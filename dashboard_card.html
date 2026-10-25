@@ -2173,8 +2173,14 @@
                     if (data.global_year) centralConfig.globalYear = data.global_year;
                     if (data.global_director) centralConfig.globalDirector = data.global_director;
                     if (data.sync_mode !== undefined) centralConfig.syncMode = !!data.sync_mode;
-                    if (data.allow_employee_movement !== undefined) centralConfig.allowEmployeeMovement = !!data.allow_employee_movement;
-                    if (data.allow_add_employee !== undefined) centralConfig.allowAddEmployee = !!data.allow_add_employee;
+                    if (data.allow_employee_movement !== undefined) {
+                        centralConfig.allowEmployeeMovement = (data.allow_employee_movement === false || data.allow_employee_movement === 'none') ? 'none' : (data.allow_employee_movement === 'selected' ? 'selected' : 'all');
+                    }
+                    if (data.employeeMovementInstitutions) centralConfig.employeeMovementInstitutions = data.employeeMovementInstitutions;
+                    if (data.allow_add_employee !== undefined) {
+                        centralConfig.allowAddEmployee = (data.allow_add_employee === false || data.allow_add_employee === 'none') ? 'none' : (data.allow_add_employee === 'selected' ? 'selected' : 'all');
+                    }
+                    if (data.addEmployeeInstitutions) centralConfig.addEmployeeInstitutions = data.addEmployeeInstitutions;
                     if (data.directorate_theme) centralConfig.directorateTheme = data.directorate_theme;
                 }
             } catch(fErr) { console.warn("Supabase config read error:", fErr); }
@@ -2325,7 +2331,9 @@
                     global_director: centralConfig.globalDirector,
                     sync_mode: centralConfig.syncMode,
                     allow_employee_movement: centralConfig.allowEmployeeMovement,
+                    employeeMovementInstitutions: centralConfig.employeeMovementInstitutions || [],
                     allow_add_employee: centralConfig.allowAddEmployee,
+                    addEmployeeInstitutions: centralConfig.addEmployeeInstitutions || [],
                     directorate_theme: centralConfig.directorateTheme
                 });
             } catch(e) { console.warn("Supabase config save error:", e); }
@@ -2842,8 +2850,8 @@
             try {
                 updateLoadProgress(20, "جاري الاتصال المباشر بقاعدة بيانات Supabase الحية...", "استرجاع كافة سجلات الموظفين وإعدادات النظام...");
 
-                // ⚡ استدعاء متوازي فائق السرعة لكافة موظفي الولاية وقائمة المؤسسات والأنشطة من Supabase
-                const [liveEmployees, actList, sbInstitutions] = await Promise.all([
+                // ⚡ استدعاء متوازي فائق السرعة لكافة موظفي الولاية وقائمة المؤسسات والأنشطة وسجل التعديلات من Supabase
+                const [liveEmployees, actList, sbInstitutions, historyList] = await Promise.all([
                     (typeof window.fetchAllEmployeesLive === "function") 
                         ? window.fetchAllEmployeesLive((count) => {
                             updateLoadProgress(50, "جاري استلام دفعات الموظفين من قاعدة البيانات...", `تم استلام ${count} موظفاً...`);
@@ -2854,6 +2862,9 @@
                         : Promise.resolve([]),
                     (typeof window.fetchInstitutionsList === "function")
                         ? window.fetchInstitutionsList()
+                        : Promise.resolve([]),
+                    (typeof window.fetchModificationsHistory === "function")
+                        ? window.fetchModificationsHistory(500)
                         : Promise.resolve([])
                 ]);
 
@@ -2893,6 +2904,48 @@
                         createdAt: ""
                     });
                 });
+
+                // ⚡ تجميع وتفعيل سجل الموظفين المعدلين في modifiedEmployeesMap
+                window.modifiedEmployeesMap = {};
+                if (Array.isArray(historyList) && historyList.length > 0) {
+                    historyList.forEach(item => {
+                        const jid = String(item.employee_id || '').trim();
+                        if (!jid || window.modifiedEmployeesMap[jid]) return;
+                        if (['ADMIN_EDIT', 'DIRECTOR_EDIT', 'PHOTO_UPDATE', 'TRANSFER_INSTITUTION', 'EMPLOYEE_CREATE'].includes(item.action_type)) {
+                            const newD = item.new_data || {};
+                            const prevD = item.previous_data || {};
+                            let eName = newD.name || '';
+                            if (!eName && typeof window.formatEmployeeRecord === 'function') {
+                                const rec = window.formatEmployeeRecord(newD);
+                                eName = rec ? rec.name : '';
+                            }
+                            if (!eName && empMap.has(jid)) {
+                                eName = empMap.get(jid).name;
+                            }
+                            window.modifiedEmployeesMap[jid] = {
+                                jobId: jid,
+                                name: eName,
+                                inst: newD.etablissement || newD.workplace || newD.inst || (empMap.has(jid) ? empMap.get(jid).inst : ''),
+                                rank: newD.grade || newD.rank || '',
+                                dob: newD.dateNais || newD.dob || '',
+                                employmentType: newD.situationAdmin || newD.employmentType || '',
+                                photoUrl: newD.photo_url || null,
+                                registryNo: newD.registry_no || null,
+                                action_type: item.action_type,
+                                modified_by: item.modified_by,
+                                modified_at: item.modified_at,
+                                originalData: prevD,
+                                isActive: true
+                            };
+                            const empObj = empMap.get(jid);
+                            if (empObj) {
+                                empObj.hasMod = true;
+                                empObj.isModActive = true;
+                                empObj.modDoc = window.modifiedEmployeesMap[jid];
+                            }
+                        }
+                    });
+                }
 
                 // ⚡ ربط صور Cloudflare R2 المحدثة
                 if (typeof window !== "undefined" && window.CF_PHOTOS_MAP) {
@@ -4059,7 +4112,10 @@
             // سطر الجدول (10 صفوف لكل صفحة)
             rowsHtml += `
                 <tr>
-                    <td>${photoSrc ? `<img src="${photoSrc}" style="width:40px; height:50px; object-fit:cover; border-radius:6px;">` : '<span style="color:#94a3b8; font-size:12px;">بدون</span>'}</td>
+                    <td>${photoSrc ? `<div style="position:relative; width:40px; height:50px; display:inline-block;">
+                        <img src="${photoSrc}" style="width:40px; height:50px; object-fit:cover; border-radius:6px;">
+                        <button onclick="deleteFloatingPhoto('${escapeHtml(emp.jobId)}', '${escapeHtml(emp.name)}')" title="حذف الصورة" style="position:absolute; top:-5px; left:-5px; background:var(--danger); color:white; border:none; border-radius:50%; width:18px; height:18px; font-size:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; line-height:1; box-shadow:0 1px 4px rgba(0,0,0,0.3); border:1.5px solid #fff;"><i class="fa-solid fa-times"></i></button>
+                    </div>` : '<span style="color:#94a3b8; font-size:12px;">بدون</span>'}</td>
                     <td style="font-family:monospace; font-weight:bold;">${escapeHtml(emp.jobId || '---')}</td>
                     <td style="text-align:center;"><span style="background:#fef3c7; color:#92400e; padding:3px 8px; border-radius:6px; font-weight:800;">${emp.registryNo ? String(emp.registryNo).padStart(4, '0') : '---'}</span></td>
                     <td style="font-weight:800;">
@@ -4078,6 +4134,7 @@
                                 <i class="fa-solid fa-crop-simple"></i>
                                 <input type="file" style="display: none;" accept="image/*" onchange="openAdminCropper(event, '${escapeHtml(emp.jobId)}')">
                             </label>
+                            ${photoSrc ? `<button class="btn btn-danger" style="padding:5px 8px; font-size:12px;" onclick="deleteFloatingPhoto('${escapeHtml(emp.jobId)}', '${escapeHtml(emp.name)}')" title="حذف صورة الموظف"><i class="fa-solid fa-image-slash"></i></button>` : ''}
                             <button class="btn btn-gold" style="padding:5px 8px; font-size:12px;" onclick="editEmpByJobId('${escapeHtml(emp.jobId)}')" title="تعديل"><i class="fa-solid fa-pen"></i></button>
                             ${toggleModTableBtn}
                             <button class="btn btn-danger" style="padding:5px 8px; font-size:12px;" onclick="deleteEmp('${escapeHtml(emp.jobId)}')" title="حذف"><i class="fa-solid fa-trash"></i></button>
@@ -4289,6 +4346,28 @@
             const emp = allEmployeesData.find(e => String(e.jobId) === String(jid)) || {};
             const orig = (mod && mod.originalData) || (emp && emp._originalData) || (emp && emp._rawBase) || {};
 
+            const cleanDisplayName = (raw) => {
+                if (!raw) return '---';
+                let s = String(raw).trim().replace(/\s+/g, ' ');
+                const parts = s.split(' ');
+                if (parts.length >= 4) {
+                    const lastTwo = parts.slice(-2).join(' ');
+                    const prevTwo = parts.slice(-4, -2).join(' ');
+                    if (lastTwo === prevTwo) {
+                        parts.splice(-2, 2);
+                        s = parts.join(' ');
+                    }
+                } else if (parts.length >= 2) {
+                    if (parts[parts.length - 1] === parts[parts.length - 2]) {
+                        parts.pop();
+                        s = parts.join(' ');
+                    }
+                }
+                return s;
+            };
+
+            const empDisplayName = cleanDisplayName(mod.name || emp.name || '');
+
             const origInst = (mod && mod.previousPlace) 
                 || (mod && mod.originalData && (mod.originalData.inst || mod.originalData.workPlace || mod.originalData.place)) 
                 || (emp && emp._originalData && (emp._originalData.inst || emp._originalData.workPlace))
@@ -4300,8 +4379,8 @@
                 || '';
 
             const changes = [];
-            if (mod.name && orig.name && mod.name !== orig.name) {
-                changes.push(`<div style="margin-bottom:4px;"><strong>الاسم واللقب:</strong> <span style="text-decoration:line-through; color:#ef4444;">${escapeHtml(orig.name)}</span> ⬅️ <span style="color:#059669; font-weight:bold;">${escapeHtml(mod.name)}</span></div>`);
+            if (mod.name && orig.name && cleanDisplayName(mod.name) !== cleanDisplayName(orig.name)) {
+                changes.push(`<div style="margin-bottom:4px;"><strong>الاسم واللقب:</strong> <span style="text-decoration:line-through; color:#ef4444;">${escapeHtml(cleanDisplayName(orig.name))}</span> ⬅️ <span style="color:#059669; font-weight:bold;">${escapeHtml(cleanDisplayName(mod.name))}</span></div>`);
             }
             if (newInst && origInst && normalizeInstName(newInst) !== normalizeInstName(origInst)) {
                 changes.push(`<div style="margin-bottom:4px;"><strong>حركة المؤسسة:</strong> <span style="text-decoration:line-through; color:#ef4444;">${escapeHtml(origInst)}</span> ⬅️ <span style="color:#059669; font-weight:bold;">${escapeHtml(newInst)}</span></div>`);
@@ -4318,6 +4397,9 @@
             if (mod.registryNo && orig.registryNo && String(mod.registryNo) !== String(orig.registryNo)) {
                 changes.push(`<div style="margin-bottom:4px;"><strong>رقم القيد:</strong> <span style="text-decoration:line-through; color:#ef4444;">${orig.registryNo}</span> ⬅️ <span style="color:#059669; font-weight:bold;">${mod.registryNo}</span></div>`);
             }
+            if (mod.photoUrl || mod.photo || mod.action_type === 'PHOTO_UPDATE') {
+                changes.push(`<div style="margin-bottom:4px;"><strong style="color:var(--primary);"><i class="fa-solid fa-camera"></i> الصورة:</strong> <span style="color:#059669; font-weight:bold;">تم رفع وتحديث صورة البطاقة</span></div>`);
+            }
 
             if (changes.length === 0) {
                 changes.push(`<span style="color:#64748b; font-style:italic;">تم حفظ تعديل بدون اختلاف في الحقول الأساسية</span>`);
@@ -4327,7 +4409,7 @@
                 <tr style="border-bottom: 1px solid #e2e8f0; font-size: 13px;">
                     <td style="padding: 10px 8px; text-align: center; font-weight: 800;">${index + 1}</td>
                     <td style="padding: 10px 8px; font-weight: 800;">
-                        <div style="font-size: 14px; color: var(--dark);">${escapeHtml(mod.name || emp.name || '---')}</div>
+                        <div style="font-size: 14px; color: var(--dark);">${escapeHtml(empDisplayName)}</div>
                         <div style="font-family: monospace; font-size: 12px; color: var(--primary);">${escapeHtml(jid)}</div>
                     </td>
                     <td style="padding: 10px 8px; font-size: 12px; color: #334155;">
@@ -4794,31 +4876,52 @@
 
     async function deleteFloatingPhoto(jobId, name) {
         const confirm = await Swal.fire({
-            title: 'حذف الصورة', text: 'هل تريد حذف صورة الموظف نهائياً من قاعدة البيانات؟', icon: 'warning',
-            showCancelButton: true, confirmButtonText: 'نعم، احذف', cancelButtonText: 'إلغاء', confirmButtonColor: 'var(--danger)'
+            title: 'حذف الصورة', 
+            html: `هل تريد حذف صورة الموظف <strong>${escapeHtml(name || '')}</strong> نهائياً من قاعدة البيانات؟`, 
+            icon: 'warning',
+            showCancelButton: true, 
+            confirmButtonText: '<i class="fa-solid fa-trash"></i> نعم، احذف', 
+            cancelButtonText: 'إلغاء', 
+            confirmButtonColor: 'var(--danger)'
         });
         if(confirm.isConfirmed) {
             Swal.fire({ title: 'جاري الحذف...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
             try {
-                const emp = allEmployeesData.find(e => String(e.jobId) === String(jobId));
+                const jid = String(jobId).trim();
+                const emp = allEmployeesData.find(e => String(e.jobId) === jid);
                 if(emp && emp.photoUrl && emp.photoUrl.includes("r2.dev")) {
                     try {
                         const key = new URL(emp.photoUrl).pathname.replace(/^\/+/, '');
-                        if(key) await fetch(`${CF_WORKER_URL}?key=${encodeURIComponent(key)}`, { method: 'DELETE' });
+                        if(key && CF_WORKER_URL) await fetch(`${CF_WORKER_URL}?key=${encodeURIComponent(key)}`, { method: 'DELETE' });
                     } catch(e){}
                 }
 
-                if (typeof window.updateEmployeePhotoUrl === 'function') {
-                    await window.updateEmployeePhotoUrl(String(jobId), null);
-                } else if (window.supabaseClient) {
-                    await window.supabaseClient.from('base-touggourt').update({ photo_url: null }).eq('job_id', String(jobId));
+                if (typeof window.deleteEmployeePhotoUrl === 'function') {
+                    await window.deleteEmployeePhotoUrl(jid, 'ADMIN');
+                } else if (typeof window.updateEmployeePhotoUrl === 'function') {
+                    await window.updateEmployeePhotoUrl(jid, 'NO_PHOTO', 'ADMIN');
                 }
 
-                if(emp) { emp.photoUrl = null; emp.photo = null; }
+                if (window.CF_PHOTOS_MAP && window.CF_PHOTOS_MAP[jid]) {
+                    delete window.CF_PHOTOS_MAP[jid];
+                }
+
+                if(emp) { 
+                    emp.photoUrl = null; 
+                    emp.photo = null; 
+                }
+
+                if (window.modifiedEmployeesMap && window.modifiedEmployeesMap[jid]) {
+                    window.modifiedEmployeesMap[jid].photoUrl = null;
+                }
+
+                calculateAccurateInstitutionCounts();
                 renderEmployees();
+                calculateAndRenderKpis();
                 Swal.fire({ icon: 'success', title: 'تم الحذف', text: 'تم حذف الصورة بنجاح من قاعدة البيانات', timer: 1500 });
             } catch(e) {
-                Swal.fire({ icon: 'error', title: 'خطأ', text: 'فشل حذف الصورة' });
+                console.error("deleteFloatingPhoto error:", e);
+                Swal.fire({ icon: 'error', title: 'خطأ', text: 'فشل حذف الصورة: ' + (e.message || e) });
             }
         }
     }
@@ -4914,7 +5017,23 @@
             // حفظ أرقام القيد مباشرة في قاعدة بيانات Supabase الحية
             if (typeof window.bulkUpdateRegistryNumbers === 'function') {
                 try {
-                    await window.bulkUpdateRegistryNumbers(registryMap, 'ADMIN');
+                    await window.bulkUpdateRegistryNumbers(registryMap, 'ADMIN', (saved, total) => {
+                        const pct = Math.round((saved / total) * 100);
+                        const content = Swal.getHtmlContainer();
+                        if (content) {
+                            content.innerHTML = `
+                                <div style="font-size:14px; font-weight:800; color:var(--primary); margin-bottom:8px;">
+                                    يتم الآن حفظ وتوثيق أرقام القيد في قاعدة البيانات...
+                                </div>
+                                <div style="font-size:13px; color:#475569; margin-bottom:10px;">
+                                    تم توثيق <strong>${saved}</strong> من <strong>${total}</strong> موظف (${pct}%)...
+                                </div>
+                                <div style="width:100%; background:#e2e8f0; border-radius:8px; height:12px; overflow:hidden;">
+                                    <div style="width:${pct}%; background:linear-gradient(90deg, #10b981, #059669); height:100%; transition:width 0.2s;"></div>
+                                </div>
+                            `;
+                        }
+                    });
                 } catch(e) {
                     console.warn("Supabase registry map save error:", e);
                 }
@@ -7247,10 +7366,21 @@
 
                 // الحفظ المباشر في قاعدة بيانات Supabase الحية
                 if (typeof window.updateEmployeeWithHistory === 'function') {
-                    try {
+                        let newNom = (formValues.name || '').trim();
+                        let newPrenom = '';
+                        const nameParts = newNom.split(/\s+/);
+                        const compoundPrefixes = ['بن', 'ابن', 'بو', 'بل', 'بوزيد', 'عبد', 'ولد', 'آيت', 'أيت'];
+                        if (nameParts.length > 2 && compoundPrefixes.includes(nameParts[0])) {
+                            newNom = nameParts[0] + ' ' + nameParts[1];
+                            newPrenom = nameParts.slice(2).join(' ');
+                        } else if (nameParts.length > 1) {
+                            newNom = nameParts[0];
+                            newPrenom = nameParts.slice(1).join(' ');
+                        }
+
                         const updateFields = {
-                            nomAr: formValues.name || '',
-                            name: formValues.name || '',
+                            nomAr: newNom,
+                            prenomAr: newPrenom,
                             etablissement: formValues.inst || '',
                             grade: formValues.rank || '',
                             dateNais: formValues.dob || '',

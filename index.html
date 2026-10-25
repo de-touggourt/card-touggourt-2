@@ -1963,7 +1963,7 @@ body.dark-theme .dir-card-no-photo {
         }
         window.formatCardNumberHTML = formatCardNumberHTML;
 
-        // تحديث شريط الحالة المركزي في أعلى الصفحة
+        // تحديث شريط الحالة المركزي في أعلى الصفحة وأزرار الصلاحيات
         function applyCentralConfigToManagerUI() {
             try {
                 const names = { 1: 'النموذج 1 (الكلاسيكي بالباركود)', 2: 'النموذج 2 (الوطني بشريط العلم)' };
@@ -2008,6 +2008,44 @@ body.dark-theme .dir-card-no-photo {
 
                 const instTitleEl = document.getElementById('dir-live-inst-title');
                 if(instTitleEl && directorInstitution) instTitleEl.textContent = directorInstitution;
+
+                // تحديث صلاحية زر إضافة موظف جديد
+                const addEmpBtn = document.getElementById('btn-director-add-emp');
+                if (addEmpBtn) {
+                    const isAllowed = isFeatureAllowedForSchool('allowAddEmployee', directorInstitution);
+                    if (isAllowed) {
+                        addEmpBtn.style.opacity = '1';
+                        addEmpBtn.title = 'إضافة موظف جديد';
+                    } else {
+                        addEmpBtn.style.opacity = '0.55';
+                        addEmpBtn.title = 'خدمة إضافة الموظفين الجدد غير مفعلة لمؤسستكم من طرف الإدارة المركزية';
+                    }
+                }
+
+                // تحديث صلاحية زر حركة ونقل الموظفين
+                const movBtn = document.getElementById('btn-director-movement');
+                if (movBtn) {
+                    const isAllowed = isFeatureAllowedForSchool('allowEmployeeMovement', directorInstitution);
+                    if (isAllowed) {
+                        movBtn.style.opacity = '1';
+                        movBtn.title = 'حركة الموظفين بين المؤسسات';
+                    } else {
+                        movBtn.style.opacity = '0.55';
+                        movBtn.title = 'خدمة حركة ونقل الموظفين غير مفعلة لمؤسستكم من طرف الإدارة المركزية';
+                    }
+                }
+
+                // تحديث صلاحية زر تصدير PDF
+                const pdfBtn = document.getElementById('btn-director-save-pdf');
+                if (pdfBtn) {
+                    if (centralDirectorateConfig.allowPdfDownload !== false) {
+                        pdfBtn.style.opacity = '1';
+                        pdfBtn.title = 'حفظ وتصدير PDF';
+                    } else {
+                        pdfBtn.style.opacity = '0.55';
+                        pdfBtn.title = 'تحميل وتصدير PDF معلق مؤقتاً من طرف الإدارة المركزية';
+                    }
+                }
             } catch(e) {
                 console.warn("applyCentralConfigToManagerUI error:", e);
             }
@@ -2072,6 +2110,14 @@ body.dark-theme .dir-card-no-photo {
                         if (data.allow_photo_upload !== undefined) centralDirectorateConfig.allowPhotoUpload = !!data.allow_photo_upload;
                         if (data.allow_pdf_download !== undefined) centralDirectorateConfig.allowPdfDownload = !!data.allow_pdf_download;
                         if (data.registry_format) centralDirectorateConfig.registryFormat = data.registry_format;
+                        if (data.show_card_date !== undefined) centralDirectorateConfig.showCardDate = !!data.show_card_date;
+                        if (data.auto_date !== undefined) centralDirectorateConfig.autoDate = !!data.auto_date;
+                        if (data.card_custom_date !== undefined) centralDirectorateConfig.cardCustomDate = data.card_custom_date;
+                        if (data.show_registry_no !== undefined) centralDirectorateConfig.showRegistryNo = !!data.show_registry_no;
+                        if (data.allow_employee_movement !== undefined) centralDirectorateConfig.allowEmployeeMovement = data.allow_employee_movement;
+                        if (data.allow_add_employee !== undefined) centralDirectorateConfig.allowAddEmployee = data.allow_add_employee;
+                        if (data.employeeMovementInstitutions) centralDirectorateConfig.employeeMovementInstitutions = data.employeeMovementInstitutions;
+                        if (data.addEmployeeInstitutions) centralDirectorateConfig.addEmployeeInstitutions = data.addEmployeeInstitutions;
                     }
                 }
             } catch (e) {
@@ -3291,10 +3337,17 @@ function renderTable() {
                 // الحفظ المباشر في قاعدة بيانات Supabase الحية
                 try {
                     const jid = String(jobId).trim();
+                    const nameParts = name.trim().split(/\s+/);
+                    let nAr = nameParts[0] || '';
+                    let pAr = nameParts.slice(1).join(' ') || '';
+                    if (['بن', 'ابن', 'بو', 'بل', 'عبد', 'أيت', 'ايت'].includes(nameParts[0]) && nameParts.length > 2) {
+                        nAr = nameParts[0] + ' ' + nameParts[1];
+                        pAr = nameParts.slice(2).join(' ');
+                    }
                     const empPayload = {
                         name,
-                        nomAr: name,
-                        prenomAr: '',
+                        nomAr: nAr,
+                        prenomAr: pAr,
                         dateNais: cleanDob,
                         grade: rank,
                         etablissement: directorInstitution,
@@ -3611,10 +3664,11 @@ function renderTable() {
 
             try {
                 // 1. تحديث مكان العمل في قاعدة بيانات Supabase الحية وتوثيقه في سجل التعديلات
+                const targetMatricule = String(foundEmp.matricule || foundEmp.jobId || officialId).trim();
                 if (typeof window.updateEmployeeWithHistory === 'function') {
                     await window.updateEmployeeWithHistory(
-                        officialId,
-                        { etablissement: activeInst },
+                        targetMatricule,
+                        { etablissement: activeInst, rawEtab: activeInst },
                         activeInst,
                         'TRANSFER_INSTITUTION'
                     );
@@ -3629,40 +3683,52 @@ function renderTable() {
                 const nextReg = maxReg > 0 ? maxReg + 1 : null;
 
                 const movedObj = {
-                    id: 'emp_fb_' + officialId,
-                    jobId: officialId,
+                    id: 'emp_fb_' + targetMatricule,
+                    jobId: targetMatricule,
+                    matricule: targetMatricule,
                     name: empName,
                     rank: empRank,
                     dob: empDob,
                     workplace: activeInst,
+                    etablissement: activeInst,
                     photo: foundEmp.photoUrl || foundEmp.photo || null,
                     photoUrl: foundEmp.photoUrl || foundEmp.photo || null,
                     employmentType: empType,
                     substituteDuration: foundEmp.substituteDuration || '',
                     registryNo: foundEmp.registryNo || nextReg,
-                    isMoved: true
+                    isMoved: true,
+                    isCentralModified: true
                 };
 
-                const existingIdx = employees.findIndex(e => String(e.jobId) === officialId);
+                const existingIdx = employees.findIndex(e => String(e.jobId || e.matricule) === targetMatricule);
                 if (existingIdx > -1) {
                     employees[existingIdx] = movedObj;
                 } else {
                     employees.push(movedObj);
                 }
 
+                // تنظيف أي كاش قديم للمؤسسة
+                try {
+                    if (typeof localforage !== 'undefined') {
+                        await localforage.clear();
+                    }
+                } catch(cErr){}
+
                 saveToStorage();
-                if (typeof localforage !== 'undefined' && activeInst) {
-                    try {
-                        await localforage.setItem(`cached_inst_emps_${activeInst}`, employees);
-                    } catch(cErr){}
-                }
 
                 // 3. تحديث العرض: الجدول، الكروت، والإحصائيات فوراً
                 renderTable();
                 renderCards(employees);
                 updateDirectorKPIs();
 
-                // 4. تسجيل النشاط في فايربيز
+                // 4. إعادة المزامنة الحية مباشرة لتأكيد ظهور الموظف رسمياً في المؤسسة المستقبلة
+                try {
+                    await fetchInstitutionEmployees(activeInst);
+                } catch(feErr) {
+                    console.warn("fetchInstitutionEmployees after move notice:", feErr);
+                }
+
+                // 5. تسجيل النشاط
                 if (typeof sendStatToServer === 'function') {
                     sendStatToServer('movement');
                 }
@@ -3676,7 +3742,7 @@ function renderTable() {
                 });
             } catch(err) {
                 console.error("Movement error:", err);
-                Swal.fire({ icon: 'error', title: 'خطأ', text: 'حدث خطأ أثناء نقل الموظف: ' + err.message });
+                Swal.fire({ icon: 'error', title: 'خطأ', text: 'حدث خطأ أثناء نقل الموظف: ' + (err.message || err) });
             }
         }
         window.openEmployeeMovementModal = openEmployeeMovementModal;
@@ -3764,6 +3830,8 @@ function renderTable() {
                     if (data.sync_mode !== undefined) centralDirectorateConfig.syncMode = !!data.sync_mode;
                     if (data.allow_employee_movement !== undefined) centralDirectorateConfig.allowEmployeeMovement = data.allow_employee_movement;
                     if (data.allow_add_employee !== undefined) centralDirectorateConfig.allowAddEmployee = data.allow_add_employee;
+                    if (data.employeeMovementInstitutions) centralDirectorateConfig.employeeMovementInstitutions = data.employeeMovementInstitutions;
+                    if (data.addEmployeeInstitutions) centralDirectorateConfig.addEmployeeInstitutions = data.addEmployeeInstitutions;
 
                     applyCentralConfigToManagerUI();
 
@@ -3989,6 +4057,41 @@ function renderTable() {
                     emp.photoUrl = emp.photo;
                 });
 
+                // ⚡ فحص واعتماد التعديلات المركزية المسجلة لموظفي المؤسسة
+                try {
+                    const empIds = finalEmps.map(e => String(e.jobId || e.matricule || '').trim()).filter(Boolean);
+                    if (empIds.length > 0) {
+                        const client = (typeof window.getSupabaseClient === 'function') ? window.getSupabaseClient() : null;
+                        if (client) {
+                            const { data: histData, error: histErr } = await client
+                                .from('modifications_history')
+                                .select('employee_id, action_type, new_data, modified_at, modified_by')
+                                .in('employee_id', empIds)
+                                .order('modified_at', { ascending: false });
+
+                            if (!histErr && Array.isArray(histData) && histData.length > 0) {
+                                const modActions = ['ADMIN_EDIT', 'DIRECTOR_EDIT', 'PHOTO_UPDATE', 'TRANSFER_INSTITUTION', 'EMPLOYEE_CREATE', 'UPDATE'];
+                                const modifiedSet = new Set();
+                                histData.forEach(h => {
+                                    const jid = String(h.employee_id || '').trim();
+                                    if (jid && modActions.includes(h.action_type)) {
+                                        modifiedSet.add(jid);
+                                    }
+                                });
+
+                                finalEmps.forEach(emp => {
+                                    const jid = String(emp.jobId || emp.matricule || '').trim();
+                                    if (modifiedSet.has(jid)) {
+                                        emp.isCentralModified = true;
+                                    }
+                                });
+                            }
+                        }
+                    }
+                } catch(modErr) {
+                    console.warn("Notice checking modifications history:", modErr);
+                }
+
                 // ترتيب الموظفين حسب رقم القيد
                 finalEmps.sort((a, b) => (parseInt(a.registryNo) || 99999) - (parseInt(b.registryNo) || 99999));
 
@@ -3998,6 +4101,7 @@ function renderTable() {
 
                 employees = finalEmps;
                 dirCurrentPage = 1;
+                applyCentralConfigToManagerUI();
                 // شرط صارم: لا يتم تخزين أو حفظ أي كاش في localStorage (Live Fetching)
                 try { saveToStorage(); } catch(e) { console.warn("saveToStorage error:", e); }
                 try { renderTable(); } catch(e) { console.warn("renderTable error:", e); }

@@ -108,6 +108,14 @@
             return null;
         }
 
+        if (data && data.extra_config) {
+            const extra = (typeof data.extra_config === 'string') ? JSON.parse(data.extra_config || '{}') : data.extra_config;
+            if (extra.allow_employee_movement) data.allow_employee_movement = extra.allow_employee_movement;
+            if (extra.allow_add_employee) data.allow_add_employee = extra.allow_add_employee;
+            data.employeeMovementInstitutions = extra.employee_movement_institutions || extra.employeeMovementInstitutions || [];
+            data.addEmployeeInstitutions = extra.add_employee_institutions || extra.addEmployeeInstitutions || [];
+        }
+
         console.log("✅ [Supabase Live] تم استلام إعدادات النظام بنجاح:", data);
         return data;
     }
@@ -116,8 +124,38 @@
         const client = getSupabaseClient();
         if (!client) throw new Error("Supabase client is not initialized");
 
+        // تحويل متوافق مع قيود الأعمدة في PostgreSQL لقاعدة البيانات
+        const movMode = newSettings.allow_employee_movement !== undefined ? newSettings.allow_employee_movement : 'all';
+        const addMode = newSettings.allow_add_employee !== undefined ? newSettings.allow_add_employee : 'all';
+        const movBool = (movMode === true || movMode === 'all' || movMode === 'selected');
+        const addBool = (addMode === true || addMode === 'all' || addMode === 'selected');
+
+        const existingExtra = (newSettings.extra_config && typeof newSettings.extra_config === 'object') ? newSettings.extra_config : {};
+        const extraConfig = {
+            ...existingExtra,
+            allow_employee_movement: typeof movMode === 'string' ? movMode : (movMode ? 'all' : 'none'),
+            allow_add_employee: typeof addMode === 'string' ? addMode : (addMode ? 'all' : 'none'),
+            employee_movement_institutions: newSettings.employeeMovementInstitutions || existingExtra.employee_movement_institutions || [],
+            add_employee_institutions: newSettings.addEmployeeInstitutions || existingExtra.add_employee_institutions || []
+        };
+
         const payload = {
-            ...newSettings,
+            published_template: newSettings.published_template !== undefined ? parseInt(newSettings.published_template, 10) : 2,
+            allow_printing: newSettings.allow_printing !== undefined ? !!newSettings.allow_printing : true,
+            allow_photo_upload: newSettings.allow_photo_upload !== undefined ? !!newSettings.allow_photo_upload : true,
+            allow_pdf_download: newSettings.allow_pdf_download !== undefined ? !!newSettings.allow_pdf_download : true,
+            registry_format: newSettings.registry_format || 'رقم {no}',
+            show_card_date: newSettings.show_card_date !== undefined ? !!newSettings.show_card_date : true,
+            auto_date: newSettings.auto_date !== undefined ? !!newSettings.auto_date : true,
+            card_custom_date: newSettings.card_custom_date !== undefined ? String(newSettings.card_custom_date) : '',
+            show_registry_no: newSettings.show_registry_no !== undefined ? !!newSettings.show_registry_no : true,
+            global_year: newSettings.global_year || '2025/2026',
+            global_director: newSettings.global_director || 'مدير التربية لولاية توقرت',
+            sync_mode: newSettings.sync_mode !== undefined ? !!newSettings.sync_mode : true,
+            allow_employee_movement: movBool,
+            allow_add_employee: addBool,
+            directorate_theme: newSettings.directorate_theme || 'emerald',
+            extra_config: extraConfig,
             updated_at: new Date().toISOString()
         };
 
@@ -291,11 +329,46 @@
 
     function formatEmployeeRecord(d) {
         if (!d) return null;
-        const fullName = (d.name || ((d.nomAr || '') + ' ' + (d.prenomAr || '')).trim() || ((d.prenomAr || '') + ' ' + (d.nomAr || '')).trim() || '').trim();
+        let nom = String(d.nomAr || d.nom || '').trim().replace(/\s+/g, ' ');
+        let prenom = String(d.prenomAr || d.prenom || '').trim().replace(/\s+/g, ' ');
+
+        // معالجة متقدمة تمنع تكرار الاسم واللقب مثل: (فغولي عبد الهادي عبد الهادي)
+        const particles = ['بن', 'ابن', 'بو', 'بل', 'بوزيد', 'ولد', 'آيت', 'أيت'];
+        if (nom && prenom) {
+            if (nom.endsWith(' ' + prenom)) {
+                const prefix = nom.slice(0, -(prenom.length + 1)).trim();
+                if (!particles.includes(prefix)) {
+                    nom = prefix;
+                }
+            } else if (nom.startsWith(prenom + ' ')) {
+                const suffix = nom.slice(prenom.length + 1).trim();
+                if (!particles.includes(suffix)) {
+                    nom = suffix;
+                }
+            }
+        }
+
+        let fullName = '';
+        if (d.name && typeof d.name === 'string' && d.name.trim()) {
+            fullName = d.name.trim();
+        } else if (nom && prenom) {
+            fullName = `${nom} ${prenom}`;
+        } else {
+            fullName = nom || prenom || d.fullName || '';
+        }
+
+        // إزالة التكرار المتتالي للكلمات (مثل تكرار الاسم مرتين)
+        if (prenom && fullName.includes(prenom + ' ' + prenom)) {
+            fullName = fullName.replace(prenom + ' ' + prenom, prenom).trim();
+        }
+        fullName = fullName.replace(/\s+/g, ' ').trim();
+
         const jid = String(d.matricule || d.job_id || d.jobId || d.id || '').trim();
 
         let photoVal = d.photo_url || d.photo || null;
-        if (!photoVal && window.CF_PHOTOS_MAP && window.CF_PHOTOS_MAP[jid]) {
+        if (photoVal === 'NO_PHOTO' || photoVal === 'deleted' || photoVal === '__DELETED__') {
+            photoVal = null;
+        } else if (!photoVal && window.CF_PHOTOS_MAP && window.CF_PHOTOS_MAP[jid]) {
             photoVal = window.CF_PHOTOS_MAP[jid].cfUrl;
         }
 
@@ -307,8 +380,8 @@
             matricule: jid,
             name: fullName,
             fullName: fullName,
-            nomAr: d.nomAr || '',
-            prenomAr: d.prenomAr || '',
+            nomAr: nom,
+            prenomAr: prenom,
             dob: cleanDateString(d.dateNais || d.dob || ''),
             dateNais: cleanDateString(d.dateNais || d.dob || ''),
             rank: d.grade || d.rank || '',
@@ -357,6 +430,7 @@
         const numChunks = Math.ceil(totalCount / chunkSize);
         const chunkPromises = [];
 
+        // ترتيب محكم بواسطة matricule لضمان عدم حدوث أي تكرار أو فقدان لأي سجل أثناء التصفح
         for (let i = 0; i < numChunks; i++) {
             const from = i * chunkSize;
             const to = Math.min(from + chunkSize - 1, totalCount - 1);
@@ -364,6 +438,7 @@
                 client
                     .from(SUPABASE_CONFIG.tables.employees)
                     .select('*')
+                    .order('matricule', { ascending: true })
                     .range(from, to)
                     .then(res => {
                         if (res.error) throw res.error;
@@ -376,9 +451,28 @@
             );
         }
 
+        // جلب خريطة أرقام القيد الاحتياطية إن وجدت لضمان اكتمال أرقام القيد 100%
+        let regMap = null;
+        try {
+            const { data: setRow } = await client
+                .from(SUPABASE_CONFIG.tables.settings)
+                .select('registry_map')
+                .eq('id', 'config')
+                .maybeSingle();
+            if (setRow && setRow.registry_map && typeof setRow.registry_map === 'object') {
+                regMap = setRow.registry_map;
+            }
+        } catch(e) {}
+
         const chunkResults = await Promise.all(chunkPromises);
         const allRows = chunkResults.flat();
-        const formatted = allRows.map(formatEmployeeRecord);
+        const formatted = allRows.map(row => {
+            const emp = formatEmployeeRecord(row);
+            if (emp && (!emp.registryNo || isNaN(emp.registryNo)) && regMap && regMap[emp.jobId]) {
+                emp.registryNo = parseInt(regMap[emp.jobId], 10);
+            }
+            return emp;
+        });
 
         console.log(`✅ [Supabase Live] تم استلام جميع الموظفين بنجاح: ${formatted.length} موظفاً حياً.`);
         return formatted;
@@ -413,7 +507,52 @@
             throw error;
         }
 
-        const formatted = (data || []).map(formatEmployeeRecord);
+        // جلب خريطة أرقام القيد الاحتياطية إن وجدت
+        let regMap = null;
+        try {
+            const { data: setRow } = await client
+                .from(SUPABASE_CONFIG.tables.settings)
+                .select('registry_map')
+                .eq('id', 'config')
+                .maybeSingle();
+            if (setRow && setRow.registry_map && typeof setRow.registry_map === 'object') {
+                regMap = setRow.registry_map;
+            }
+        } catch(e) {}
+
+        // تنقية وتدقيق دقيق لمنع تداخل مؤسسات أخرى تشترك في جزء من التسمية (مثل "المستقبل" و "المستقبل الشمالي")
+        const normTarget = cleanInst.replace(/^(المدرسة الابتدائية|إبتدائية|ابتدائية|مدرسة ابتدائية|متوسطة|ثانوية)\s*/gi, '')
+            .replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').replace(/[\s\-_–]/g, '').trim();
+
+        const qualifiers = ['الشمالي', 'الجنوبي', 'الشرقي', 'الغربي', 'الجديده', 'القديمه', '1', '2', '3', 'الملحقه'];
+
+        const filteredRows = (data || []).filter(row => {
+            const rowEtab = (row.etablissement || row.rawEtab || '').trim();
+            if (!rowEtab) return false;
+            if (rowEtab === cleanInst) return true;
+
+            const normRow = rowEtab.replace(/^(المدرسة الابتدائية|إبتدائية|ابتدائية|مدرسة ابتدائية|متوسطة|ثانوية)\s*/gi, '')
+                .replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').replace(/[\s\-_–]/g, '').trim();
+
+            if (normRow === normTarget) return true;
+
+            // إذا كانت إحدى التسميتين تحمل لاحقة تمييزية واضحة والأخرى لا تحملها، فهما مؤسستان مختلفتان
+            for (const q of qualifiers) {
+                const qClean = q.replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي');
+                if (normRow.includes(qClean) && !normTarget.includes(qClean)) return false;
+                if (!normRow.includes(qClean) && normTarget.includes(qClean)) return false;
+            }
+            return true;
+        });
+
+        const formatted = filteredRows.map(row => {
+            const emp = formatEmployeeRecord(row);
+            if (emp && (!emp.registryNo || isNaN(emp.registryNo)) && regMap && regMap[emp.jobId]) {
+                emp.registryNo = parseInt(regMap[emp.jobId], 10);
+            }
+            return emp;
+        });
+
         console.log(`✅ [Supabase Live] تم استلام ${formatted.length} موظفاً لمؤسسة ${cleanInst} مباشرة وبدون كاش.`);
         return formatted;
     }
@@ -471,6 +610,9 @@
     /**
      * تحديث بيانات الموظف مع تسجيل التعديل أوتوماتيكياً في جدول سجل التعديلات
      */
+    /**
+     * تحديث بيانات الموظف مع تسجيل التعديل أوتوماتيكياً في جدول سجل التعديلات
+     */
     async function updateEmployeeWithHistory(matriculeId, newFields, modifiedBy = 'DIRECTOR', actionType = 'UPDATE') {
         const client = getSupabaseClient();
         if (!client) throw new Error("Supabase client is not initialized");
@@ -478,27 +620,98 @@
         const cleanId = String(matriculeId).trim();
         if (!cleanId) throw new Error("رقم الموظف مطلوب لإجراء التحديث.");
 
-        const { data: previousData } = await client
+        // البحث الفوري بالرقم الوظيفي (16 رقم) أو الوطني (18 رقم) لضمان العثور على السجل الحقيقي بدقة
+        let previousData = null;
+        let queryPrev = client.from(SUPABASE_CONFIG.tables.employees).select('*');
+        if (cleanId.length === 18) {
+            queryPrev = queryPrev.or(`nin.eq.${cleanId},matricule.eq.${cleanId}`);
+        } else {
+            queryPrev = queryPrev.or(`matricule.eq.${cleanId},nin.eq.${cleanId}`);
+        }
+        const { data: foundPrev } = await queryPrev.maybeSingle();
+        previousData = foundPrev;
+
+        const realMatricule = (previousData && previousData.matricule) ? String(previousData.matricule).trim() : cleanId;
+
+        // تصفية وتجهيز الحقول الصالحة فقط لجدول base-touggourt لمنع أخطاء PostgREST
+        const validColumns = new Set([
+            'matricule', 'nomAr', 'prenomAr', 'nomFr', 'prenomFr', 'dateNais', 'grade',
+            'etablissement', 'rawEtab', 'codeEtab', 'typeEtab', 'communeEtab', 'nin',
+            'situationAdmin', 'natureContrat', 'sexe', 'chapitreBudget', 'matiere',
+            'ccp', 'cleCcp', 'acuiteVisuelle', 'presume', 'serviceNat', 'dateGrade',
+            'dateTitularisation', 'numActeNais', 'telephone', 'nbEnfantsScol',
+            'communeResidence', 'notePedagogique', 'prenomPere', 'nomMere', 'prenomMere',
+            'dateNotePedag', 'dateRecrutement', 'codeCommuneNais', 'communeNais',
+            'lieuNais', 'numSecu', 'dateAffectation', 'nbEnfants', 'nbEnfantsPlus10',
+            'noteAdministrative', 'nbACharge', 'dateNoteAdmin', 'statutAffectation',
+            'dateEffet', 'groupeSanguin', 'conjointSecteur', 'nomJeuneFille',
+            'adresse', 'situationFam', 'echelon', 'photo_url', 'registry_no'
+        ]);
+
+        const dbFields = {};
+        for (const [key, val] of Object.entries(newFields || {})) {
+            if (validColumns.has(key)) {
+                dbFields[key] = val;
+            } else {
+                if (key === 'rank' && !dbFields.grade) dbFields.grade = val;
+                if ((key === 'workplace' || key === 'inst' || key === 'place') && !dbFields.etablissement) dbFields.etablissement = val;
+                if (key === 'dob' && !dbFields.dateNais) dbFields.dateNais = cleanDateString(val);
+                if (key === 'photo' || key === 'photoUrl') dbFields.photo_url = val;
+                if (key === 'registryNo' && dbFields.registry_no === undefined) dbFields.registry_no = (val !== null && val !== '') ? parseInt(val, 10) : null;
+                if ((key === 'employmentType' || key === 'situation_admin') && !dbFields.situationAdmin) dbFields.situationAdmin = val;
+                if ((key === 'nationalId' || key === 'national_id') && !dbFields.nin) dbFields.nin = val;
+                if ((key === 'bloodType' || key === 'blood_type') && !dbFields.groupeSanguin) dbFields.groupeSanguin = val;
+            }
+        }
+
+        // عند تحديث المؤسسة في حركة الموظفين، نضمن تحديث etablissement و rawEtab معاً
+        if (dbFields.etablissement && !dbFields.rawEtab) {
+            dbFields.rawEtab = dbFields.etablissement;
+        }
+
+        // تقسيم الاسم العربي بدقة إذا تم تمريره كاسم كامل name
+        if (newFields.name && (!dbFields.nomAr || dbFields.nomAr === newFields.name)) {
+            const rawName = String(newFields.name).trim();
+            const parts = rawName.split(/\s+/);
+            const compoundPrefixes = ['بن', 'ابن', 'بو', 'بل', 'بوزيد', 'عبد', 'ولد', 'آيت', 'أيت'];
+            if (parts.length > 2 && compoundPrefixes.includes(parts[0])) {
+                dbFields.nomAr = parts[0] + ' ' + parts[1];
+                dbFields.prenomAr = parts.slice(2).join(' ');
+            } else if (parts.length > 1) {
+                dbFields.nomAr = parts[0];
+                dbFields.prenomAr = parts.slice(1).join(' ');
+            } else {
+                dbFields.nomAr = rawName;
+            }
+        }
+
+        let updateQuery = client
             .from(SUPABASE_CONFIG.tables.employees)
-            .select('*')
-            .eq('matricule', cleanId)
-            .maybeSingle();
+            .update(dbFields);
 
-        const { data: updatedEmployee, error: updateErr } = await client
-            .from(SUPABASE_CONFIG.tables.employees)
-            .update(newFields)
-            .eq('matricule', cleanId)
-            .select()
-            .maybeSingle();
+        if (realMatricule && realMatricule.length !== 18) {
+            updateQuery = updateQuery.eq('matricule', realMatricule);
+        } else if (previousData && previousData.matricule) {
+            updateQuery = updateQuery.eq('matricule', previousData.matricule);
+        } else if (cleanId.length === 18) {
+            updateQuery = updateQuery.eq('nin', cleanId);
+        } else {
+            updateQuery = updateQuery.eq('matricule', cleanId);
+        }
 
-        if (updateErr) throw updateErr;
+        const { data: updatedEmployee, error: updateErr } = await updateQuery.select().maybeSingle();
 
-        // تسجيل التعديل في جدول التعديلات
+        if (updateErr) {
+            console.error("❌ خطأ أثناء تحديث بيانات الموظف في Supabase:", updateErr);
+            throw updateErr;
+        }
+
+        // تسجيل التعديل في جدول سجل التعديلات modifications_history
         const historyRecord = {
-            employee_id: cleanId,
+            employee_id: realMatricule,
             action_type: actionType,
             previous_data: previousData || {},
-            new_data: updatedEmployee || newFields,
+            new_data: { ...(previousData || {}), ...newFields, ...(updatedEmployee || dbFields) },
             modified_by: modifiedBy,
             modified_at: new Date().toISOString()
         };
@@ -512,8 +725,16 @@
      * حفظ وتحديث رابط صورة Cloudflare في قاعدة البيانات
      */
     async function updateEmployeePhotoUrl(matriculeId, cloudflareImageUrl, modifiedBy = 'DIRECTOR') {
+        const cleanId = String(matriculeId).trim();
+        if (cloudflareImageUrl && typeof window !== 'undefined' && window.CF_PHOTOS_MAP) {
+            window.CF_PHOTOS_MAP[cleanId] = {
+                jobId: cleanId,
+                cfUrl: cloudflareImageUrl,
+                migratedAt: new Date().toISOString()
+            };
+        }
         return await updateEmployeeWithHistory(
-            matriculeId,
+            cleanId,
             { photo_url: cloudflareImageUrl },
             modifiedBy,
             'PHOTO_UPDATE'
@@ -521,12 +742,16 @@
     }
 
     /**
-     * حذف رابط صورة الموظف
+     * حذف رابط صورة الموظف نهائياً وتوثيقه
      */
     async function deleteEmployeePhotoUrl(matriculeId, modifiedBy = 'DIRECTOR') {
+        const cleanId = String(matriculeId).trim();
+        if (typeof window !== 'undefined' && window.CF_PHOTOS_MAP && window.CF_PHOTOS_MAP[cleanId]) {
+            delete window.CF_PHOTOS_MAP[cleanId];
+        }
         return await updateEmployeeWithHistory(
-            matriculeId,
-            { photo_url: null },
+            cleanId,
+            { photo_url: 'NO_PHOTO' },
             modifiedBy,
             'PHOTO_DELETE'
         );
@@ -545,9 +770,9 @@
     }
 
     /**
-     * تحديث أرقام القيد المعتمدة لعدة موظفين دفعة واحدة
+     * تحديث أرقام القيد المعتمدة لعدة موظفين دفعة واحدة بنظام الدفعات المتزامنة والتوثيق المركزي
      */
-    async function bulkUpdateRegistryNumbers(registryMap, modifiedBy = 'ADMIN') {
+    async function bulkUpdateRegistryNumbers(registryMap, modifiedBy = 'ADMIN', onProgress = null) {
         const client = getSupabaseClient();
         if (!client) throw new Error("Supabase client is not initialized");
 
@@ -556,15 +781,45 @@
 
         console.log(`🔄 [Supabase Live] جاري تحديث ${entries.length} رقم قيد في قاعدة البيانات...`);
 
-        const promises = entries.map(([jid, regNo]) => {
-            return client
-                .from(SUPABASE_CONFIG.tables.employees)
-                .update({ registry_no: parseInt(regNo, 10) })
-                .eq('matricule', String(jid).trim());
-        });
+        // 1. حفظ خريطة أرقام القيد كاملة في system_settings.registry_map فوراً لضمان توثيقها 100%
+        try {
+            await client
+                .from(SUPABASE_CONFIG.tables.settings)
+                .update({ 
+                    registry_map: registryMap,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', 'config');
+            console.log("✅ [Supabase Live] تم حفظ خريطة أرقام القيد الكاملة في إعدادات النظام.");
+        } catch(setErr) {
+            console.warn("Notice saving registry_map to settings:", setErr.message);
+        }
 
-        await Promise.all(promises);
-        console.log("✅ تم تحديث أرقام القيد بنجاح في قاعدة البيانات.");
+        // 2. تحديث سجلات الموظفين في base-touggourt بدفعات متزامنة ومنظمة (Batched Concurrency)
+        const batchSize = 60;
+        let completed = 0;
+        for (let i = 0; i < entries.length; i += batchSize) {
+            const batch = entries.slice(i, i + batchSize);
+            await Promise.all(batch.map(async ([jid, regNo]) => {
+                const cleanId = String(jid).trim();
+                const num = parseInt(regNo, 10);
+                if (!cleanId || isNaN(num)) return;
+                try {
+                    await client
+                        .from(SUPABASE_CONFIG.tables.employees)
+                        .update({ registry_no: num })
+                        .eq('matricule', cleanId);
+                } catch(e) {
+                    console.warn(`Retry update reg for ${cleanId}:`, e.message);
+                }
+            }));
+            completed += batch.length;
+            if (typeof onProgress === 'function') {
+                onProgress(completed, entries.length);
+            }
+        }
+
+        console.log(`✅ تم تحديث أرقام القيد بنجاح لجميع الموظفين (${entries.length}).`);
         return true;
     }
 
@@ -685,7 +940,15 @@
                 { event: '*', schema: 'public', table: SUPABASE_CONFIG.tables.settings },
                 (payload) => {
                     console.log("⚡ [Realtime] تحديث فوري لإعدادات النظام مستلم:", payload);
-                    if (typeof onUpdateCallback === 'function') onUpdateCallback(payload.new);
+                    const newRow = payload ? payload.new : null;
+                    if (newRow && newRow.extra_config) {
+                        const extra = (typeof newRow.extra_config === 'string') ? JSON.parse(newRow.extra_config || '{}') : newRow.extra_config;
+                        if (extra.allow_employee_movement) newRow.allow_employee_movement = extra.allow_employee_movement;
+                        if (extra.allow_add_employee) newRow.allow_add_employee = extra.allow_add_employee;
+                        newRow.employeeMovementInstitutions = extra.employee_movement_institutions || extra.employeeMovementInstitutions || [];
+                        newRow.addEmployeeInstitutions = extra.add_employee_institutions || extra.addEmployeeInstitutions || [];
+                    }
+                    if (typeof onUpdateCallback === 'function') onUpdateCallback(newRow);
                 }
             )
             .subscribe();
