@@ -159,15 +159,36 @@
             updated_at: new Date().toISOString()
         };
 
-        const { data, error } = await client
+        // نستخدم UPDATE حصراً لمطابقة سياسة RLS (Allow update system settings)
+        let { data, error } = await client
             .from(SUPABASE_CONFIG.tables.settings)
-            .upsert({ id: 'config', ...payload })
+            .update(payload)
+            .eq('id', 'config')
             .select()
             .maybeSingle();
 
+        // في حال لم يكن السطر موجوداً أساساً، نجرب upsert كحل بديل
+        if (!data && !error) {
+            const upsertRes = await client
+                .from(SUPABASE_CONFIG.tables.settings)
+                .upsert({ id: 'config', ...payload })
+                .select()
+                .maybeSingle();
+            data = upsertRes.data;
+            error = upsertRes.error;
+        }
+
         if (error) {
-            console.error("❌ فشل تحديث إعدادات النظام:", error);
+            console.error("❌ فشل تحديث إعدادات النظام في Supabase:", error);
             throw error;
+        }
+
+        if (data && data.extra_config) {
+            const extra = (typeof data.extra_config === 'string') ? JSON.parse(data.extra_config || '{}') : data.extra_config;
+            if (extra.allow_employee_movement) data.allow_employee_movement = extra.allow_employee_movement;
+            if (extra.allow_add_employee) data.allow_add_employee = extra.allow_add_employee;
+            data.employeeMovementInstitutions = extra.employee_movement_institutions || extra.employeeMovementInstitutions || [];
+            data.addEmployeeInstitutions = extra.add_employee_institutions || extra.addEmployeeInstitutions || [];
         }
 
         console.log("✅ تم حفظ وتعميم إعدادات النظام بنجاح:", data);
@@ -416,55 +437,80 @@
 
         console.log("⚡ [Supabase Live] جلب كافة سجلات الموظفين (9074 موظف) مباشرة بالتوازي...");
 
-        // 1. تحديد العدد الإجمالي لسجلات الموظفين
-        const { count, error: countErr } = await client
-            .from(SUPABASE_CONFIG.tables.employees)
-            .select('*', { count: 'exact', head: true });
-
-        if (countErr) {
-            console.warn("Count warning, defaulting to 9074:", countErr.message);
+        // 1. تحديد العدد الإجمالي لسجلات الموظفين (الافتراضي المعتمد 9074 لتفادي أي بطء في استعلام HEAD)
+        let totalCount = 9074;
+        try {
+            const headPromise = client
+                .from(SUPABASE_CONFIG.tables.employees)
+                .select('*', { count: 'exact', head: true });
+            const timeoutPromise = new Promise(resolve => setTimeout(() => resolve({ count: null }), 1500));
+            const headRes = await Promise.race([headPromise, timeoutPromise]);
+            if (headRes && headRes.count && headRes.count > 0) {
+                totalCount = headRes.count;
+            }
+        } catch(e) {
+            totalCount = 9074;
         }
 
-        const totalCount = count || 9074;
         const chunkSize = 1000;
         const numChunks = Math.ceil(totalCount / chunkSize);
         const chunkPromises = [];
+        let completedRows = 0;
 
-        // ترتيب محكم بواسطة matricule لضمان عدم حدوث أي تكرار أو فقدان لأي سجل أثناء التصفح
-        for (let i = 0; i < numChunks; i++) {
-            const from = i * chunkSize;
-            const to = Math.min(from + chunkSize - 1, totalCount - 1);
-            chunkPromises.push(
-                client
+        // دالة جلب الدفعة مع إعادة المحاولة لمرة واحدة في حال حدوث انقطاع مؤقت
+        const fetchChunkWithRetry = async (from, to, retryCount = 1) => {
+            try {
+                const res = await client
                     .from(SUPABASE_CONFIG.tables.employees)
                     .select('*')
                     .order('matricule', { ascending: true })
-                    .range(from, to)
-                    .then(res => {
-                        if (res.error) throw res.error;
-                        const rows = res.data || [];
-                        if (typeof onProgress === 'function') {
-                            onProgress(rows.length);
-                        }
-                        return rows;
-                    })
-            );
+                    .range(from, to);
+                if (res.error) throw res.error;
+                const rows = res.data || [];
+                completedRows += rows.length;
+                if (typeof onProgress === 'function') {
+                    onProgress(completedRows);
+                }
+                return rows;
+            } catch(err) {
+                if (retryCount > 0) {
+                    await new Promise(r => setTimeout(r, 400));
+                    return fetchChunkWithRetry(from, to, retryCount - 1);
+                }
+                throw err;
+            }
+        };
+
+        // إطلاق دفعات الموظفين بالتوازي
+        for (let i = 0; i < numChunks; i++) {
+            const from = i * chunkSize;
+            const to = Math.min(from + chunkSize - 1, totalCount - 1);
+            chunkPromises.push(fetchChunkWithRetry(from, to));
         }
 
-        // جلب خريطة أرقام القيد الاحتياطية إن وجدت لضمان اكتمال أرقام القيد 100%
-        let regMap = null;
-        try {
-            const { data: setRow } = await client
-                .from(SUPABASE_CONFIG.tables.settings)
-                .select('registry_map')
-                .eq('id', 'config')
-                .maybeSingle();
-            if (setRow && setRow.registry_map && typeof setRow.registry_map === 'object') {
-                regMap = setRow.registry_map;
+        // جلب خريطة أرقام القيد بالتوازي مع دفعات الموظفين دون انتظار تسلسلي وبشكل آمن
+        const settingsPromise = (async () => {
+            try {
+                return await client
+                    .from(SUPABASE_CONFIG.tables.settings)
+                    .select('registry_map')
+                    .eq('id', 'config')
+                    .maybeSingle();
+            } catch(e) {
+                return { data: null };
             }
-        } catch(e) {}
+        })();
 
-        const chunkResults = await Promise.all(chunkPromises);
+        const [chunkResults, setRowRes] = await Promise.all([
+            Promise.all(chunkPromises),
+            settingsPromise
+        ]);
+
+        let regMap = null;
+        if (setRowRes && setRowRes.data && setRowRes.data.registry_map && typeof setRowRes.data.registry_map === 'object') {
+            regMap = setRowRes.data.registry_map;
+        }
+
         const allRows = chunkResults.flat();
         const formatted = allRows.map(row => {
             const emp = formatEmployeeRecord(row);
@@ -716,7 +762,9 @@
             modified_at: new Date().toISOString()
         };
 
-        await client.from(SUPABASE_CONFIG.tables.history).insert([historyRecord]).catch(() => {});
+        try {
+            await client.from(SUPABASE_CONFIG.tables.history).insert([historyRecord]);
+        } catch(e) {}
 
         return formatEmployeeRecord(updatedEmployee) || newFields;
     }
@@ -858,14 +906,16 @@
         if (error) throw error;
 
         // تسجيل في سجل التعديلات
-        await client.from(SUPABASE_CONFIG.tables.history).insert([{
-            employee_id: jid,
-            action_type: 'EMPLOYEE_CREATE',
-            previous_data: {},
-            new_data: payload,
-            modified_by: createdBy,
-            modified_at: new Date().toISOString()
-        }]).catch(() => {});
+        try {
+            await client.from(SUPABASE_CONFIG.tables.history).insert([{
+                employee_id: jid,
+                action_type: 'EMPLOYEE_CREATE',
+                previous_data: {},
+                new_data: payload,
+                modified_by: createdBy,
+                modified_at: new Date().toISOString()
+            }]);
+        } catch(e) {}
 
         return formatEmployeeRecord(data);
     }
@@ -892,37 +942,45 @@
         if (error) throw error;
 
         // تسجيل في سجل التعديلات
-        await client.from(SUPABASE_CONFIG.tables.history).insert([{
-            employee_id: cleanId,
-            action_type: 'EMPLOYEE_DELETE',
-            previous_data: previousData || {},
-            new_data: {},
-            modified_by: deletedBy,
-            modified_at: new Date().toISOString()
-        }]).catch(() => {});
+        try {
+            await client.from(SUPABASE_CONFIG.tables.history).insert([{
+                employee_id: cleanId,
+                action_type: 'EMPLOYEE_DELETE',
+                previous_data: previousData || {},
+                new_data: {},
+                modified_by: deletedBy,
+                modified_at: new Date().toISOString()
+            }]);
+        } catch(e) {}
 
         return true;
     }
 
     /**
-     * جلب سجل التعديلات من قاعدة البيانات
+     * جلب سجل التعديلات الفعلي من قاعدة البيانات (تصفية التعديلات البشرية فقط واستبعاد سجلات التريجر الآلية)
      */
     async function fetchModificationsHistory(limitCount = 100) {
         const client = getSupabaseClient();
         if (!client) return [];
 
-        const { data, error } = await client
-            .from(SUPABASE_CONFIG.tables.history)
-            .select('*')
-            .order('modified_at', { ascending: false })
-            .limit(limitCount);
+        try {
+            const { data, error } = await client
+                .from(SUPABASE_CONFIG.tables.history)
+                .select('*')
+                .neq('modified_by', 'postgres')
+                .in('action_type', ['ADMIN_EDIT', 'DIRECTOR_EDIT', 'TRANSFER_INSTITUTION', 'EMPLOYEE_CREATE'])
+                .order('modified_at', { ascending: false })
+                .limit(limitCount);
 
-        if (error) {
-            console.warn("fetch history notice:", error.message);
+            if (error) {
+                console.warn("fetch history notice:", error.message);
+                return [];
+            }
+
+            return data || [];
+        } catch(e) {
             return [];
         }
-
-        return data || [];
     }
 
     // ========================================================================

@@ -166,6 +166,13 @@ ON system_settings FOR UPDATE
 TO anon, authenticated 
 USING (true) WITH CHECK (true);
 
+-- الإدراج مسموح لإنشاء الإعدادات الأولية
+DROP POLICY IF EXISTS "Allow insert system settings" ON system_settings;
+CREATE POLICY "Allow insert system settings" 
+ON system_settings FOR INSERT 
+TO anon, authenticated 
+WITH CHECK (true);
+
 -- -------------------------------------------------------------
 -- ب) سياسات كلمات المرور (pages_passwords):
 -- -------------------------------------------------------------

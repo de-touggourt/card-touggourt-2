@@ -2310,14 +2310,48 @@
         });
     }
 
-    // حفظ ونشر الإعدادات
+    // مزامنة واستخراج الإعدادات من عناصر الواجهة قبل الحفظ لضمان عدم ضياع التعديلات
+    function syncConfigFromUI() {
+        const yInput = document.getElementById('setting-year');
+        if (yInput && yInput.value.trim()) centralConfig.globalYear = yInput.value.trim();
+        const dInput = document.getElementById('setting-director');
+        if (dInput && dInput.value.trim()) centralConfig.globalDirector = dInput.value.trim();
+        const cdInput = document.getElementById('setting-custom-date');
+        if (cdInput) centralConfig.cardCustomDate = cdInput.value.trim();
+
+        const pSettingToggle = document.getElementById('setting-allow-print');
+        if (pSettingToggle) centralConfig.allowPrinting = pSettingToggle.checked;
+        const uSettingToggle = document.getElementById('setting-allow-upload');
+        if (uSettingToggle) centralConfig.allowPhotoUpload = uSettingToggle.checked;
+        const pdfSettingToggle = document.getElementById('setting-allow-pdf');
+        if (pdfSettingToggle) centralConfig.allowPdfDownload = pdfSettingToggle.checked;
+        const sSettingToggle = document.getElementById('setting-sync-mode');
+        if (sSettingToggle) centralConfig.syncMode = sSettingToggle.checked;
+        const sdToggle = document.getElementById('setting-show-date');
+        if (sdToggle) centralConfig.showCardDate = sdToggle.checked;
+        const autoDateToggle = document.getElementById('setting-auto-date');
+        if (autoDateToggle) centralConfig.autoDate = autoDateToggle.checked;
+        const srToggle = document.getElementById('setting-show-registry');
+        if (srToggle) centralConfig.showRegistryNo = srToggle.checked;
+        const asToggle = document.getElementById('setting-auto-shrink');
+        if (asToggle) centralConfig.allowAutoShrink = asToggle.checked;
+        const rfSelect = document.getElementById('setting-registry-format');
+        if (rfSelect) centralConfig.registryFormat = rfSelect.value;
+        const emSelect = document.getElementById('setting-employee-movement-mode');
+        if (emSelect) centralConfig.allowEmployeeMovement = emSelect.value;
+        const aeSelect = document.getElementById('setting-add-employee-mode');
+        if (aeSelect) centralConfig.allowAddEmployee = aeSelect.value;
+    }
+
+    // حفظ ونشر الإعدادات وتعميمها فورياً
     async function saveCentralConfigToServer() {
+        syncConfigFromUI();
         applyConfigToUI();
 
         // الحفظ الفوري المباشر في Supabase
         if (typeof window.updateSystemSettings === 'function') {
             try {
-                await window.updateSystemSettings({
+                const res = await window.updateSystemSettings({
                     published_template: centralConfig.publishedTemplate,
                     allow_printing: centralConfig.allowPrinting,
                     allow_photo_upload: centralConfig.allowPhotoUpload,
@@ -2336,29 +2370,54 @@
                     addEmployeeInstitutions: centralConfig.addEmployeeInstitutions || [],
                     directorate_theme: centralConfig.directorateTheme
                 });
-            } catch(e) { console.warn("Supabase config save error:", e); }
+
+                // بث فوري لكافة التبويبات المفتوحة في المتصفح عبر حدث التخزين
+                try {
+                    localStorage.setItem('central_config_broadcast', JSON.stringify({
+                        timestamp: Date.now(),
+                        config: centralConfig
+                    }));
+                } catch(e) {}
+
+                return res;
+            } catch(e) {
+                console.error("❌ خطأ في حفظ الإعدادات المركزية بالسيرفر:", e);
+                throw e;
+            }
         }
     }
 
     async function toggleMasterPermission(key, value) {
         centralConfig[key] = value;
-        await saveCentralConfigToServer();
-        Swal.fire({
-            icon: 'success', title: 'تم التحديث', text: 'تم تطبيق الإعداد المركزي بنجاح لجميع المدارس.',
-            timer: 1500, showConfirmButton: false
-        });
+        try {
+            await saveCentralConfigToServer();
+            Swal.fire({
+                icon: 'success', title: 'تم التحديث والتعميم', text: 'تم حفظ وتعميم الإعداد المركزي بنجاح لجميع المؤسسات.',
+                timer: 1500, showConfirmButton: false
+            });
+        } catch(err) {
+            applyConfigToUI();
+            Swal.fire({
+                icon: 'error', title: 'تعذر الحفظ', text: 'حدث خطأ أثناء حفظ الإعداد في قاعدة البيانات: ' + (err.message || err)
+            });
+        }
     }
 
     async function saveSettingField(fieldName) {
         if(fieldName === 'year') {
-            centralConfig.globalYear = document.getElementById('setting-year').value;
+            centralConfig.globalYear = document.getElementById('setting-year').value.trim();
         } else if(fieldName === 'director') {
-            centralConfig.globalDirector = document.getElementById('setting-director').value;
+            centralConfig.globalDirector = document.getElementById('setting-director').value.trim();
         } else if(fieldName === 'customDate') {
-            centralConfig.cardCustomDate = document.getElementById('setting-custom-date').value;
+            centralConfig.cardCustomDate = document.getElementById('setting-custom-date').value.trim();
         }
-        await saveCentralConfigToServer();
-        Swal.fire({ icon: 'success', title: 'تم التعميم', text: 'تم تعميم وتحديث البيانات بنجاح.', timer: 1500, showConfirmButton: false });
+        try {
+            await saveCentralConfigToServer();
+            Swal.fire({ icon: 'success', title: 'تم التعميم', text: 'تم تعميم وتحديث البيانات بنجاح في قاعدة البيانات.', timer: 1500, showConfirmButton: false });
+        } catch(err) {
+            applyConfigToUI();
+            Swal.fire({ icon: 'error', title: 'تعذر الحفظ', text: 'حدث خطأ أثناء حفظ البيانات في قاعدة البيانات: ' + (err.message || err) });
+        }
     }
 
     // نشر النموذج المختار
@@ -2376,13 +2435,22 @@
 
         if(result.isConfirmed) {
             centralConfig.publishedTemplate = templateId;
-            await saveCentralConfigToServer();
-            Swal.fire({
-                icon: 'success',
-                title: 'تم نشر النموذج بنجاح!',
-                html: `تم تعميم <strong>${names[templateId]}</strong> بنجاح. سيظهر الآن للمديرين تلقائياً عند الطباعة.`,
-                confirmButtonText: 'ممتاز'
-            });
+            try {
+                await saveCentralConfigToServer();
+                Swal.fire({
+                    icon: 'success',
+                    title: 'تم نشر النموذج بنجاح!',
+                    html: `تم تعميم <strong>${names[templateId]}</strong> بنجاح. سيظهر الآن للمديرين تلقائياً عند الطباعة.`,
+                    confirmButtonText: 'ممتاز'
+                });
+            } catch(err) {
+                applyConfigToUI();
+                Swal.fire({
+                    icon: 'error',
+                    title: 'تعذر نشر النموذج',
+                    text: 'حدث خطأ أثناء حفظ النموذج في قاعدة البيانات: ' + (err.message || err)
+                });
+            }
         }
     }
 
@@ -2391,11 +2459,18 @@
         const btnId = (key === 'allowEmployeeMovement') ? 'btn-config-insts-movement' : 'btn-config-insts-add';
         const btn = document.getElementById(btnId);
         if (btn) btn.style.display = (mode === 'selected') ? 'inline-flex' : 'none';
-        await saveCentralConfigToServer();
-        Swal.fire({
-            icon: 'success', title: 'تم حفظ الصلاحية', text: 'تم تحديث صلاحية المديرين بنجاح.',
-            timer: 1500, showConfirmButton: false
-        });
+        try {
+            await saveCentralConfigToServer();
+            Swal.fire({
+                icon: 'success', title: 'تم حفظ الصلاحية', text: 'تم تحديث وتعميم صلاحية المديرين بنجاح.',
+                timer: 1500, showConfirmButton: false
+            });
+        } catch(err) {
+            applyConfigToUI();
+            Swal.fire({
+                icon: 'error', title: 'تعذر حفظ الصلاحية', text: 'حدث خطأ أثناء حفظ الصلاحية في قاعدة البيانات: ' + (err.message || err)
+            });
+        }
     }
 
     async function openPermissionModal(type) {
@@ -2505,15 +2580,24 @@
 
         if (result.isConfirmed) {
             centralConfig[configKey] = Array.from(selectedInsts);
-            await saveCentralConfigToServer();
-            applyConfigToUI();
-            Swal.fire({
-                icon: 'success',
-                title: 'تم الحفظ',
-                text: `تم تحديد ${centralConfig[configKey].length} مؤسسة بنجاح واعتماد الصلاحية لها.`,
-                timer: 1600,
-                showConfirmButton: false
-            });
+            try {
+                await saveCentralConfigToServer();
+                applyConfigToUI();
+                Swal.fire({
+                    icon: 'success',
+                    title: 'تم الحفظ والتعميم',
+                    text: `تم تحديد ${centralConfig[configKey].length} مؤسسة بنجاح واعتماد وتعميم الصلاحية لها فوراً.`,
+                    timer: 1600,
+                    showConfirmButton: false
+                });
+            } catch(err) {
+                applyConfigToUI();
+                Swal.fire({
+                    icon: 'error',
+                    title: 'تعذر حفظ الصلاحية',
+                    text: 'حدث خطأ أثناء حفظ قائمة المؤسسات في قاعدة البيانات: ' + (err.message || err)
+                });
+            }
         }
     }
 
@@ -2854,7 +2938,8 @@
                 const [liveEmployees, actList, sbInstitutions, historyList] = await Promise.all([
                     (typeof window.fetchAllEmployeesLive === "function") 
                         ? window.fetchAllEmployeesLive((count) => {
-                            updateLoadProgress(50, "جاري استلام دفعات الموظفين من قاعدة البيانات...", `تم استلام ${count} موظفاً...`);
+                            const pct = Math.min(85, Math.round(20 + (count / 9074) * 60));
+                            updateLoadProgress(pct, "جاري استلام دفعات الموظفين من قاعدة البيانات...", `تم استلام ${count} موظفاً حياً...`);
                         }) 
                         : Promise.resolve([]),
                     (typeof window.fetchInstitutionsActivity === "function") 
@@ -2911,7 +2996,8 @@
                     historyList.forEach(item => {
                         const jid = String(item.employee_id || '').trim();
                         if (!jid || window.modifiedEmployeesMap[jid]) return;
-                        if (['ADMIN_EDIT', 'DIRECTOR_EDIT', 'PHOTO_UPDATE', 'TRANSFER_INSTITUTION', 'EMPLOYEE_CREATE'].includes(item.action_type)) {
+                        if (item.modified_by === 'postgres') return;
+                        if (['ADMIN_EDIT', 'DIRECTOR_EDIT', 'TRANSFER_INSTITUTION', 'EMPLOYEE_CREATE'].includes(item.action_type)) {
                             const newD = item.new_data || {};
                             const prevD = item.previous_data || {};
                             let eName = newD.name || '';
@@ -3343,7 +3429,9 @@
             const chunkSize = 50;
             for (let i = 0; i < instList.length; i += chunkSize) {
                 const chunk = instList.slice(i, i + chunkSize);
-                await window.supabaseClient.from('institutions').upsert(chunk, { onConflict: 'inst' }).catch(() => null);
+                try {
+                    await window.supabaseClient.from('institutions').upsert(chunk, { onConflict: 'inst' });
+                } catch(e) {}
             }
 
             updateStep('<i class="fa-solid fa-check-circle"></i> الخطوة 3/3: اكتمل الحفظ! جاري تحديث الذاكرة والواجهة...', 95);
@@ -4494,7 +4582,10 @@
         try {
             const finalOriginalInst = origInst || (orig && orig.inst) || '';
             const revertBaseFields = {};
-            if (finalOriginalInst) revertBaseFields.etablissement = finalOriginalInst;
+            if (finalOriginalInst) {
+                revertBaseFields.etablissement = finalOriginalInst;
+                revertBaseFields.rawEtab = finalOriginalInst;
+            }
             if (orig.name) { revertBaseFields.nomAr = orig.name; revertBaseFields.name = orig.name; }
             if (orig.rank) { revertBaseFields.grade = orig.rank; revertBaseFields.rank = orig.rank; }
             if (orig.dob) revertBaseFields.dateNais = orig.dob;
@@ -4515,6 +4606,8 @@
                 delete emp._originalData;
                 if (finalOriginalInst) {
                     emp.inst = finalOriginalInst;
+                    emp.canonicalInst = matchToCanonicalInstitution(finalOriginalInst) || finalOriginalInst;
+                    emp.originalInst = finalOriginalInst;
                     emp.workplace = finalOriginalInst;
                     emp.place = finalOriginalInst;
                 }
@@ -4524,6 +4617,16 @@
                 if (orig.employmentType) emp.employmentType = orig.employmentType;
                 if (orig.substituteDuration !== undefined) emp.substituteDuration = orig.substituteDuration;
                 if (orig.registryNo) emp.registryNo = orig.registryNo;
+            }
+
+            const liveCounts = calculateAccurateInstitutionCounts();
+            if (allData && allData.length > 0) {
+                allData.forEach(row => {
+                    if (liveCounts.has(row.inst)) {
+                        row.employeeCount = liveCounts.get(row.inst);
+                    }
+                });
+                if (typeof renderTable === 'function') renderTable();
             }
 
             updateModifiedEmployeesBadge();
@@ -4585,7 +4688,10 @@
 
                 const finalOriginalInst = origInst || (orig && orig.inst) || '';
                 const revertBaseFields = {};
-                if (finalOriginalInst) revertBaseFields.etablissement = finalOriginalInst;
+                if (finalOriginalInst) {
+                    revertBaseFields.etablissement = finalOriginalInst;
+                    revertBaseFields.rawEtab = finalOriginalInst;
+                }
                 if (orig.name) { revertBaseFields.nomAr = orig.name; revertBaseFields.name = orig.name; }
                 if (orig.rank) { revertBaseFields.grade = orig.rank; revertBaseFields.rank = orig.rank; }
                 if (orig.dob) revertBaseFields.dateNais = orig.dob;
@@ -4593,9 +4699,13 @@
                 if (orig.registryNo) revertBaseFields.registry_no = orig.registryNo;
 
                 if (typeof window.updateEmployeeWithHistory === 'function') {
-                    await window.updateEmployeeWithHistory(String(jid), revertBaseFields, 'ADMIN', 'REVERT_ALL_MODS').catch(() => null);
+                    try {
+                        await window.updateEmployeeWithHistory(String(jid), revertBaseFields, 'ADMIN', 'REVERT_ALL_MODS');
+                    } catch(e) {}
                 } else if (window.supabaseClient) {
-                    await window.supabaseClient.from('base-touggourt').update(revertBaseFields).eq('job_id', String(jid)).catch(() => null);
+                    try {
+                        await window.supabaseClient.from('base-touggourt').update(revertBaseFields).eq('job_id', String(jid));
+                    } catch(e) {}
                 }
 
                 if (emp) {
@@ -4605,6 +4715,8 @@
                     delete emp._originalData;
                     if (finalOriginalInst) {
                         emp.inst = finalOriginalInst;
+                        emp.canonicalInst = matchToCanonicalInstitution(finalOriginalInst) || finalOriginalInst;
+                        emp.originalInst = finalOriginalInst;
                         emp.workplace = finalOriginalInst;
                         emp.place = finalOriginalInst;
                     }
@@ -4618,6 +4730,15 @@
             }
 
             window.modifiedEmployeesMap = {};
+            const liveCounts = calculateAccurateInstitutionCounts();
+            if (allData && allData.length > 0) {
+                allData.forEach(row => {
+                    if (liveCounts.has(row.inst)) {
+                        row.employeeCount = liveCounts.get(row.inst);
+                    }
+                });
+                if (typeof renderTable === 'function') renderTable();
+            }
             updateModifiedEmployeesBadge();
             renderEmployees();
             renderRegistryTab();
@@ -7366,6 +7487,7 @@
 
                 // الحفظ المباشر في قاعدة بيانات Supabase الحية
                 if (typeof window.updateEmployeeWithHistory === 'function') {
+                    try {
                         let newNom = (formValues.name || '').trim();
                         let newPrenom = '';
                         const nameParts = newNom.split(/\s+/);
@@ -7378,17 +7500,21 @@
                             newPrenom = nameParts.slice(1).join(' ');
                         }
 
+                        const isTransfer = (oldInst && formValues.inst && oldInst !== formValues.inst);
+                        const actionType = isTransfer ? 'TRANSFER_INSTITUTION' : 'ADMIN_EDIT';
+
                         const updateFields = {
                             nomAr: newNom,
                             prenomAr: newPrenom,
                             etablissement: formValues.inst || '',
+                            rawEtab: formValues.inst || '',
                             grade: formValues.rank || '',
                             dateNais: formValues.dob || '',
                             situationAdmin: formValues.employmentType || 'مرسم',
                             photo_url: currentPhoto,
                             registry_no: regNum ? parseInt(regNum, 10) : null
                         };
-                        await window.updateEmployeeWithHistory(jid, updateFields, 'ADMIN', 'ADMIN_EDIT');
+                        await window.updateEmployeeWithHistory(jid, updateFields, 'ADMIN', actionType);
                     } catch(baseErr) { console.warn("Supabase save warning:", baseErr); }
                 }
 
@@ -7404,6 +7530,9 @@
                         target.inst = formValues.inst;
                         target.canonicalInst = matchToCanonicalInstitution(formValues.inst) || formValues.inst;
                         target.inst = target.canonicalInst;
+                        target.originalInst = formValues.inst;
+                        target.workplace = formValues.inst;
+                        target.place = formValues.inst;
                         target.rank = formValues.rank;
                         target.dob = formValues.dob;
                         target.employmentType = formValues.employmentType;

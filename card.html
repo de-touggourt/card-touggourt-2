@@ -1822,9 +1822,13 @@ body.dark-theme .dir-card-no-photo {
         window.toggleDarkMode = toggleDarkMode;
         window.initDarkMode = initDarkMode;
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initDarkMode);
+            document.addEventListener('DOMContentLoaded', () => {
+                initDarkMode();
+                fetchGlobalYear();
+            });
         } else {
             initDarkMode();
+            fetchGlobalYear();
         }
 
         // 🚀 رابط خدمة رفع الصور السحابية (Cloudflare Worker -> Cloudflare R2)
@@ -2099,6 +2103,15 @@ body.dark-theme .dir-card-no-photo {
                 if (typeof window.fetchSystemSettings === 'function') {
                     const data = await window.fetchSystemSettings();
                     if (data) {
+                        const prevTemplate = centralDirectorateConfig.publishedTemplate;
+                        const prevYear = centralDirectorateConfig.globalYear;
+                        const prevDirector = centralDirectorateConfig.globalDirector;
+                        const prevCustomDate = centralDirectorateConfig.cardCustomDate;
+                        const prevAutoDate = centralDirectorateConfig.autoDate;
+                        const prevShowDate = centralDirectorateConfig.showCardDate;
+                        const prevShowReg = centralDirectorateConfig.showRegistryNo;
+                        const prevRegFormat = centralDirectorateConfig.registryFormat;
+
                         if (data.global_year) { globalCardYear = data.global_year; centralDirectorateConfig.globalYear = data.global_year; }
                         if (data.global_director) { globalDirectorName = data.global_director; centralDirectorateConfig.globalDirector = data.global_director; }
                         if (data.sync_mode !== undefined) { 
@@ -2118,6 +2131,23 @@ body.dark-theme .dir-card-no-photo {
                         if (data.allow_add_employee !== undefined) centralDirectorateConfig.allowAddEmployee = data.allow_add_employee;
                         if (data.employeeMovementInstitutions) centralDirectorateConfig.employeeMovementInstitutions = data.employeeMovementInstitutions;
                         if (data.addEmployeeInstitutions) centralDirectorateConfig.addEmployeeInstitutions = data.addEmployeeInstitutions;
+
+                        applyCentralConfigToManagerUI();
+
+                        // تحديث شكل البطاقات فوراً إذا تغير النموذج أو التواريخ أو اسم المدير المعتمد
+                        const hasVisualChanges = (
+                            prevTemplate !== centralDirectorateConfig.publishedTemplate ||
+                            prevYear !== centralDirectorateConfig.globalYear ||
+                            prevDirector !== centralDirectorateConfig.globalDirector ||
+                            prevCustomDate !== centralDirectorateConfig.cardCustomDate ||
+                            prevAutoDate !== centralDirectorateConfig.autoDate ||
+                            prevShowDate !== centralDirectorateConfig.showCardDate ||
+                            prevShowReg !== centralDirectorateConfig.showRegistryNo ||
+                            prevRegFormat !== centralDirectorateConfig.registryFormat
+                        );
+                        if (hasVisualChanges && typeof employees !== 'undefined' && employees && employees.length > 0 && typeof renderCardsUnified === 'function') {
+                            renderCardsUnified(employees, centralDirectorateConfig.publishedTemplate || 2, 'front');
+                        }
                     }
                 }
             } catch (e) {
@@ -3845,6 +3875,37 @@ function renderTable() {
             console.warn("Real-time listener setup error:", e);
         }
 
+        // ========================================================================
+        // المزامنة اللحظية الشاملة لإعدادات وصلاحيات المديرية لجميع المؤسسات
+        // ========================================================================
+
+        // 1. الاستماع للتحديثات الفورية بين التبويبات المفتوحة في المتصفح
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'central_config_broadcast') {
+                console.log("⚡ [Realtime Broadcast] تم استلام إشعار تحديث الإعدادات المركزية.");
+                fetchGlobalYear();
+            }
+        });
+
+        // 2. تحديث فوري عند العودة إلى نافذة/تبويب المتصفح
+        window.addEventListener('focus', () => {
+            if (typeof directorInstitution !== 'undefined' && directorInstitution) {
+                fetchGlobalYear();
+            }
+        });
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && typeof directorInstitution !== 'undefined' && directorInstitution) {
+                fetchGlobalYear();
+            }
+        });
+
+        // 3. نبض دوري ذكي كل 4 ثوانٍ لضمان استلام أي تعديلات جديدة في الصلاحيات والإعدادات فوراً
+        setInterval(() => {
+            if (!document.hidden && typeof directorInstitution !== 'undefined' && directorInstitution) {
+                fetchGlobalYear();
+            }
+        }, 4000);
+
         // ==========================================
         // ميزة الـ Easter Egg (الضغط 10 مرات على الشعار)
         // ==========================================
@@ -4067,14 +4128,15 @@ function renderTable() {
                                 .from('modifications_history')
                                 .select('employee_id, action_type, new_data, modified_at, modified_by')
                                 .in('employee_id', empIds)
+                                .neq('modified_by', 'postgres')
                                 .order('modified_at', { ascending: false });
 
                             if (!histErr && Array.isArray(histData) && histData.length > 0) {
-                                const modActions = ['ADMIN_EDIT', 'DIRECTOR_EDIT', 'PHOTO_UPDATE', 'TRANSFER_INSTITUTION', 'EMPLOYEE_CREATE', 'UPDATE'];
+                                const modActions = ['ADMIN_EDIT', 'TRANSFER_INSTITUTION'];
                                 const modifiedSet = new Set();
                                 histData.forEach(h => {
                                     const jid = String(h.employee_id || '').trim();
-                                    if (jid && modActions.includes(h.action_type)) {
+                                    if (jid && modActions.includes(h.action_type) && h.modified_by !== 'postgres') {
                                         modifiedSet.add(jid);
                                     }
                                 });
