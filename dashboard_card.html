@@ -1166,6 +1166,9 @@
             <span class="status-pill pill-template" id="live-template-pill">
                 <i class="fa-solid fa-layer-group"></i> النموذج المعتمد: <strong id="live-template-name">النموذج 2 (الوطني)</strong>
             </span>
+            <span class="status-pill pill-active" id="live-platform-pill">
+                <i class="fa-solid fa-door-open"></i> منصة المديرين: <strong id="live-platform-status">مفتوحة</strong>
+            </span>
             <span class="status-pill pill-active" id="live-print-pill">
                 <i class="fa-solid fa-print"></i> خدمة الطباعة: <strong id="live-print-status">مفعلة</strong>
             </span>
@@ -1288,9 +1291,6 @@
             </div>
             <button class="btn btn-gold" onclick="openWilayaInstitutionsStatisticsModal()" title="إحصائيات شاملة لحالة كل المؤسسات حسب الأطوار">
                 <i class="fa-solid fa-chart-pie"></i> إحصائيات المؤسسات (الرفع والطباعة)
-            </button>
-            <button class="btn btn-primary" onclick="standardizeAllDatabaseInstitutions()" title="توحيد وتصحيح أسماء المؤسسات في قاعدة البيانات ومزامنة حركة الموظفين" style="background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%); color:white;">
-                <i class="fa-solid fa-wand-magic-sparkles"></i> توحيد وتصحيح أسماء المؤسسات
             </button>
             <button class="btn btn-emerald" onclick="fetchData(true)" title="تحديث ومزامنة قائمة المؤسسات والأنشطة وأعداد الموظفين">
                 <i class="fa-solid fa-rotate"></i> تحديث القائمة
@@ -1422,6 +1422,15 @@
             </button>
             <button class="btn btn-primary" onclick="printBulkEmps()"><i class="fa-solid fa-print"></i> طباعة المؤسسة</button>
             <button class="btn btn-dark" onclick="openBulkPrintModal()" title="طباعة بطاقات الموظفين بتحديد المؤسسات لتفادي ثقل الصفحة"><i class="fa-solid fa-print"></i> طباعة الكل</button>
+            <button class="btn btn-emerald" id="btn-print-selected" onclick="printSelectedEmps()" style="background: linear-gradient(135deg, #059669 0%, #047857 100%) !important; color: white !important; font-weight: 800; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25);" title="طباعة بطاقات الموظفين المحددين في الجدول">
+                <i class="fa-solid fa-id-card"></i> طباعة المحددين (<span id="selected-emps-badge" style="font-weight: 900;">0</span>)
+            </button>
+            <button class="btn btn-gold" onclick="selectSpecificCountPrompt()" style="font-weight: 800; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(212, 175, 55, 0.25);" title="تحديد عدد محدد من الموظفين للطباعة (مثلاً 5، 10، 20 موظفاً...)">
+                <i class="fa-solid fa-list-check"></i> تحديد عدد للطباعة
+            </button>
+            <button class="btn btn-outline" id="btn-clear-selection" onclick="clearEmpSelection()" style="display: none; font-size: 13px; font-weight: 700; padding: 7px 12px;" title="إلغاء تحديد الموظفين الحالي">
+                <i class="fa-solid fa-xmark"></i> إلغاء التحديد
+            </button>
         </div>
 
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
@@ -1442,6 +1451,9 @@
             <table id="employees-table">
                 <thead>
                     <tr>
+                        <th style="width: 45px; text-align: center;">
+                            <input type="checkbox" id="emp-select-all-visible" onchange="toggleSelectAllVisibleEmps(this.checked)" title="تحديد / إلغاء تحديد الكل في هذه الصفحة" style="width: 17px; height: 17px; cursor: pointer; accent-color: var(--emerald);">
+                        </th>
                         <th style="width: 70px;">الصورة</th>
                         <th>الرقم الوظيفي</th>
                         <th>رقم القيد</th>
@@ -1627,9 +1639,6 @@
         <div style="margin-bottom: 12px;" id="reg-quota-badge"></div>
         <!-- أزرار إدارة القيد -->
         <div style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; align-items: center;">
-            <button class="btn btn-emerald" onclick="fetchEmployeesData(true)" style="background: linear-gradient(135deg, #059669 0%, #047857 100%) !important; color: white !important; font-weight: 800; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3) !important;" title="تحميل وتحديث قاعدة بيانات الموظفين مباشرة من فايربيز وحفظها في المتصفح">
-                <i class="fa-solid fa-cloud-arrow-down"></i> تحديث من السيرفر
-            </button>
             <button class="btn btn-emerald" onclick="generateSequentialRegistryNumbers(false)">
                 <i class="fa-solid fa-bolt"></i> إكمال الترقيم للموظفين الجدد
             </button>
@@ -1780,6 +1789,18 @@
             <div style="background: var(--light-bg); border: 1px solid var(--border); border-radius: 18px; padding: 24px;">
                 <h3 style="margin: 0 0 18px 0; color: var(--dark); font-size: 18px; font-weight: 800;"><i class="fa-solid fa-lock" style="color:var(--danger);"></i> الصلاحيات المركزية لمديري المؤسسات</h3>
                 
+                <!-- فتح وغلق المنصة بالكامل لجميع المديرين -->
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-radius: 12px; margin-bottom: 14px; background: #fff1f2; border: 1.5px solid #fecdd3;">
+                    <div>
+                        <strong style="display: block; font-size: 14.5px; color: #be123c;"><i class="fa-solid fa-lock"></i> فتح / غلق منصة مديري المؤسسات</strong>
+                        <span style="font-size: 12px; color: #64748b;">عند الغلق، يُمنع دخول أي مدير مؤسسة إلى المنصة وتظهر له رسالة تفيد بأن المنصة مغلقة حالياً من طرف مديرية التربية.</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="setting-platform-open" checked onchange="toggleMasterPermission('isPlatformOpen', this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid #e2e8f0;">
                     <div>
                         <strong style="display: block; font-size: 14px;">تفعيل خدمة الطباعة</strong>
@@ -1959,9 +1980,6 @@
                 <button class="btn btn-emerald" onclick="addNewInstitutionPrompt()" style="padding: 7px 14px; font-size: 13px; font-weight:800;">
                     <i class="fa-solid fa-plus-circle"></i> إضافة مؤسسة جديدة
                 </button>
-                <button class="btn btn-primary" onclick="standardizeAllDatabaseInstitutions()" style="padding: 7px 14px; font-size: 13px; font-weight:800; background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%); color:white;">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i> توحيد وتصحيح أسماء المؤسسات في القاعدة
-                </button>
                 <button class="btn btn-dark" onclick="printWilayaStatsReport()" style="padding: 7px 14px; font-size: 13px;">
                     <i class="fa-solid fa-print"></i> طباعة التقرير الإحصائي A4
                 </button>
@@ -2065,7 +2083,8 @@
         allowEmployeeMovement: 'all', // 'all', 'none', 'selected'
         employeeMovementInstitutions: [],
         allowAddEmployee: 'all', // 'all', 'none', 'selected'
-        addEmployeeInstitutions: []
+        addEmployeeInstitutions: [],
+        isPlatformOpen: true
     };
 
     // دالة تحديد نص تاريخ البطاقة حسب إعداد التاريخ التلقائي والمخصص
@@ -2182,6 +2201,8 @@
                     }
                     if (data.addEmployeeInstitutions) centralConfig.addEmployeeInstitutions = data.addEmployeeInstitutions;
                     if (data.directorate_theme) centralConfig.directorateTheme = data.directorate_theme;
+                    if (data.is_platform_open !== undefined) centralConfig.isPlatformOpen = !!data.is_platform_open;
+                    if (data.isPlatformOpen !== undefined) centralConfig.isPlatformOpen = !!data.isPlatformOpen;
                 }
             } catch(fErr) { console.warn("Supabase config read error:", fErr); }
         }
@@ -2212,6 +2233,9 @@
         if(sToggle) sToggle.checked = centralConfig.syncMode;
         const sSettingToggle = document.getElementById('setting-sync-mode');
         if(sSettingToggle) sSettingToggle.checked = centralConfig.syncMode;
+
+        const platformSettingToggle = document.getElementById('setting-platform-open');
+        if(platformSettingToggle) platformSettingToggle.checked = (centralConfig.isPlatformOpen !== false);
 
         const sdToggle = document.getElementById('setting-show-date');
         if(sdToggle) sdToggle.checked = centralConfig.showCardDate;
@@ -2257,6 +2281,18 @@
         if(ltNameEl) ltNameEl.textContent = currentName;
         const ptBadgeEl = document.getElementById('published-template-badge');
         if(ptBadgeEl) ptBadgeEl.textContent = currentName;
+
+        const platformStatusEl = document.getElementById('live-platform-status');
+        const platformPill = document.getElementById('live-platform-pill');
+        if(platformStatusEl && platformPill) {
+            if(centralConfig.isPlatformOpen !== false) {
+                platformStatusEl.textContent = 'مفتوحة';
+                platformPill.className = 'status-pill pill-active';
+            } else {
+                platformStatusEl.textContent = 'مغلقة';
+                platformPill.className = 'status-pill pill-locked';
+            }
+        }
         
         const printStatusEl = document.getElementById('live-print-status');
         const printPill = document.getElementById('live-print-pill');
@@ -2310,7 +2346,7 @@
         });
     }
 
-    // مزامنة واستخراج الإعدادات من عناصر الواجهة قبل الحفظ لضمان عدم ضياع التعديلات
+    // مزامنة واستخراج الإعدادات النصية والقوائم فقط من عناصر الواجهة قبل الحفظ لضمان عدم ضياع التعديلات
     function syncConfigFromUI() {
         const yInput = document.getElementById('setting-year');
         if (yInput && yInput.value.trim()) centralConfig.globalYear = yInput.value.trim();
@@ -2319,22 +2355,6 @@
         const cdInput = document.getElementById('setting-custom-date');
         if (cdInput) centralConfig.cardCustomDate = cdInput.value.trim();
 
-        const pSettingToggle = document.getElementById('setting-allow-print');
-        if (pSettingToggle) centralConfig.allowPrinting = pSettingToggle.checked;
-        const uSettingToggle = document.getElementById('setting-allow-upload');
-        if (uSettingToggle) centralConfig.allowPhotoUpload = uSettingToggle.checked;
-        const pdfSettingToggle = document.getElementById('setting-allow-pdf');
-        if (pdfSettingToggle) centralConfig.allowPdfDownload = pdfSettingToggle.checked;
-        const sSettingToggle = document.getElementById('setting-sync-mode');
-        if (sSettingToggle) centralConfig.syncMode = sSettingToggle.checked;
-        const sdToggle = document.getElementById('setting-show-date');
-        if (sdToggle) centralConfig.showCardDate = sdToggle.checked;
-        const autoDateToggle = document.getElementById('setting-auto-date');
-        if (autoDateToggle) centralConfig.autoDate = autoDateToggle.checked;
-        const srToggle = document.getElementById('setting-show-registry');
-        if (srToggle) centralConfig.showRegistryNo = srToggle.checked;
-        const asToggle = document.getElementById('setting-auto-shrink');
-        if (asToggle) centralConfig.allowAutoShrink = asToggle.checked;
         const rfSelect = document.getElementById('setting-registry-format');
         if (rfSelect) centralConfig.registryFormat = rfSelect.value;
         const emSelect = document.getElementById('setting-employee-movement-mode');
@@ -2368,7 +2388,9 @@
                     employeeMovementInstitutions: centralConfig.employeeMovementInstitutions || [],
                     allow_add_employee: centralConfig.allowAddEmployee,
                     addEmployeeInstitutions: centralConfig.addEmployeeInstitutions || [],
-                    directorate_theme: centralConfig.directorateTheme
+                    directorate_theme: centralConfig.directorateTheme,
+                    is_platform_open: (centralConfig.isPlatformOpen !== false),
+                    isPlatformOpen: (centralConfig.isPlatformOpen !== false)
                 });
 
                 // بث فوري لكافة التبويبات المفتوحة في المتصفح عبر حدث التخزين
@@ -2389,6 +2411,30 @@
 
     async function toggleMasterPermission(key, value) {
         centralConfig[key] = value;
+
+        // مزامنة عناصر الواجهة المقترنة فوراً لتفادي أي ارتداد
+        if (key === 'allowPrinting') {
+            const q = document.getElementById('quick-toggle-print');
+            const s = document.getElementById('setting-allow-print');
+            if (q) q.checked = value;
+            if (s) s.checked = value;
+        } else if (key === 'allowPhotoUpload') {
+            const q = document.getElementById('quick-toggle-upload');
+            const s = document.getElementById('setting-allow-upload');
+            if (q) q.checked = value;
+            if (s) s.checked = value;
+        } else if (key === 'syncMode') {
+            const q = document.getElementById('quick-toggle-sync');
+            const s = document.getElementById('setting-sync-mode');
+            if (q) q.checked = value;
+            if (s) s.checked = value;
+        } else if (key === 'isPlatformOpen') {
+            const s = document.getElementById('setting-platform-open');
+            if (s) s.checked = value;
+        }
+
+        applyConfigToUI();
+
         try {
             await saveCentralConfigToServer();
             Swal.fire({
@@ -4116,8 +4162,9 @@
 
         if(filtered.length === 0) {
             if (grid) grid.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--gray); background: var(--white); border-radius: 16px;">لا يوجد موظفون مطابقون لمعايير البحث الحالية</div>`;
-            if (tbody) tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color:var(--gray);">لا يوجد موظفون مطابقون لمعايير البحث الحالية</td></tr>`;
+            if (tbody) tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:30px; color:var(--gray);">لا يوجد موظفون مطابقون لمعايير البحث الحالية</td></tr>`;
             renderEmpPagination(1, 0, 0, 0);
+            updateEmpSelectionUI();
             return;
         }
 
@@ -4156,9 +4203,14 @@
                 }
             }
 
+            const isEmpSelected = window.selectedEmpJobIds && window.selectedEmpJobIds.has(String(emp.jobId));
+
             // كرت الشبكة
             cardsHtml += `
-                <div class="emp-card">
+                <div class="emp-card ${isEmpSelected ? 'emp-card-selected' : ''}" style="position:relative; ${isEmpSelected ? 'border: 2px solid var(--emerald); background: #f0fdf4;' : ''}">
+                    <div style="position: absolute; top: 10px; right: 10px; z-index: 5;">
+                        <input type="checkbox" class="emp-select-cb" value="${escapeHtml(emp.jobId)}" ${isEmpSelected ? 'checked' : ''} onchange="toggleSelectEmp('${escapeHtml(emp.jobId)}', this.checked)" title="تحديد هذا الموظف للطباعة" style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--emerald);">
+                    </div>
                     <div class="emp-card-content">
                         <div style="position: relative; flex-shrink: 0; width: 85px; height: 115px;">
                             ${photoSrc ? 
@@ -4199,7 +4251,10 @@
 
             // سطر الجدول (10 صفوف لكل صفحة)
             rowsHtml += `
-                <tr>
+                <tr style="${isEmpSelected ? 'background-color: #f0fdf4;' : ''}">
+                    <td style="text-align: center;">
+                        <input type="checkbox" class="emp-select-cb" value="${escapeHtml(emp.jobId)}" ${isEmpSelected ? 'checked' : ''} onchange="toggleSelectEmp('${escapeHtml(emp.jobId)}', this.checked)" title="تحديد هذا الموظف" style="width: 17px; height: 17px; cursor: pointer; accent-color: var(--emerald);">
+                    </td>
                     <td>${photoSrc ? `<div style="position:relative; width:40px; height:50px; display:inline-block;">
                         <img src="${photoSrc}" style="width:40px; height:50px; object-fit:cover; border-radius:6px;">
                         <button onclick="deleteFloatingPhoto('${escapeHtml(emp.jobId)}', '${escapeHtml(emp.name)}')" title="حذف الصورة" style="position:absolute; top:-5px; left:-5px; background:var(--danger); color:white; border:none; border-radius:50%; width:18px; height:18px; font-size:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; line-height:1; box-shadow:0 1px 4px rgba(0,0,0,0.3); border:1.5px solid #fff;"><i class="fa-solid fa-times"></i></button>
@@ -4235,6 +4290,7 @@
         if (tbody) tbody.innerHTML = rowsHtml;
 
         renderEmpPagination(totalPages, filtered.length, startIdx, endIdx);
+        updateEmpSelectionUI();
     }
 
     // ==========================================
@@ -4313,6 +4369,200 @@
         }
     }
     window.jumpToEmpPage = jumpToEmpPage;
+
+    // ==========================================
+    // إدارة وتحديد الموظفين لطباعة مخصصة أو محددة
+    // ==========================================
+    window.selectedEmpJobIds = window.selectedEmpJobIds || new Set();
+
+    function updateEmpSelectionUI() {
+        if (!window.selectedEmpJobIds) window.selectedEmpJobIds = new Set();
+        const count = window.selectedEmpJobIds.size;
+        const badge = document.getElementById('selected-emps-badge');
+        if (badge) badge.innerText = count;
+
+        const clearBtn = document.getElementById('btn-clear-selection');
+        if (clearBtn) {
+            clearBtn.style.display = count > 0 ? 'inline-flex' : 'none';
+        }
+
+        const cbs = document.querySelectorAll('.emp-select-cb');
+        let allVisibleChecked = cbs.length > 0;
+        cbs.forEach(cb => {
+            const isChecked = window.selectedEmpJobIds.has(String(cb.value));
+            cb.checked = isChecked;
+            if (!isChecked) allVisibleChecked = false;
+            const tr = cb.closest('tr');
+            if (tr) {
+                tr.style.backgroundColor = isChecked ? '#f0fdf4' : '';
+            }
+            const card = cb.closest('.emp-card');
+            if (card) {
+                card.style.border = isChecked ? '2px solid var(--emerald)' : '';
+                card.style.backgroundColor = isChecked ? '#f0fdf4' : '';
+            }
+        });
+
+        const headerCb = document.getElementById('emp-select-all-visible');
+        if (headerCb) {
+            headerCb.checked = allVisibleChecked && cbs.length > 0;
+        }
+    }
+    window.updateEmpSelectionUI = updateEmpSelectionUI;
+
+    function toggleSelectEmp(jobId, checked) {
+        if (!jobId) return;
+        if (!window.selectedEmpJobIds) window.selectedEmpJobIds = new Set();
+        const strId = String(jobId);
+        if (checked) {
+            window.selectedEmpJobIds.add(strId);
+        } else {
+            window.selectedEmpJobIds.delete(strId);
+        }
+        updateEmpSelectionUI();
+    }
+    window.toggleSelectEmp = toggleSelectEmp;
+
+    function toggleSelectAllVisibleEmps(checked) {
+        if (!window.selectedEmpJobIds) window.selectedEmpJobIds = new Set();
+        const cbs = document.querySelectorAll('.emp-select-cb');
+        cbs.forEach(cb => {
+            const jId = String(cb.value);
+            if (checked) {
+                window.selectedEmpJobIds.add(jId);
+            } else {
+                window.selectedEmpJobIds.delete(jId);
+            }
+        });
+        updateEmpSelectionUI();
+    }
+    window.toggleSelectAllVisibleEmps = toggleSelectAllVisibleEmps;
+
+    function clearEmpSelection() {
+        if (window.selectedEmpJobIds) {
+            window.selectedEmpJobIds.clear();
+        }
+        renderEmployees(false);
+        updateEmpSelectionUI();
+    }
+    window.clearEmpSelection = clearEmpSelection;
+
+    async function selectSpecificCountPrompt() {
+        if (!window.selectedEmpJobIds) window.selectedEmpJobIds = new Set();
+        
+        // جلب قائمة الموظفين المفلترة حالياً
+        const inst = (document.getElementById('filter-emp-inst') ? document.getElementById('filter-emp-inst').value : '') || '';
+        const search = (document.getElementById('search-emp') ? document.getElementById('search-emp').value.trim().toLowerCase() : '');
+        const empTypeFilter = (document.getElementById('filter-emp-type') ? document.getElementById('filter-emp-type').value : '');
+
+        const currentFiltered = allEmployeesData.filter(emp => {
+            let matchInst = true;
+            if (inst) {
+                const eInst = (emp.canonicalInst || emp.inst || emp.place || emp.workPlace || '').trim();
+                if (inst.includes('مديرية التربية') || inst === 'مديرية') {
+                    matchInst = eInst.includes('مديرية التربية') || eInst === 'مديرية' || eInst === 'مديرية التربية تقرت - توقرت';
+                } else {
+                    const eCanonical = emp.canonicalInst || matchToCanonicalInstitution(eInst) || eInst;
+                    const instCanonical = matchToCanonicalInstitution(inst) || inst;
+                    matchInst = (eInst === inst || eCanonical === inst || eCanonical === instCanonical || 
+                                 (typeof normalizeInstName === 'function' && normalizeInstName(eInst) === normalizeInstName(inst)));
+                }
+            }
+            const matchSearch = (!search || 
+                (emp.name && emp.name.toLowerCase().includes(search)) ||
+                (emp.jobId && String(emp.jobId).includes(search)) ||
+                (emp.rank && emp.rank.toLowerCase().includes(search)) ||
+                (emp.inst && emp.inst.toLowerCase().includes(search))
+            );
+            let matchType = true;
+            if (empTypeFilter === 'new_director') {
+                matchType = !!emp.addedByDirector;
+            } else if (empTypeFilter) {
+                const t = (emp.employmentType || emp.status || 'مرسم');
+                matchType = (t === empTypeFilter);
+            }
+            return matchInst && matchSearch && matchType;
+        });
+
+        if (currentFiltered.length === 0) {
+            return Swal.fire('تنبيه', 'لا يوجد موظفون مطابقون لمعايير البحث الحالية لتحديدهم.', 'info');
+        }
+
+        const defaultVal = Math.min(10, currentFiltered.length);
+        const { value: countVal } = await Swal.fire({
+            title: 'تحديد عدد موظفين للطباعة',
+            html: `
+                <div style="text-align: right; font-size: 14px; margin-bottom: 12px; line-height: 1.6;">
+                    أدخل عدد الموظفين المراد تحديدهم من القائمة المعروضة حالياً (المجموع المتاح: <strong>${currentFiltered.length}</strong> موظف):
+                </div>
+                <input type="number" id="swal-emp-count-input" class="swal2-input" min="1" max="${currentFiltered.length}" value="${defaultVal}" style="width: 80%; font-weight: bold; font-size: 16px; text-align: center; margin: 10px auto;">
+                <div style="margin-top: 12px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+                    <button type="button" class="btn btn-outline" style="padding: 4px 10px; font-size: 12px;" onclick="document.getElementById('swal-emp-count-input').value = 5">5 موظفين</button>
+                    <button type="button" class="btn btn-outline" style="padding: 4px 10px; font-size: 12px;" onclick="document.getElementById('swal-emp-count-input').value = 10">10 موظفين</button>
+                    <button type="button" class="btn btn-outline" style="padding: 4px 10px; font-size: 12px;" onclick="document.getElementById('swal-emp-count-input').value = 20">20 موظفاً</button>
+                    <button type="button" class="btn btn-outline" style="padding: 4px 10px; font-size: 12px;" onclick="document.getElementById('swal-emp-count-input').value = 50">50 موظفاً</button>
+                    <button type="button" class="btn btn-outline" style="padding: 4px 10px; font-size: 12px;" onclick="document.getElementById('swal-emp-count-input').value = ${currentFiltered.length}">الكل (${currentFiltered.length})</button>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: '<i class="fa-solid fa-check"></i> تحديد الآن',
+            cancelButtonText: 'إلغاء',
+            confirmButtonColor: '#059669',
+            cancelButtonColor: '#64748b',
+            preConfirm: () => {
+                const input = document.getElementById('swal-emp-count-input');
+                const num = parseInt(input ? input.value : '0', 10);
+                if (isNaN(num) || num < 1) {
+                    Swal.showValidationMessage('يرجى إدخال عدد صحيح أكبر من 0');
+                    return false;
+                }
+                return num;
+            }
+        });
+
+        if (!countVal) return;
+        const countToSelect = Math.min(countVal, currentFiltered.length);
+
+        window.selectedEmpJobIds.clear();
+        for (let i = 0; i < countToSelect; i++) {
+            if (currentFiltered[i] && currentFiltered[i].jobId) {
+                window.selectedEmpJobIds.add(String(currentFiltered[i].jobId));
+            }
+        }
+
+        renderEmployees(false);
+        updateEmpSelectionUI();
+
+        const askPrint = await Swal.fire({
+            title: 'تم التحديد بنجاح!',
+            html: `تم تحديد <strong>${window.selectedEmpJobIds.size}</strong> موظفاً بنجاح.<br>هل ترغب في فتح نافذة طباعة بطاقاتهم الآن مباشرة؟`,
+            icon: 'success',
+            showCancelButton: true,
+            confirmButtonText: '<i class="fa-solid fa-print"></i> نعم، اطبع البطاقات الآن',
+            cancelButtonText: 'إبقاء التحديد فقط',
+            confirmButtonColor: '#059669',
+            cancelButtonColor: '#64748b'
+        });
+
+        if (askPrint.isConfirmed) {
+            printSelectedEmps();
+        }
+    }
+    window.selectSpecificCountPrompt = selectSpecificCountPrompt;
+
+    function printSelectedEmps() {
+        if (!window.selectedEmpJobIds || window.selectedEmpJobIds.size === 0) {
+            return Swal.fire('تنبيه', 'لم تقم بتحديد أي موظف للطباعة. يرجى تحديد موظفين بواسطة مربعات الاختيار في الجدول أو النقر على "تحديد عدد للطباعة".', 'warning');
+        }
+
+        const selectedList = allEmployeesData.filter(emp => window.selectedEmpJobIds.has(String(emp.jobId)));
+        if (selectedList.length === 0) {
+            return Swal.fire('تنبيه', 'تعذر العثور على بيانات الموظفين المحددين في الذاكرة.', 'error');
+        }
+
+        executePrint(selectedList);
+    }
+    window.printSelectedEmps = printSelectedEmps;
 
     // ==========================================
     // تبديل حالة تفعيل التعديل ليظهر للمديرين أو يتعطل
@@ -6151,13 +6401,28 @@
         if(confirm.isConfirmed) {
             Swal.fire({ title: 'جاري تصفير أرقام القيد في قاعدة البيانات...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-            // 1. تصفير أرقام القيد في مصفوفة الموظفين المحلية
+            // 1. تصفير أرقام القيد في قاعدة البيانات السحابية Supabase
+            try {
+                if (typeof window.clearAllRegistryNumbersLive === 'function') {
+                    await window.clearAllRegistryNumbersLive();
+                } else if (typeof window.getSupabaseClient === 'function') {
+                    const client = window.getSupabaseClient();
+                    if (client) {
+                        await client.from('system_settings').update({ registry_map: {}, updated_at: new Date().toISOString() }).eq('id', 'config');
+                        await client.from('base-touggourt').update({ registry_no: null }).neq('matricule', '___NONE___');
+                    }
+                }
+            } catch(e) {
+                console.warn("Supabase clear registry notice:", e);
+            }
+
+            // 2. تصفير أرقام القيد في مصفوفة الموظفين المحلية
             allEmployeesData.forEach(e => {
                 e.registryNo = null;
                 delete e.registryNo;
             });
 
-            // 2. مسح أي كاش قديم
+            // 3. مسح أي كاش قديم
             try { localStorage.removeItem('cached_registry_data'); } catch(e){}
             if (typeof localforage !== 'undefined') {
                 try {
@@ -6166,30 +6431,26 @@
                 } catch(e){}
             }
 
-            // 3. تصفير أرقام القيد في Supabase
-            if (window.supabaseClient) {
-                try {
-                    await window.supabaseClient.from('base-touggourt').update({ registry_no: null }).neq('job_id', '___NONE___');
-                } catch(e) {
-                    console.warn("Supabase clear registry notice:", e);
-                }
+            // 4. تسجيل النشاط في Supabase
+            if (typeof logActivityToFirestore === 'function') {
+                logActivityToFirestore('clear_registry', 'تم مسح وتصفير أرقام القيد لجميع الموظفين.');
             }
 
-            // 4. تسجيل النشاط في Supabase
-            logActivityToFirestore('clear_registry', 'تم مسح وتصفير أرقام القيد لجميع الموظفين.');
+            // 5. تصفير العدادات والشارات فوراً
+            const maxEl = document.getElementById('reg-max-num');
+            if (maxEl) maxEl.textContent = '0000';
+            const quotaEl = document.getElementById('reg-quota-badge');
+            if (quotaEl) quotaEl.innerHTML = `<span style="background:#e2e8f0; color:#475569; padding:4px 12px; border-radius:12px; font-weight:800; font-size:12px;">إجمالي المقيدين: 0 من ${allEmployeesData.length}</span>`;
 
-            // 5. تحديث واجهة الجدول فوراً لتظهر الأرقام مصفرة
+            // 6. تحديث واجهات الجداول والبطاقات فوراً
             renderRegistryTab();
             renderEmployees();
             if (typeof renderCards === 'function') renderCards();
 
-            Swal.close();
-            await new Promise(r => setTimeout(r, 100));
-
             Swal.fire({
                 icon: 'success',
                 title: 'تم التصفير بنجاح',
-                text: 'تم تصفير ومسح أرقام القيد في الجدول وقاعدة البيانات السحابية.',
+                text: 'تم تصفير ومسح أرقام القيد في الجدول وقاعدة البيانات السحابية بالكامل.',
                 timer: 2000,
                 showConfirmButton: false
             });

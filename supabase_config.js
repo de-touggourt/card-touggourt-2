@@ -114,6 +114,11 @@
             if (extra.allow_add_employee) data.allow_add_employee = extra.allow_add_employee;
             data.employeeMovementInstitutions = extra.employee_movement_institutions || extra.employeeMovementInstitutions || [];
             data.addEmployeeInstitutions = extra.add_employee_institutions || extra.addEmployeeInstitutions || [];
+            data.is_platform_open = (extra.is_platform_open !== undefined) ? !!extra.is_platform_open : true;
+            data.isPlatformOpen = data.is_platform_open;
+        } else if (data) {
+            data.is_platform_open = true;
+            data.isPlatformOpen = true;
         }
 
         console.log("✅ [Supabase Live] تم استلام إعدادات النظام بنجاح:", data);
@@ -130,13 +135,18 @@
         const movBool = (movMode === true || movMode === 'all' || movMode === 'selected');
         const addBool = (addMode === true || addMode === 'all' || addMode === 'selected');
 
+        const isPlatformOpen = (newSettings.is_platform_open !== undefined)
+            ? !!newSettings.is_platform_open
+            : ((newSettings.isPlatformOpen !== undefined) ? !!newSettings.isPlatformOpen : true);
+
         const existingExtra = (newSettings.extra_config && typeof newSettings.extra_config === 'object') ? newSettings.extra_config : {};
         const extraConfig = {
             ...existingExtra,
             allow_employee_movement: typeof movMode === 'string' ? movMode : (movMode ? 'all' : 'none'),
             allow_add_employee: typeof addMode === 'string' ? addMode : (addMode ? 'all' : 'none'),
             employee_movement_institutions: newSettings.employeeMovementInstitutions || existingExtra.employee_movement_institutions || [],
-            add_employee_institutions: newSettings.addEmployeeInstitutions || existingExtra.add_employee_institutions || []
+            add_employee_institutions: newSettings.addEmployeeInstitutions || existingExtra.add_employee_institutions || [],
+            is_platform_open: isPlatformOpen
         };
 
         const payload = {
@@ -872,6 +882,43 @@
     }
 
     /**
+     * مسح وتصفير أرقام القيد لجميع الموظفين حياً في قاعدة بيانات Supabase
+     */
+    async function clearAllRegistryNumbersLive() {
+        const client = getSupabaseClient();
+        if (!client) throw new Error("Supabase client is not initialized");
+
+        console.log("🔄 [Supabase Live] جاري مسح وتصفير أرقام القيد من قاعدة البيانات بالكامل...");
+
+        // 1. تصفير خريطة أرقام القيد في system_settings
+        try {
+            await client
+                .from(SUPABASE_CONFIG.tables.settings)
+                .update({ 
+                    registry_map: {},
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', 'config');
+            console.log("✅ [Supabase Live] تم تصفير خريطة registry_map في إعدادات النظام.");
+        } catch(err) {
+            console.warn("تنبيه تصفير خريطة القيد في الإعدادات:", err.message);
+        }
+
+        // 2. تصفير عمود registry_no في جدول base-touggourt لجميع السجلات
+        try {
+            await client
+                .from(SUPABASE_CONFIG.tables.employees)
+                .update({ registry_no: null })
+                .neq('matricule', '___NONE___');
+            console.log("✅ [Supabase Live] تم تصفير حقول registry_no لجميع الموظفين.");
+        } catch(err) {
+            console.warn("تنبيه تصفير حقول registry_no للموظفين:", err.message);
+        }
+
+        return true;
+    }
+
+    /**
      * إضافة موظف جديد مباشرة إلى Supabase
      */
     async function addNewEmployeeLive(empData, createdBy = 'DIRECTOR') {
@@ -1005,6 +1052,8 @@
                         if (extra.allow_add_employee) newRow.allow_add_employee = extra.allow_add_employee;
                         newRow.employeeMovementInstitutions = extra.employee_movement_institutions || extra.employeeMovementInstitutions || [];
                         newRow.addEmployeeInstitutions = extra.add_employee_institutions || extra.addEmployeeInstitutions || [];
+                        newRow.is_platform_open = (extra.is_platform_open !== undefined) ? !!extra.is_platform_open : true;
+                        newRow.isPlatformOpen = newRow.is_platform_open;
                     }
                     if (typeof onUpdateCallback === 'function') onUpdateCallback(newRow);
                 }
@@ -1034,6 +1083,7 @@
     window.deleteEmployeePhotoUrl = deleteEmployeePhotoUrl;
     window.updateEmployeeRegistryNo = updateEmployeeRegistryNo;
     window.bulkUpdateRegistryNumbers = bulkUpdateRegistryNumbers;
+    window.clearAllRegistryNumbersLive = clearAllRegistryNumbersLive;
     window.addNewEmployeeLive = addNewEmployeeLive;
     window.deleteEmployeeLive = deleteEmployeeLive;
     window.fetchModificationsHistory = fetchModificationsHistory;

@@ -1848,6 +1848,7 @@ body.dark-theme .dir-card-no-photo {
             allowPrinting: true,
             allowPhotoUpload: true,
             allowPdfDownload: true,
+            isPlatformOpen: true,
             registryFormat: 'year_first',
             allowAutoShrink: true,
             showCardDate: true,
@@ -2122,6 +2123,8 @@ body.dark-theme .dir-card-no-photo {
                         if (data.allow_printing !== undefined) centralDirectorateConfig.allowPrinting = !!data.allow_printing;
                         if (data.allow_photo_upload !== undefined) centralDirectorateConfig.allowPhotoUpload = !!data.allow_photo_upload;
                         if (data.allow_pdf_download !== undefined) centralDirectorateConfig.allowPdfDownload = !!data.allow_pdf_download;
+                        if (data.is_platform_open !== undefined) centralDirectorateConfig.isPlatformOpen = !!data.is_platform_open;
+                        if (data.isPlatformOpen !== undefined) centralDirectorateConfig.isPlatformOpen = !!data.isPlatformOpen;
                         if (data.registry_format) centralDirectorateConfig.registryFormat = data.registry_format;
                         if (data.show_card_date !== undefined) centralDirectorateConfig.showCardDate = !!data.show_card_date;
                         if (data.auto_date !== undefined) centralDirectorateConfig.autoDate = !!data.auto_date;
@@ -2131,6 +2134,23 @@ body.dark-theme .dir-card-no-photo {
                         if (data.allow_add_employee !== undefined) centralDirectorateConfig.allowAddEmployee = data.allow_add_employee;
                         if (data.employeeMovementInstitutions) centralDirectorateConfig.employeeMovementInstitutions = data.employeeMovementInstitutions;
                         if (data.addEmployeeInstitutions) centralDirectorateConfig.addEmployeeInstitutions = data.addEmployeeInstitutions;
+
+                        // إذا تم إغلاق المنصة مركزياً وكان المدير داخل حسابه
+                        if (centralDirectorateConfig.isPlatformOpen === false && typeof directorInstitution !== 'undefined' && directorInstitution) {
+                            directorInstitution = null;
+                            const mainDash = document.getElementById("main-dashboard");
+                            const loginScreen = document.getElementById("login-screen");
+                            if (mainDash) mainDash.style.display = "none";
+                            if (loginScreen) loginScreen.style.display = "flex";
+                            Swal.fire({
+                                title: 'المنصة مغلقة مؤقتاً',
+                                text: 'تم غلق منصة مديري المؤسسات مؤقتاً من قبل مديرية التربية لولاية توقرت. تم إنهاء جلستكم.',
+                                icon: 'warning',
+                                confirmButtonText: 'حسناً',
+                                confirmButtonColor: '#0f766e'
+                            });
+                            return;
+                        }
 
                         applyCentralConfigToManagerUI();
 
@@ -2834,6 +2854,16 @@ function renderTable() {
         }
 
         function openCropper(event, empId) {
+            if (!centralDirectorateConfig.allowPhotoUpload) {
+                if (event && event.target) event.target.value = '';
+                return Swal.fire({
+                    icon: 'warning',
+                    title: 'خدمة رفع الصور معلقة مؤقتاً',
+                    text: 'تم تعليق خدمة رفع وتعديل صور الموظفين مؤقتاً من قبل مديرية التربية لولاية توقرت.',
+                    confirmButtonText: 'حسناً'
+                });
+            }
+
             const inputEl = event.target;
             const file = inputEl && inputEl.files ? inputEl.files[0] : null;
             if (!file) {
@@ -3850,6 +3880,8 @@ function renderTable() {
                     if (data.allow_printing !== undefined) centralDirectorateConfig.allowPrinting = !!data.allow_printing;
                     if (data.allow_photo_upload !== undefined) centralDirectorateConfig.allowPhotoUpload = !!data.allow_photo_upload;
                     if (data.allow_pdf_download !== undefined) centralDirectorateConfig.allowPdfDownload = !!data.allow_pdf_download;
+                    if (data.is_platform_open !== undefined) centralDirectorateConfig.isPlatformOpen = !!data.is_platform_open;
+                    if (data.isPlatformOpen !== undefined) centralDirectorateConfig.isPlatformOpen = !!data.isPlatformOpen;
                     if (data.registry_format) centralDirectorateConfig.registryFormat = data.registry_format;
                     if (data.show_card_date !== undefined) centralDirectorateConfig.showCardDate = !!data.show_card_date;
                     if (data.auto_date !== undefined) centralDirectorateConfig.autoDate = !!data.auto_date;
@@ -3862,6 +3894,23 @@ function renderTable() {
                     if (data.allow_add_employee !== undefined) centralDirectorateConfig.allowAddEmployee = data.allow_add_employee;
                     if (data.employeeMovementInstitutions) centralDirectorateConfig.employeeMovementInstitutions = data.employeeMovementInstitutions;
                     if (data.addEmployeeInstitutions) centralDirectorateConfig.addEmployeeInstitutions = data.addEmployeeInstitutions;
+
+                    // إغلاق فوري إذا أغلقت المديرية المنصة حياً
+                    if (centralDirectorateConfig.isPlatformOpen === false && typeof directorInstitution !== 'undefined' && directorInstitution) {
+                        directorInstitution = null;
+                        const mainDash = document.getElementById("main-dashboard");
+                        const loginScreen = document.getElementById("login-screen");
+                        if (mainDash) mainDash.style.display = "none";
+                        if (loginScreen) loginScreen.style.display = "flex";
+                        Swal.fire({
+                            title: 'المنصة مغلقة مؤقتاً',
+                            text: 'تم غلق منصة مديري المؤسسات مؤقتاً من قبل مديرية التربية لولاية توقرت. تم إنهاء جلستكم.',
+                            icon: 'warning',
+                            confirmButtonText: 'حسناً',
+                            confirmButtonColor: '#0f766e'
+                        });
+                        return;
+                    }
 
                     applyCentralConfigToManagerUI();
 
@@ -3996,6 +4045,34 @@ function renderTable() {
             if (empId.length < 16) { Swal.fire({ icon: 'warning', title: 'تنبيه', text: 'يجب أن يتكون رقم التعريف الوظيفي من 16 رقماً.' }); return; }
             
             Swal.fire({ title: 'جاري التحقق من هوية المدير...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+            // التحقق المسبق من حالة فتح / غلق المنصة من طرف المديرية
+            try {
+                if (typeof window.fetchSystemSettings === 'function') {
+                    const settings = await window.fetchSystemSettings();
+                    if (settings && (settings.is_platform_open === false || settings.isPlatformOpen === false)) {
+                        return Swal.fire({
+                            title: 'المنصة مغلقة مؤقتاً',
+                            html: `
+                                <div style="text-align:center; padding:10px;">
+                                    <i class="fa-solid fa-lock" style="font-size:42px; color:#ef4444; margin-bottom:15px;"></i>
+                                    <p style="font-size:15px; font-weight:700; color:#1e293b; line-height:1.6;">
+                                        تم غلق منصة مديري المؤسسات مؤقتاً من قبل مديرية التربية لولاية توقرت.
+                                    </p>
+                                    <p style="font-size:13px; color:#64748b; margin-top:8px;">
+                                        يرجى مراجعة مصلحة الموظفين أو التفتيش، أو إعادة المحاولة لاحقاً عند إعادة فتح المنصة.
+                                    </p>
+                                </div>
+                            `,
+                            icon: 'warning',
+                            confirmButtonText: 'حسناً',
+                            confirmButtonColor: '#0f766e'
+                        });
+                    }
+                }
+            } catch(e) {
+                console.warn("Check platform status error:", e);
+            }
 
             try {
                 let directorData = null;
