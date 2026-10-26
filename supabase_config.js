@@ -112,8 +112,16 @@
             const extra = (typeof data.extra_config === 'string') ? JSON.parse(data.extra_config || '{}') : data.extra_config;
             if (extra.allow_employee_movement) data.allow_employee_movement = extra.allow_employee_movement;
             if (extra.allow_add_employee) data.allow_add_employee = extra.allow_add_employee;
+            if (extra.allow_printing) data.allow_printing = extra.allow_printing;
+            if (extra.allow_pdf_download) data.allow_pdf_download = extra.allow_pdf_download;
+            if (extra.allow_photo_upload) data.allow_photo_upload = extra.allow_photo_upload;
+
             data.employeeMovementInstitutions = extra.employee_movement_institutions || extra.employeeMovementInstitutions || [];
             data.addEmployeeInstitutions = extra.add_employee_institutions || extra.addEmployeeInstitutions || [];
+            data.printingInstitutions = extra.printing_institutions || extra.printingInstitutions || [];
+            data.pdfDownloadInstitutions = extra.pdf_download_institutions || extra.pdfDownloadInstitutions || [];
+            data.photoUploadInstitutions = extra.photo_upload_institutions || extra.photoUploadInstitutions || [];
+
             data.is_platform_open = (extra.is_platform_open !== undefined) ? !!extra.is_platform_open : true;
             data.isPlatformOpen = data.is_platform_open;
         } else if (data) {
@@ -132,8 +140,15 @@
         // تحويل متوافق مع قيود الأعمدة في PostgreSQL لقاعدة البيانات
         const movMode = newSettings.allow_employee_movement !== undefined ? newSettings.allow_employee_movement : 'all';
         const addMode = newSettings.allow_add_employee !== undefined ? newSettings.allow_add_employee : 'all';
+        const printMode = newSettings.allow_printing !== undefined ? newSettings.allow_printing : 'all';
+        const pdfMode = newSettings.allow_pdf_download !== undefined ? newSettings.allow_pdf_download : 'all';
+        const uploadMode = newSettings.allow_photo_upload !== undefined ? newSettings.allow_photo_upload : 'all';
+
         const movBool = (movMode === true || movMode === 'all' || movMode === 'selected');
         const addBool = (addMode === true || addMode === 'all' || addMode === 'selected');
+        const printBool = (printMode === true || printMode === 'all' || printMode === 'selected');
+        const pdfBool = (pdfMode === true || pdfMode === 'all' || pdfMode === 'selected');
+        const uploadBool = (uploadMode === true || uploadMode === 'all' || uploadMode === 'selected');
 
         const isPlatformOpen = (newSettings.is_platform_open !== undefined)
             ? !!newSettings.is_platform_open
@@ -144,16 +159,22 @@
             ...existingExtra,
             allow_employee_movement: typeof movMode === 'string' ? movMode : (movMode ? 'all' : 'none'),
             allow_add_employee: typeof addMode === 'string' ? addMode : (addMode ? 'all' : 'none'),
+            allow_printing: typeof printMode === 'string' ? printMode : (printMode ? 'all' : 'none'),
+            allow_pdf_download: typeof pdfMode === 'string' ? pdfMode : (pdfMode ? 'all' : 'none'),
+            allow_photo_upload: typeof uploadMode === 'string' ? uploadMode : (uploadMode ? 'all' : 'none'),
             employee_movement_institutions: newSettings.employeeMovementInstitutions || existingExtra.employee_movement_institutions || [],
             add_employee_institutions: newSettings.addEmployeeInstitutions || existingExtra.add_employee_institutions || [],
+            printing_institutions: newSettings.printingInstitutions || existingExtra.printing_institutions || [],
+            pdf_download_institutions: newSettings.pdfDownloadInstitutions || existingExtra.pdf_download_institutions || [],
+            photo_upload_institutions: newSettings.photoUploadInstitutions || existingExtra.photo_upload_institutions || [],
             is_platform_open: isPlatformOpen
         };
 
         const payload = {
             published_template: newSettings.published_template !== undefined ? parseInt(newSettings.published_template, 10) : 2,
-            allow_printing: newSettings.allow_printing !== undefined ? !!newSettings.allow_printing : true,
-            allow_photo_upload: newSettings.allow_photo_upload !== undefined ? !!newSettings.allow_photo_upload : true,
-            allow_pdf_download: newSettings.allow_pdf_download !== undefined ? !!newSettings.allow_pdf_download : true,
+            allow_printing: printBool,
+            allow_photo_upload: uploadBool,
+            allow_pdf_download: pdfBool,
             registry_format: newSettings.registry_format || 'رقم {no}',
             show_card_date: newSettings.show_card_date !== undefined ? !!newSettings.show_card_date : true,
             auto_date: newSettings.auto_date !== undefined ? !!newSettings.auto_date : true,
@@ -197,8 +218,14 @@
             const extra = (typeof data.extra_config === 'string') ? JSON.parse(data.extra_config || '{}') : data.extra_config;
             if (extra.allow_employee_movement) data.allow_employee_movement = extra.allow_employee_movement;
             if (extra.allow_add_employee) data.allow_add_employee = extra.allow_add_employee;
+            if (extra.allow_printing) data.allow_printing = extra.allow_printing;
+            if (extra.allow_pdf_download) data.allow_pdf_download = extra.allow_pdf_download;
+            if (extra.allow_photo_upload) data.allow_photo_upload = extra.allow_photo_upload;
             data.employeeMovementInstitutions = extra.employee_movement_institutions || extra.employeeMovementInstitutions || [];
             data.addEmployeeInstitutions = extra.add_employee_institutions || extra.addEmployeeInstitutions || [];
+            data.printingInstitutions = extra.printing_institutions || extra.printingInstitutions || [];
+            data.pdfDownloadInstitutions = extra.pdf_download_institutions || extra.pdfDownloadInstitutions || [];
+            data.photoUploadInstitutions = extra.photo_upload_institutions || extra.photoUploadInstitutions || [];
         }
 
         console.log("✅ تم حفظ وتعميم إعدادات النظام بنجاح:", data);
@@ -428,6 +455,7 @@
             nin: d.nin || d.national_id || '',
             employmentType: d.situationAdmin || d.employment_type || 'مرسم',
             situationAdmin: d.situationAdmin || d.employment_type || 'مرسم',
+            substituteDuration: d.substituteDuration || d.substitute_duration || d.duration || '',
             bloodType: d.groupeSanguin || d.bloodType || '',
             photo: photoVal,                   // رابط صورة Cloudflare المعتمد
             photoUrl: photoVal,
@@ -954,11 +982,16 @@
 
         // تسجيل في سجل التعديلات
         try {
+            const historyPayload = {
+                ...payload,
+                name: empData.name || (empData.nomAr + ' ' + empData.prenomAr).trim(),
+                substituteDuration: empData.substituteDuration || ''
+            };
             await client.from(SUPABASE_CONFIG.tables.history).insert([{
                 employee_id: jid,
                 action_type: 'EMPLOYEE_CREATE',
                 previous_data: {},
-                new_data: payload,
+                new_data: historyPayload,
                 modified_by: createdBy,
                 modified_at: new Date().toISOString()
             }]);

@@ -564,6 +564,12 @@
         .value { font-family: 'Cairo', sans-serif; font-weight: 700; color: #000; margin-right: 5px; font-size: 20px; }
         .info-row.workplace-row { display: flex; align-items: flex-start; }
         .info-row.workplace-row .workplace-val { white-space: normal !important; word-break: break-word; line-height: 1.25; flex: 1; display: inline-block; }
+        .info-row.validity-row { color: #0369a1; font-weight: 800; margin-bottom: 4px; }
+        .info-row.validity-row .label, .info-row.validity-row .info-label { color: #0284c7 !important; font-weight: 800; }
+        .info-row.validity-row .value, .info-row.validity-row span:not(.info-label):not(.label) { color: #0369a1 !important; font-weight: 800 !important; }
+        #card-container.theme-2 .info-row.validity-row { color: #0369a1 !important; font-weight: 700; display: flex; align-items: baseline; gap: 6px; margin-bottom: 2px; }
+        #card-container.theme-2 .info-row.validity-row .info-label { color: #0284c7 !important; white-space: nowrap; flex-shrink: 0; line-height: 1.18; }
+        #card-container.theme-2 .info-row.validity-row span:not(.info-label) { color: #0369a1 !important; font-size: 25px !important; font-weight: 700; line-height: 1.18; }
         .photo-section { font-family: 'Cairo', sans-serif; flex: 0 0 170px; width: 170px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 8px; margin-left: 15px; box-sizing: border-box; }
         .serial-number { font-family: 'Cairo', sans-serif; font-weight: 700; font-size: 16px; color: var(--primary-red); background: rgba(210, 43, 43, 0.05); padding: 3px 10px; border-radius: 8px; width: 150px; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; margin-top: 0; margin-bottom: 10px; }
         .photo-frame { width: 125px; height: 160px; background-color: #fafafa; border: 2px solid #fff; box-shadow: 0 4px 8px rgba(0,0,0,0.15); border-radius: 6px; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; overflow: hidden; box-sizing: border-box; }
@@ -1749,7 +1755,7 @@ body.dark-theme .dir-card-no-photo {
                 </select>
             </div>
             <div class="emp-form-group" id="emp-duration-group" style="display: none;">
-                <label><i class="fa-solid fa-clock"></i> مدة الاستخلاف (كتابة فقط بدون تقويم)</label>
+                <label><i class="fa-solid fa-clock"></i> مدة الصلاحية (كتابة فقط بدون تقويم)</label>
                 <input type="text" id="emp-substitute-duration" placeholder="مثال: من 2026/01/15 إلى 2026/06/30" style="text-align: center;">
             </div>
             <div class="emp-form-group">
@@ -1845,9 +1851,12 @@ body.dark-theme .dir-card-no-photo {
         // الإعدادات المركزية المعتمدة من مديرية التربية
         let centralDirectorateConfig = {
             publishedTemplate: 2,
-            allowPrinting: true,
-            allowPhotoUpload: true,
-            allowPdfDownload: true,
+            allowPrinting: 'all',
+            printingInstitutions: [],
+            allowPhotoUpload: 'all',
+            photoUploadInstitutions: [],
+            allowPdfDownload: 'all',
+            pdfDownloadInstitutions: [],
             isPlatformOpen: true,
             registryFormat: 'year_first',
             allowAutoShrink: true,
@@ -1930,18 +1939,28 @@ body.dark-theme .dir-card-no-photo {
         // دالة فحص الصلاحية للمؤسسة الحالية (الكل، معطل، مؤسسات محددة)
         function isFeatureAllowedForSchool(featureKey, schoolName) {
             const cfg = window.centralDirectorateConfig || centralDirectorateConfig;
-            const mode = cfg[featureKey] || 'all'; // 'all', 'none', 'selected'
-            if (mode === 'all') return true;
-            if (mode === 'none') return false;
+            let mode = cfg[featureKey];
+            if (mode === undefined) mode = 'all';
+            if (mode === true || mode === 'all') return true;
+            if (mode === false || mode === 'none') return false;
             if (mode === 'selected') {
-                const allowedList = featureKey === 'allowEmployeeMovement' 
-                    ? (cfg.employeeMovementInstitutions || [])
-                    : (cfg.addEmployeeInstitutions || []);
+                let allowedList = [];
+                if (featureKey === 'allowEmployeeMovement') {
+                    allowedList = cfg.employeeMovementInstitutions || [];
+                } else if (featureKey === 'allowAddEmployee') {
+                    allowedList = cfg.addEmployeeInstitutions || [];
+                } else if (featureKey === 'allowPrinting') {
+                    allowedList = cfg.printingInstitutions || [];
+                } else if (featureKey === 'allowPhotoUpload') {
+                    allowedList = cfg.photoUploadInstitutions || [];
+                } else if (featureKey === 'allowPdfDownload') {
+                    allowedList = cfg.pdfDownloadInstitutions || [];
+                }
                 const cleanSchool = (schoolName || directorInstitution || '').trim();
-                const normSchool = typeof normalizeInstName === 'function' ? normalizeInstName(cleanSchool) : cleanSchool.replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').replace(/s+/g, '');
+                const normSchool = typeof normalizeInstName === 'function' ? normalizeInstName(cleanSchool) : cleanSchool.replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').replace(/\s+/g, '');
                 return allowedList.some(item => {
                     const cleanItem = (item || '').trim();
-                    const normItem = typeof normalizeInstName === 'function' ? normalizeInstName(cleanItem) : cleanItem.replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').replace(/s+/g, '');
+                    const normItem = typeof normalizeInstName === 'function' ? normalizeInstName(cleanItem) : cleanItem.replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').replace(/\s+/g, '');
                     return cleanItem === cleanSchool || (normSchool && normItem === normSchool);
                 });
             }
@@ -1975,9 +1994,10 @@ body.dark-theme .dir-card-no-photo {
                 const badge = document.getElementById('dir-live-template-badge');
                 if(badge) badge.textContent = names[centralDirectorateConfig.publishedTemplate] || 'النموذج 2 (الوطني بشريط العلم)';
 
+                const isPrintAllowed = isFeatureAllowedForSchool('allowPrinting', directorInstitution);
                 const printStatusEl = document.getElementById('dir-live-print-status');
                 if(printStatusEl) {
-                    if(centralDirectorateConfig.allowPrinting) {
+                    if(isPrintAllowed) {
                         printStatusEl.textContent = 'مفعلة';
                         printStatusEl.className = 'dir-pill-badge dir-pill-green';
                     } else {
@@ -1986,9 +2006,10 @@ body.dark-theme .dir-card-no-photo {
                     }
                 }
 
+                const isUploadAllowed = isFeatureAllowedForSchool('allowPhotoUpload', directorInstitution);
                 const uploadStatusEl = document.getElementById('dir-live-upload-status');
                 if(uploadStatusEl) {
-                    if(centralDirectorateConfig.allowPhotoUpload) {
+                    if(isUploadAllowed) {
                         uploadStatusEl.textContent = 'مفعل';
                         uploadStatusEl.className = 'dir-pill-badge dir-pill-green';
                     } else {
@@ -1997,9 +2018,10 @@ body.dark-theme .dir-card-no-photo {
                     }
                 }
 
+                const isPdfAllowed = isFeatureAllowedForSchool('allowPdfDownload', directorInstitution);
                 const pdfStatusEl = document.getElementById('dir-live-pdf-status');
                 if(pdfStatusEl) {
-                    if(centralDirectorateConfig.allowPdfDownload !== false) {
+                    if(isPdfAllowed) {
                         pdfStatusEl.textContent = 'مفعل';
                         pdfStatusEl.className = 'dir-pill-badge dir-pill-green';
                     } else {
@@ -2043,12 +2065,12 @@ body.dark-theme .dir-card-no-photo {
                 // تحديث صلاحية زر تصدير PDF
                 const pdfBtn = document.getElementById('btn-director-save-pdf');
                 if (pdfBtn) {
-                    if (centralDirectorateConfig.allowPdfDownload !== false) {
+                    if (isPdfAllowed) {
                         pdfBtn.style.opacity = '1';
                         pdfBtn.title = 'حفظ وتصدير PDF';
                     } else {
                         pdfBtn.style.opacity = '0.55';
-                        pdfBtn.title = 'تحميل وتصدير PDF معلق مؤقتاً من طرف الإدارة المركزية';
+                        pdfBtn.title = 'تحميل وتصدير PDF غير مفعل لمؤسستكم من طرف الإدارة المركزية';
                     }
                 }
             } catch(e) {
@@ -2120,9 +2142,12 @@ body.dark-theme .dir-card-no-photo {
                             centralDirectorateConfig.syncMode = globalSyncMode;
                         }
                         if (data.published_template) centralDirectorateConfig.publishedTemplate = parseInt(data.published_template);
-                        if (data.allow_printing !== undefined) centralDirectorateConfig.allowPrinting = !!data.allow_printing;
-                        if (data.allow_photo_upload !== undefined) centralDirectorateConfig.allowPhotoUpload = !!data.allow_photo_upload;
-                        if (data.allow_pdf_download !== undefined) centralDirectorateConfig.allowPdfDownload = !!data.allow_pdf_download;
+                        if (data.allow_printing !== undefined) centralDirectorateConfig.allowPrinting = data.allow_printing;
+                        if (data.printingInstitutions) centralDirectorateConfig.printingInstitutions = data.printingInstitutions;
+                        if (data.allow_photo_upload !== undefined) centralDirectorateConfig.allowPhotoUpload = data.allow_photo_upload;
+                        if (data.photoUploadInstitutions) centralDirectorateConfig.photoUploadInstitutions = data.photoUploadInstitutions;
+                        if (data.allow_pdf_download !== undefined) centralDirectorateConfig.allowPdfDownload = data.allow_pdf_download;
+                        if (data.pdfDownloadInstitutions) centralDirectorateConfig.pdfDownloadInstitutions = data.pdfDownloadInstitutions;
                         if (data.is_platform_open !== undefined) centralDirectorateConfig.isPlatformOpen = !!data.is_platform_open;
                         if (data.isPlatformOpen !== undefined) centralDirectorateConfig.isPlatformOpen = !!data.isPlatformOpen;
                         if (data.registry_format) centralDirectorateConfig.registryFormat = data.registry_format;
@@ -2523,8 +2548,7 @@ function formatEmployeeCardRank(emp) {
     const baseRank = (emp.rank || '').trim();
     const type = (emp.employmentType || emp.status || 'مرسم').trim();
     if (type === 'مستخلف') {
-        const dur = (emp.substituteDuration || emp.duration || '').trim();
-        return dur ? `${baseRank} - مستخلف (${dur})` : `${baseRank} - مستخلف`;
+        return `${baseRank} - مستخلف`;
     } else if (type === 'متعاقد') {
         return `${baseRank} - متعاقد`;
     } else {
@@ -2533,15 +2557,26 @@ function formatEmployeeCardRank(emp) {
 }
 window.formatEmployeeCardRank = formatEmployeeCardRank;
 
+function formatCardValidityHTML(emp, theme = 1) {
+    if (!emp) return '';
+    const dur = (emp.substituteDuration || emp.duration || '').trim();
+    if (!dur) return '';
+    if (theme === 2) {
+        return `<div class="info-row validity-row"><span class="info-label">مدة الصلاحية:&rlm;</span><span>${escapeHtml(dur)}</span></div>`;
+    }
+    return `<div class="info-row validity-row"><span class="label">مدة الصلاحية:</span><span class="value">${escapeHtml(dur)}</span></div>`;
+}
+window.formatCardValidityHTML = formatCardValidityHTML;
+
 function toggleSubstituteDurationField(val) {
     const grp = document.getElementById('emp-duration-group');
     if (grp) {
-        if (val === 'مستخلف') {
+        if (val === 'مستخلف' || val === 'متعاقد') {
             grp.style.display = 'block';
         } else {
             grp.style.display = 'none';
             const durInput = document.getElementById('emp-substitute-duration');
-            if (durInput && val !== 'مستخلف') durInput.value = '';
+            if (durInput) durInput.value = '';
         }
     }
 
@@ -2854,12 +2889,12 @@ function renderTable() {
         }
 
         function openCropper(event, empId) {
-            if (!centralDirectorateConfig.allowPhotoUpload) {
+            if (!isFeatureAllowedForSchool('allowPhotoUpload', directorInstitution)) {
                 if (event && event.target) event.target.value = '';
                 return Swal.fire({
                     icon: 'warning',
-                    title: 'خدمة رفع الصور معلقة مؤقتاً',
-                    text: 'تم تعليق خدمة رفع وتعديل صور الموظفين مؤقتاً من قبل مديرية التربية لولاية توقرت.',
+                    title: 'خدمة رفع الصور غير مفعلة',
+                    text: 'خدمة رفع وتعديل صور الموظفين غير مفعلة لمؤسستكم من قبل مديرية التربية لولاية توقرت.',
                     confirmButtonText: 'حسناً'
                 });
             }
@@ -3334,7 +3369,7 @@ function renderTable() {
             const typeSelect = document.getElementById('emp-employment-type');
             const employmentType = typeSelect ? typeSelect.value : 'مرسم';
             const durInput = document.getElementById('emp-substitute-duration');
-            const substituteDuration = (employmentType === 'مستخلف' && durInput) ? durInput.value.trim() : '';
+            const substituteDuration = ((employmentType === 'مستخلف' || employmentType === 'متعاقد') && durInput) ? durInput.value.trim() : '';
             
             // التحقق من الحقول الإجبارية
             if (!name.trim() || !jobId.trim()) {
@@ -3356,7 +3391,6 @@ function renderTable() {
             Swal.fire({ title: 'جاري الحفظ في قاعدة البيانات...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
             try {
-                let nextReg = 1;
                 if (id) {
                     const index = employees.findIndex(e => e.id === id);
                     if (index > -1) { 
@@ -3368,13 +3402,7 @@ function renderTable() {
                         employees[index].substituteDuration = substituteDuration;
                     }
                 } else {
-                    // احتساب رقم القيد التسلسلي التالي للموظف الجديد
-                    let maxReg = 0;
-                    employees.forEach(e => {
-                        const num = parseInt(e.registryNo);
-                        if (!isNaN(num) && num > maxReg) maxReg = num;
-                    });
-                    nextReg = maxReg + 1;
+                    // بناءً على تعليمات المديرية: لا يتم ترقيم الموظف الجديد تلقائياً بل يترك الترقيم الرسمي للمديرية
                     const newEmp = { 
                         id: 'emp_manual_' + Date.now(), 
                         name, 
@@ -3384,7 +3412,7 @@ function renderTable() {
                         jobId, 
                         photo: null, 
                         photoUrl: null,
-                        registryNo: nextReg,
+                        registryNo: null,
                         employmentType,
                         substituteDuration,
                         addedByDirector: true,
@@ -3412,10 +3440,10 @@ function renderTable() {
                         grade: rank,
                         etablissement: directorInstitution,
                         situationAdmin: employmentType,
-                        substituteDuration: (employmentType === 'مستخلف') ? substituteDuration : ''
+                        substituteDuration: (employmentType === 'مستخلف' || employmentType === 'متعاقد') ? substituteDuration : ''
                     };
                     if (!id) {
-                        empPayload.registry_no = nextReg;
+                        empPayload.registry_no = null;
                         empPayload.matricule = jid;
                         if (typeof window.addNewEmployeeLive === 'function') {
                             await window.addNewEmployeeLive(empPayload, directorInstitution);
@@ -3877,9 +3905,12 @@ function renderTable() {
                 window.subscribeToSystemSettings((data) => {
                     if (!data) return;
                     if (data.published_template !== undefined) centralDirectorateConfig.publishedTemplate = parseInt(data.published_template);
-                    if (data.allow_printing !== undefined) centralDirectorateConfig.allowPrinting = !!data.allow_printing;
-                    if (data.allow_photo_upload !== undefined) centralDirectorateConfig.allowPhotoUpload = !!data.allow_photo_upload;
-                    if (data.allow_pdf_download !== undefined) centralDirectorateConfig.allowPdfDownload = !!data.allow_pdf_download;
+                    if (data.allow_printing !== undefined) centralDirectorateConfig.allowPrinting = data.allow_printing;
+                    if (data.printingInstitutions) centralDirectorateConfig.printingInstitutions = data.printingInstitutions;
+                    if (data.allow_photo_upload !== undefined) centralDirectorateConfig.allowPhotoUpload = data.allow_photo_upload;
+                    if (data.photoUploadInstitutions) centralDirectorateConfig.photoUploadInstitutions = data.photoUploadInstitutions;
+                    if (data.allow_pdf_download !== undefined) centralDirectorateConfig.allowPdfDownload = data.allow_pdf_download;
+                    if (data.pdfDownloadInstitutions) centralDirectorateConfig.pdfDownloadInstitutions = data.pdfDownloadInstitutions;
                     if (data.is_platform_open !== undefined) centralDirectorateConfig.isPlatformOpen = !!data.is_platform_open;
                     if (data.isPlatformOpen !== undefined) centralDirectorateConfig.isPlatformOpen = !!data.isPlatformOpen;
                     if (data.registry_format) centralDirectorateConfig.registryFormat = data.registry_format;
@@ -4305,6 +4336,7 @@ function renderTable() {
                             <div class="info-row"><span class="label">تاريخ الميلاد:</span><span class="value" dir="ltr">${cleanDob}</span></div>
                             <div class="info-row"><span class="label">الرتبة:</span><span class="value">${formatEmployeeCardRank(emp)}</span></div>
                             <div class="info-row workplace-row"><span class="label">مكان العمل:</span><span class="value workplace-val">${emp.workplace || ''}</span></div>
+                            ${formatCardValidityHTML(emp, 1)}
                             ${showDate ? formatCardDateHTML(window.centralDirectorateConfig || centralDirectorateConfig) : ''}
                         </div>
                         <div class="photo-section">
@@ -4344,6 +4376,7 @@ function renderTable() {
                             <div class="info-row"><span class="info-label">تاريخ الميلاد:&rlm;</span><span dir="ltr">${cleanDob}</span></div>
                             <div class="info-row"><span class="info-label">الرتبة:&rlm;</span><span>${formatEmployeeCardRank(emp)}</span></div>
                             <div class="info-row workplace-row"><span class="info-label">مكان العمل:&rlm;</span><span class="workplace-val">${emp.workplace || ''}</span></div>
+                            ${formatCardValidityHTML(emp, 2)}
                             ${showDate ? formatCardDateHTMLTheme2(window.centralDirectorateConfig || centralDirectorateConfig) : ''} 
                         </div>
                         <div class="left-section">
@@ -4402,11 +4435,11 @@ function renderTable() {
         }
 
         async function generateProfessionalPDF(isLargeFormatConfig) {
-            if ((window.centralDirectorateConfig || centralDirectorateConfig).allowPdfDownload === false) {
+            if (!isFeatureAllowedForSchool('allowPdfDownload', directorInstitution)) {
                 return Swal.fire({
                     icon: 'warning',
-                    title: 'خدمة تحميل PDF معلقة مؤقتاً',
-                    text: 'تم تعليق خدمة تحميل وتصدير ملفات PDF مؤقتاً من قبل مديرية التربية لولاية توقرت.',
+                    title: 'خدمة تحميل PDF غير مفعلة',
+                    text: 'خدمة تحميل وتصدير ملفات PDF غير مفعلة لمؤسستكم من قبل مديرية التربية لولاية توقرت.',
                     confirmButtonText: 'حسناً'
                 });
             }
@@ -4563,11 +4596,11 @@ window.toggleSelectAll = function(customVal) {
 
         // دالة الطباعة المعتمدة على النموذج المنشور مركزياً من المديرية
         async function printPublishedTemplate(face = 'front') {
-            if (!centralDirectorateConfig.allowPrinting) {
+            if (!isFeatureAllowedForSchool('allowPrinting', directorInstitution)) {
                 return Swal.fire({
                     icon: 'warning',
-                    title: 'خدمة الطباعة معلقة مؤقتاً',
-                    text: 'تم تعليق خدمة طباعة البطاقات مؤقتاً من قبل مديرية التربية لولاية توقرت.',
+                    title: 'خدمة الطباعة غير مفعلة',
+                    text: 'خدمة طباعة البطاقات غير مفعلة لمؤسستكم من قبل مديرية التربية لولاية توقرت.',
                     confirmButtonText: 'حسناً'
                 });
             }
@@ -4733,6 +4766,7 @@ window.toggleSelectAll = function(customVal) {
                                         <div class="info-row"><span class="label">تاريخ الميلاد:</span><span class="value" dir="ltr">${printDob}</span></div>
                                         <div class="info-row"><span class="label">الرتبة:</span><span class="value">${formatEmployeeCardRank(emp)}</span></div>
                                         <div class="info-row workplace-row"><span class="label">مكان العمل:</span><span class="value workplace-val">${emp.workplace || ''}</span></div>
+                                        ${formatCardValidityHTML(emp, 1)}
                                         ${showDate ? formatCardDateHTML(window.centralDirectorateConfig || centralDirectorateConfig) : ''}
                                     </div>
                                     <div class="photo-section">
@@ -4775,6 +4809,7 @@ window.toggleSelectAll = function(customVal) {
                                         <div class="info-row"><span class="info-label">تاريخ الميلاد:&rlm;</span><span dir="ltr">${printDob}</span></div>
                                         <div class="info-row"><span class="info-label">الرتبة:&rlm;</span><span>${formatEmployeeCardRank(emp)}</span></div>
                                         <div class="info-row workplace-row"><span class="info-label">مكان العمل:&rlm;</span><span class="workplace-val">${emp.workplace || ''}</span></div>
+                                        ${formatCardValidityHTML(emp, 2)}
                                         ${showDate ? formatCardDateHTMLTheme2(window.centralDirectorateConfig || centralDirectorateConfig) : ''}
                                     </div>
                                     <div class="left-section">
@@ -5181,11 +5216,11 @@ window.toggleSelectAll = function(customVal) {
         window.printInstitutionRegistry = printInstitutionRegistry;
 
         window.printIndividual = async function(empId, faceOrTemplate = 'front') {
-            if (!centralDirectorateConfig.allowPrinting) {
+            if (!isFeatureAllowedForSchool('allowPrinting', directorInstitution)) {
                 return Swal.fire({
                     icon: 'warning',
-                    title: 'خدمة الطباعة معلقة مؤقتاً',
-                    text: 'تم تعليق خدمة طباعة البطاقات مؤقتاً من قبل مديرية التربية لولاية توقرت.',
+                    title: 'خدمة الطباعة غير مفعلة',
+                    text: 'خدمة طباعة البطاقات غير مفعلة لمؤسستكم من قبل مديرية التربية لولاية توقرت.',
                     confirmButtonText: 'حسناً'
                 });
             }
