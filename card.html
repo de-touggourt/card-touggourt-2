@@ -1542,7 +1542,7 @@ body.dark-theme .dir-card-no-photo {
                         <div style="display: flex; gap: 6px; align-items: center; width: 100%; margin-top: 4px;">
                             <select id="pdf-template-select" style="flex: 1; padding: 10px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-family: inherit; font-size: 13px;">
                                 <option value="front">الوجه الأمامي للبطاقة (النموذج المعتمد)</option>
-                                <option value="3">الوجه الخلفي للبطاقة</option>
+                                <option value="back">الوجه الخلفي للبطاقة</option>
                             </select>
                             <button class="btn btn-danger" id="btn-director-save-pdf" style="background: linear-gradient(135deg, #b91c1c 0%, #dc2626 100%); padding: 10px 18px; font-weight: 800; border-radius: 8px; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.28); display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; border: none; cursor: pointer;" onclick="downloadLargePDF()">
                                 <i class="fa-solid fa-file-pdf"></i> حفظ وتصدير PDF
@@ -1990,7 +1990,7 @@ body.dark-theme .dir-card-no-photo {
         // تحديث شريط الحالة المركزي في أعلى الصفحة وأزرار الصلاحيات
         function applyCentralConfigToManagerUI() {
             try {
-                const names = { 1: 'النموذج 1 (الكلاسيكي بالباركود)', 2: 'النموذج 2 (الوطني بشريط العلم)' };
+                const names = { 1: 'النموذج 1 (الكلاسيكي بالباركود)', 2: 'النموذج 2 (الوطني بشريط العلم)', 3: 'النموذج 3 (الرقمي الذكي بالـ QR)' };
                 const badge = document.getElementById('dir-live-template-badge');
                 if(badge) badge.textContent = names[centralDirectorateConfig.publishedTemplate] || 'النموذج 2 (الوطني بشريط العلم)';
 
@@ -3188,7 +3188,7 @@ function renderTable() {
         let currentTemplate = 2; let isLargeFormat = false;
         async function printTemplate(templateId) {
             if (typeof window.printPublishedTemplate === 'function') {
-                const face = (templateId === 3 || templateId === 'back') ? 'back' : 'front';
+                const face = (templateId === 'back') ? 'back' : 'front';
                 return window.printPublishedTemplate(face);
             }
 
@@ -4300,7 +4300,7 @@ function renderTable() {
 
         async function waitForFonts() { await document.fonts.ready; }
 
-        function getCardHTML(emp, templateId) {
+        function getCardHTML(emp, templateId, face = 'front') {
             const defaultPhotoAvatar = `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#f1f5f9;"><svg viewBox="0 0 24 24" fill="#94a3b8" style="width:58px; height:58px; opacity:0.6;"><path d="M12 12c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 5zm0 2c-3.33 0-10 1.67-10 5v3h20v-3c0-3.33-6.67-5-10-5z"/></svg></div>`;
             const photoHTML = emp.photo ? `<img src="${emp.photo}" style="width:100%; height:100%; object-fit:cover;">` : defaultPhotoAvatar;
             const barcodeValue = emp.jobId ? emp.jobId : "0000000000";
@@ -4388,25 +4388,55 @@ function renderTable() {
                     <div class="footer">على السلطات المدنية والعسكرية أن تسمح لحامل هذه البطاقة بالمرور في كل الحالات</div>
                 </div>`;
             }
-            else if (templateId === 3) {
-                const printStyle = typeof normalPrintStyle !== 'undefined' ? normalPrintStyle : cardPrintStyle;
+            // الوجه الأمامي: النموذج 3 (الرقمي الذكي بالـ QR)
+            else if (templateId === 3 && face !== 'back') {
+                const regNoOnly = emp.registryNo ? String(emp.registryNo).padStart(4, '0') : '---';
+                const verifyUrl = (typeof window.generateSmartCardVerificationUrl === 'function')
+                    ? window.generateSmartCardVerificationUrl(emp, window.centralDirectorateConfig || centralDirectorateConfig)
+                    : `verify.html?id=${emp.jobId}`;
+                const cardDateText = getCardDateDisplay(window.centralDirectorateConfig || centralDirectorateConfig);
+
                 return `
-                <div class="card" style="${printStyle}" dir="rtl">
-                    <div class="back-content">
-                        <div class="back-graphics">
-                            <img src="https://pub-c986b46fc04145cfa01b9aa2c6197bac.r2.dev/cards/emp_ministry_logo_hq_circle_1792192626677_fbe8b5e4.png" alt="شعار وزارة التربية" class="ministry-logo-back">
+                <div class="card" style="${cardPrintStyle}" dir="rtl">
+                    <div class="top-deco-bar"><div class="bar-red"></div><div class="bar-green"></div></div>
+                    <div class="watermark"></div>
+                    <div class="header">
+                        <div class="logo-box">
+                            <img src="https://pub-c986b46fc04145cfa01b9aa2c6197bac.r2.dev/cards/emp_ministry_logo_hq_circle_1792192626677_fbe8b5e4.png" class="header-logo">
+                            <div class="logo-text">وزارة التربية الوطنية</div>
                         </div>
-                        <div class="ministry-title-back" style="letter-spacing: normal !important; font-family: 'Cairo', sans-serif !important; text-align: center; width: 100%;">وزارة التربية الوطنية</div>
-                        <div class="rules-container">
-                            <ul class="rules-list" style="letter-spacing: normal !important;">
-                                <li>كل استعمال غير قانوني أو لأغراض غير مهنية للبطاقة المهنية يعرض صاحبها لعقوبات تأديبية</li>
-                                <li>في حالة التقاعد أو الإستقالة أو الخروج من الولاية يجب على الموظف تسليم البطاقة للإدارة</li>
-                            </ul>
+                        <div class="header-center"><div class="main-title">الجمهورية الجزائرية الديمقراطية الشعبية</div></div>
+                        <div class="logo-box">
+                            <img src="https://pub-c986b46fc04145cfa01b9aa2c6197bac.r2.dev/cards/emp_ministry_logo_hq_circle_1792192626677_fbe8b5e4.png" class="header-logo">
+                            <div class="logo-text">مديرية التربية لولاية توقرت</div>
                         </div>
                     </div>
+                    <div class="card-body">
+                        <div class="info-section">
+                            <div class="card-name-title">بطاقة التعريف المهنية</div>
+                            <div class="info-row"><span class="label">الاسم واللقب:</span><span class="value" style="font-size:22px; font-weight:900;">${emp.name}</span></div>
+                            <div class="info-row"><span class="label">تاريخ الإصدار:</span><span class="value" dir="ltr" style="font-weight:800;">${cardDateText}</span></div>
+                            <div class="smart-qr-center-box" style="display:flex; flex-direction:column; align-items:center; justify-content:center; margin:6px auto 0 auto; padding:6px; background:#ffffff; border:1.5px solid #006233; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.06); width:fit-content;">
+                                <div class="smart-qr-target" data-verify-url="${verifyUrl}" style="width:105px; height:105px; display:flex; align-items:center; justify-content:center;">
+                                    <canvas class="smart-qr-canvas" style="width:105px; height:105px; display:block;"></canvas>
+                                </div>
+                                <span style="font-size:9px; font-weight:800; color:#006233; margin-top:3px; display:flex; align-items:center; gap:4px;">
+                                    <i class="fa-solid fa-qrcode"></i> مسح للتحقق والبطاقة الرقمية
+                                </span>
+                            </div>
+                        </div>
+                        <div class="photo-section">
+                            <div class="serial-number" style="font-weight:900; letter-spacing:1px; direction:ltr;">${regNoOnly}</div>
+                            <div class="photo-frame">${photoHTML}</div>
+                            <div class="signature-title" style="line-height: 1.2;">مدير التربية<br><span style="font-size: 15px; font-weight: 800; color: #000;">${currentDirector}</span></div>
+                        </div>
+                    </div>
+                    <div class="smart-jobid-bar" style="height:34px; display:flex; align-items:center; justify-content:center; gap:8px; font-family:monospace; font-size:15px; font-weight:900; color:#0f172a; letter-spacing:2px; border-top:1.5px dashed #cbd5e1; background:rgba(0,98,51,0.04);"><i class="fa-solid fa-fingerprint" style="color:#006233; font-size:14px;"></i> رقم التعريف الوظيفي: ${emp.jobId || '---'}</div>
+                    <div class="footer">على السلطات المدنية والعسكرية أن تسمح لحامل هذه البطاقة بالمرور في كل الحالات</div>
                 </div>`;
             }
-            else if (templateId === 4) {
+            // الوجه الخلفي: يرتبط بالنموذج (1 و 3 -> Theme 4، 2 -> Theme 3)
+            else if (templateId === 4 || (face === 'back' && (templateId === 1 || templateId === 3))) {
                 const printStyle = typeof normalPrintStyle !== 'undefined' ? normalPrintStyle : cardPrintStyle;
                 return `
                 <div class="card" style="${printStyle}" dir="rtl">
@@ -4432,6 +4462,24 @@ function renderTable() {
                     </div>
                 </div>`;
             }
+            else {
+                const printStyle = typeof normalPrintStyle !== 'undefined' ? normalPrintStyle : cardPrintStyle;
+                return `
+                <div class="card" style="${printStyle}" dir="rtl">
+                    <div class="back-content">
+                        <div class="back-graphics">
+                            <img src="https://pub-c986b46fc04145cfa01b9aa2c6197bac.r2.dev/cards/emp_ministry_logo_hq_circle_1792192626677_fbe8b5e4.png" alt="شعار وزارة التربية" class="ministry-logo-back">
+                        </div>
+                        <div class="ministry-title-back" style="letter-spacing: normal !important; font-family: 'Cairo', sans-serif !important; text-align: center; width: 100%;">وزارة التربية الوطنية</div>
+                        <div class="rules-container">
+                            <ul class="rules-list" style="letter-spacing: normal !important;">
+                                <li>كل استعمال غير قانوني أو لأغراض غير مهنية للبطاقة المهنية يعرض صاحبها لعقوبات تأديبية</li>
+                                <li>في حالة التقاعد أو الإستقالة أو الخروج من الولاية يجب على الموظف تسليم البطاقة للإدارة</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>`;
+            }
         }
 
         async function generateProfessionalPDF(isLargeFormatConfig) {
@@ -4448,11 +4496,14 @@ function renderTable() {
             const selectedPdfVal = document.getElementById('pdf-template-select').value;
             const pubTpl = (window.centralDirectorateConfig || centralDirectorateConfig).publishedTemplate || 2;
             let templateId;
-            if (selectedPdfVal === 'front' || selectedPdfVal === 'published' || selectedPdfVal === '1' || selectedPdfVal === '2') {
-                templateId = (selectedPdfVal === '1' || selectedPdfVal === '2') ? parseInt(selectedPdfVal) : pubTpl;
+            let isBack = false;
+            if (selectedPdfVal === 'back') {
+                isBack = true;
+                templateId = (pubTpl === 1 || pubTpl === 3) ? 4 : 3;
+            } else if (selectedPdfVal === '1' || selectedPdfVal === '2' || selectedPdfVal === '3') {
+                templateId = parseInt(selectedPdfVal);
             } else {
-                // الوجه الخلفي: يرتبط بالنموذج المنشور (1 -> 4, 2 -> 3)
-                templateId = (pubTpl === 1) ? 4 : 3;
+                templateId = pubTpl;
             }
             const institutionSelect = document.getElementById('sel-institution');
             let institutionName = (institutionSelect.selectedIndex !== -1 && institutionSelect.value !== "") 
@@ -4495,7 +4546,7 @@ function renderTable() {
                 renderContainer.style.position = 'fixed'; renderContainer.style.top = '-9999px'; renderContainer.style.left = '-9999px';
                 renderContainer.style.width = `${cardWidthPx}px`; renderContainer.style.height = `${cardHeightPx}px`;
                 renderContainer.style.background = 'white'; renderContainer.style.zIndex = '-1000';
-                renderContainer.className = templateId === 4 ? 'theme-4' : (templateId === 3 ? 'theme-3' : (templateId === 1 ? 'theme-1' : 'theme-2'));
+                renderContainer.className = isBack ? (templateId === 4 ? 'theme-4' : 'theme-3') : ('theme-' + (templateId === 3 ? 1 : templateId));
                 document.body.appendChild(renderContainer);
 
                 await waitForFonts(); 
@@ -4505,13 +4556,27 @@ function renderTable() {
                     const progressEl = document.getElementById('pdf-progress');
                     if (progressEl) progressEl.innerText = `تمت معالجة ${i + 1} من ${employees.length} بطاقة...`;
 
-                    renderContainer.innerHTML = getCardHTML(emp, templateId);
+                    renderContainer.innerHTML = getCardHTML(emp, templateId, isBack ? 'back' : 'front');
                     autoShrinkText(renderContainer); 
                 
-                    if (templateId === 1) {
+                    if (templateId === 1 && !isBack) {
                         const barcodeSvg = renderContainer.querySelector(".barcode-render");
                         if (barcodeSvg) { JsBarcode(barcodeSvg, emp.jobId || "0000000000", { format: "CODE128", displayValue: false, height: 32, width: 2.1, margin: 0, background: "transparent" }); }
-                    } else if (templateId === 4 && typeof QRious === 'function') {
+                    } else if (templateId === 3 && !isBack && typeof QRious === 'function') {
+                        const target = renderContainer.querySelector('.smart-qr-target');
+                        if (target) {
+                            const qrCanvas = target.querySelector('canvas');
+                            const url = target.getAttribute('data-verify-url');
+                            if (qrCanvas && url) {
+                                new QRious({
+                                    element: qrCanvas,
+                                    value: url,
+                                    size: 140,
+                                    level: 'M'
+                                });
+                            }
+                        }
+                    } else if (isBack && (pubTpl === 1 || pubTpl === 3) && typeof QRious === 'function') {
                         const qrEl = renderContainer.querySelector('.local-qr');
                         if (qrEl) {
                             qrEl.innerHTML = '<canvas></canvas>';
@@ -4661,9 +4726,9 @@ window.toggleSelectAll = function(customVal) {
             const container = document.getElementById('card-container');
             const pubTpl = (window.centralDirectorateConfig || centralDirectorateConfig).publishedTemplate || templateId || 2;
             if (face === 'back') {
-                container.className = (pubTpl === 1) ? 'theme-4' : 'theme-3';
+                container.className = (pubTpl === 1 || pubTpl === 3) ? 'theme-4' : 'theme-3';
             } else {
-                container.className = 'theme-' + templateId;
+                container.className = 'theme-' + (templateId === 3 ? 1 : templateId);
             }
             container.innerHTML = '';
             const chunkSize = 4;
@@ -4691,9 +4756,9 @@ window.toggleSelectAll = function(customVal) {
                     const numberDisplayHtml = formatCardNumberHTML(emp.registryNo, currentYear, showReg, regFormat);
                     const dateText = getCardDateDisplay(window.centralDirectorateConfig || centralDirectorateConfig);
 
-                    // الوجه الخلفي المعتمد للبطاقة (النموذج 1 يرتبط بـ Theme 4 والنموذج 2 يرتبط بـ Theme 3)
+                    // الوجه الخلفي المعتمد للبطاقة (النموذج 1 و 3 يرتبط بـ Theme 4 والنموذج 2 يرتبط بـ Theme 3)
                     if(face === 'back') {
-                        if (pubTpl === 1) {
+                        if (pubTpl === 1 || pubTpl === 3) {
                             pageHTML += `
                             <div class="${wrapperClass}">
                                 <div class="card" dir="rtl">
@@ -4786,6 +4851,54 @@ window.toggleSelectAll = function(customVal) {
                             </div>
                         </div>`;
                     }
+                    // الوجه الأمامي: النموذج 3 (الرقمي الذكي بالـ QR)
+                    else if (templateId === 3) {
+                        const regNoOnly = emp.registryNo ? String(emp.registryNo).padStart(4, '0') : '---';
+                        const verifyUrl = (typeof window.generateSmartCardVerificationUrl === 'function')
+                            ? window.generateSmartCardVerificationUrl(emp, window.centralDirectorateConfig || centralDirectorateConfig)
+                            : `verify.html?id=${emp.jobId}`;
+
+                        pageHTML += `
+                        <div class="${wrapperClass}">
+                            <div class="card" dir="rtl">
+                                <div class="top-deco-bar"><div class="bar-red"></div><div class="bar-green"></div></div>
+                                <div class="watermark"></div>
+                                <div class="header">
+                                    <div class="logo-box">
+                                        <img src="https://pub-c986b46fc04145cfa01b9aa2c6197bac.r2.dev/cards/emp_ministry_logo_hq_circle_1792192626677_fbe8b5e4.png" class="header-logo">
+                                        <div class="logo-text">وزارة التربية الوطنية</div>
+                                    </div>
+                                    <div class="header-center"><div class="main-title">الجمهورية الجزائرية الديمقراطية الشعبية</div></div>
+                                    <div class="logo-box">
+                                        <img src="https://pub-c986b46fc04145cfa01b9aa2c6197bac.r2.dev/cards/emp_ministry_logo_hq_circle_1792192626677_fbe8b5e4.png" class="header-logo">
+                                        <div class="logo-text">مديرية التربية لولاية توقرت</div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="info-section">
+                                        <div class="card-name-title">بطاقة التعريف المهنية</div>
+                                        <div class="info-row"><span class="label">الاسم واللقب:</span><span class="value" style="font-size: 22px; font-weight: 900;">${emp.name}</span></div>
+                                        <div class="info-row"><span class="label">تاريخ الإصدار:</span><span class="value" dir="ltr" style="font-weight: 800;">${dateText}</span></div>
+                                        <div class="smart-qr-center-box" style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 6px auto 0 auto; padding: 6px; background: #ffffff; border: 1.5px solid #006233; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); width: fit-content;">
+                                            <div class="smart-qr-target" data-verify-url="${verifyUrl}" style="width: 105px; height: 105px; display: flex; align-items: center; justify-content: center;">
+                                                <canvas class="smart-qr-canvas" style="width: 105px; height: 105px; display: block;"></canvas>
+                                            </div>
+                                            <span style="font-size: 9px; font-weight: 800; color: #006233; margin-top: 3px; display: flex; align-items: center; gap: 4px;">
+                                                <i class="fa-solid fa-qrcode"></i> مسح للتحقق والبطاقة الرقمية
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="photo-section">
+                                        <div class="serial-number" style="font-weight: 900; letter-spacing: 1px; direction: ltr;">${regNoOnly}</div>
+                                        <div class="photo-frame">${photoHTML}</div>
+                                        <div class="signature-title" style="line-height: 1.2;">مدير التربية<br><span style="font-size: 15px; font-weight: 800; color: #000;">${currentDirector}</span></div>
+                                    </div>
+                                </div>
+                                <div class="smart-jobid-bar" style="height: 34px; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: monospace; font-size: 15px; font-weight: 900; color: #0f172a; letter-spacing: 2px; border-top: 1.5px dashed #cbd5e1; background: rgba(0, 98, 51, 0.04);"><i class="fa-solid fa-fingerprint" style="color: #006233; font-size: 14px;"></i> رقم التعريف الوظيفي: ${emp.jobId || '---'}</div>
+                                <div class="footer">على السلطات المدنية والعسكرية أن تسمح لحامل هذه البطاقة بالمرور في كل الحالات</div>
+                            </div>
+                        </div>`;
+                    }
                     // الوجه الأمامي: النموذج 2 (الوطني المعتمد بشريط العلم وخط الصقال المجلة)
                     else {
                         pageHTML += `
@@ -4838,8 +4951,26 @@ window.toggleSelectAll = function(customVal) {
                 });
             }
 
-            // توليد رمز QR إذا كان الوجه الخلفي للنموذج 1
-            if (face === 'back' && pubTpl === 1 && typeof QRious === 'function') {
+            // توليد رمز QR للتحقق والبطاقة الرقمية إذا كان النموذج 3
+            if (templateId === 3 && typeof QRious === 'function') {
+                container.querySelectorAll('.smart-qr-target').forEach(el => {
+                    try {
+                        const canvas = el.querySelector('canvas');
+                        const url = el.getAttribute('data-verify-url');
+                        if (canvas && url) {
+                            new QRious({
+                                element: canvas,
+                                value: url,
+                                size: 140,
+                                level: 'M'
+                            });
+                        }
+                    } catch(e){}
+                });
+            }
+
+            // توليد رمز QR إذا كان الوجه الخلفي للنموذج 1 أو 3
+            if (face === 'back' && (pubTpl === 1 || pubTpl === 3) && typeof QRious === 'function') {
                 container.querySelectorAll('.local-qr').forEach(el => {
                     try {
                         el.innerHTML = '<canvas></canvas>';
@@ -5227,8 +5358,8 @@ window.toggleSelectAll = function(customVal) {
             const emp = employees.find(e => e.id === empId);
             if (!emp) return;
 
-            const face = (faceOrTemplate === 'back' || faceOrTemplate === 3) ? 'back' : 'front';
-            const templateId = (typeof faceOrTemplate === 'number' && faceOrTemplate !== 3) ? faceOrTemplate : (centralDirectorateConfig.publishedTemplate || 2);
+            const face = (faceOrTemplate === 'back') ? 'back' : 'front';
+            const templateId = (typeof faceOrTemplate === 'number') ? faceOrTemplate : (centralDirectorateConfig.publishedTemplate || 2);
 
             Swal.fire({ title: 'جاري تجهيز البطاقة...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
             sendStatToServer('print');

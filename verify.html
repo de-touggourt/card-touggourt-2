@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مديرية التربية لولاية توقرت | التحقق الرسمي والبطاقة المهنية الرقمية</title>
+    <!-- خط القاهرة الرسمي و FontAwesome -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Supabase SDK & Config -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase_config.js"></script>
+    <script src="cf_photos_map.js"></script>
+
+    <style>
+        :root {
+            --primary-green: #006233;
+            --emerald-dark: #004d28;
+            --primary-red: #d22b2b;
+            --gold: #d97706;
+            --gold-light: #fef3c7;
+            --dark: #0f172a;
+            --slate: #334155;
+            --muted: #64748b;
+            --light-bg: #f8fafc;
+            --border: #e2e8f0;
+            --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Cairo', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            min-height: 100vh;
+            color: var(--dark);
+            padding: 16px 12px 40px 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 680px;
+            margin: 0 auto;
+        }
+
+        /* رأس الصفحة الرسمي */
+        .portal-header {
+            text-align: center;
+            color: #ffffff;
+            margin-bottom: 20px;
+            padding: 10px 15px;
+        }
+
+        .portal-header .top-logos {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .portal-header .ministry-logo {
+            width: 55px;
+            height: 55px;
+            object-fit: contain;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+        }
+
+        .portal-header .republic-title {
+            font-size: 15px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            color: #f1f5f9;
+        }
+
+        .portal-header .ministry-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #cbd5e1;
+            margin-top: 2px;
+        }
+
+        .portal-header .directorate-title {
+            font-size: 17px;
+            font-weight: 900;
+            color: #34d399;
+            margin-top: 4px;
+        }
+
+        /* شارة التحقق الأمني */
+        .security-badge-box {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1.5px solid #10b981;
+            border-radius: 50px;
+            padding: 8px 18px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            color: #6ee7b7;
+            font-size: 13.5px;
+            font-weight: 800;
+            margin-top: 10px;
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.25);
+            animation: pulse-glow 2.5s infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 15px rgba(16, 185, 129, 0.25); }
+            50% { box-shadow: 0 0 28px rgba(16, 185, 129, 0.45); }
+        }
+
+        /* بطاقة شريط التنقل الرئيسية بين الأيقونتين */
+        .tabs-card {
+            background: #ffffff;
+            border-radius: 18px;
+            padding: 8px;
+            box-shadow: var(--card-shadow);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .verify-tab-btn {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 12px 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            text-align: right;
+        }
+
+        .verify-tab-btn:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+        }
+
+        .verify-tab-btn.active {
+            background: linear-gradient(135deg, #006233 0%, #047857 100%);
+            border-color: #006233;
+            color: #ffffff;
+            box-shadow: 0 6px 16px rgba(0, 98, 51, 0.28);
+        }
+
+        .tab-icon-wrap {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: rgba(0, 98, 51, 0.1);
+            color: var(--primary-green);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+            transition: all 0.25s ease;
+        }
+
+        .verify-tab-btn.active .tab-icon-wrap {
+            background: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+        }
+
+        .tab-text-wrap {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .tab-title {
+            font-size: 15px;
+            font-weight: 900;
+            line-height: 1.2;
+        }
+
+        .tab-sub {
+            font-size: 11.5px;
+            color: var(--muted);
+            font-weight: 600;
+            margin-top: 2px;
+        }
+
+        .verify-tab-btn.active .tab-sub {
+            color: #a7f3d0;
+        }
+
+        /* المحتوى الرئيسي */
+        .view-section {
+            display: none;
+            animation: fadeIn 0.3s ease forwards;
+        }
+
+        .view-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ==============================================================
+           1. تصميم بطاقة المعلومات التفصيلية
+           ============================================================== */
+        .info-card-box {
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .info-card-header {
+            background: linear-gradient(135deg, #006233 0%, #065f46 100%);
+            padding: 24px 20px 20px 20px;
+            color: #ffffff;
+            text-align: center;
+            position: relative;
+        }
+
+        .emp-photo-container {
+            width: 110px;
+            height: 135px;
+            border-radius: 12px;
+            border: 3px solid #ffffff;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+            margin: 0 auto 14px auto;
+            overflow: hidden;
+            background: #f1f5f9;
+            position: relative;
+        }
+
+        .emp-photo-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .emp-main-name {
+            font-size: 22px;
+            font-weight: 900;
+            color: #ffffff;
+            margin-bottom: 6px;
+        }
+
+        .emp-type-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 800;
+            background: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+            backdrop-filter: blur(4px);
+        }
+
+        .emp-type-badge.perm { background: rgba(16, 185, 129, 0.35); color: #ecfdf5; border: 1px solid #34d399; }
+        .emp-type-badge.contract { background: rgba(59, 130, 246, 0.35); color: #eff6ff; border: 1px solid #60a5fa; }
+        .emp-type-badge.sub { background: rgba(168, 85, 247, 0.35); color: #faf5ff; border: 1px solid #c084fc; }
+
+        .info-card-body {
+            padding: 20px;
+        }
+
+        .status-live-strip {
+            background: #ecfdf5;
+            border: 1px solid #a7f3d0;
+            border-radius: 12px;
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #065f46;
+            font-size: 13px;
+            font-weight: 800;
+            margin-bottom: 18px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        @media (max-width: 500px) {
+            .info-grid { grid-template-columns: 1fr; }
+        }
+
+        .info-item {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 12px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .info-item.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .info-item-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--muted);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .info-item-label i {
+            color: var(--primary-green);
+        }
+
+        .info-item-val {
+            font-size: 15px;
+            font-weight: 800;
+            color: #0f172a;
+            word-break: break-word;
+        }
+
+        .copy-btn {
+            background: none;
+            border: none;
+            color: var(--primary-green);
+            cursor: pointer;
+            padding: 2px 6px;
+            font-size: 12px;
+            font-weight: 700;
+            margin-right: 4px;
+        }
+
+        .info-item.validity-item {
+            background: #f0f9ff;
+            border-color: #bae6fd;
+        }
+
+        .info-item.validity-item .info-item-val {
+            color: #0369a1;
+        }
+
+        .authority-sign-box {
+            margin-top: 18px;
+            padding: 14px 18px;
+            background: #fcfbf7;
+            border: 1.5px dashed #cbd5e1;
+            border-radius: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        /* ==============================================================
+           2. تصميم نموذج البطاقة الرقمية (مطابق للنموذج الأول + رقم التعريف)
+           ============================================================== */
+        .digital-card-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .card-view-actions {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .card-action-btn {
+            background: #ffffff;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 12px;
+            padding: 10px 18px;
+            font-size: 13.5px;
+            font-weight: 800;
+            color: var(--dark);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+            transition: all 0.2s;
+        }
+
+        .card-action-btn:hover {
+            border-color: var(--primary-green);
+            color: var(--primary-green);
+            transform: translateY(-1px);
+        }
+
+        /* حاوية بطاقة التعريف الرقمية المتطابقة بنسبة العرض */
+        .card-scaler-wrap {
+            width: 100%;
+            max-width: 580px;
+            aspect-ratio: 750 / 474;
+            position: relative;
+            box-shadow: 0 16px 32px rgba(0,0,0,0.3);
+            border-radius: 14px;
+            overflow: hidden;
+            perspective: 1000px;
+        }
+
+        .card-flipper {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+
+        .card-flipper.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .digital-card-face {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            backface-visibility: hidden;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+            border: 2px solid #006233;
+            border-radius: 14px;
+        }
+
+        .digital-card-face.back {
+            transform: rotateY(180deg);
+        }
+
+        /* تفاصيل الوجه الأمامي مثل النموذج 1 */
+        .top-deco-strip {
+            width: 100%;
+            height: 2.2%;
+            display: flex;
+        }
+
+        .deco-red { flex: 1; background: var(--primary-red); }
+        .deco-green { flex: 2; background: var(--primary-green); }
+
+        .card-header-inner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5% 3% 0 3%;
+            height: 20%;
+            position: relative;
+            z-index: 2;
+        }
+
+        .header-logo-side {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 20%;
+        }
+
+        .header-logo-side img {
+            width: 44px;
+            height: 44px;
+            object-fit: contain;
+        }
+
+        .header-logo-side span {
+            font-size: 9.5px;
+            font-weight: 900;
+            color: #000;
+            white-space: nowrap;
+            margin-top: 1px;
+        }
+
+        .header-republic-center {
+            font-size: 14px;
+            font-weight: 800;
+            color: #000;
+            text-align: center;
+            flex: 1;
+            margin-top: -6px;
+        }
+
+        .card-body-inner {
+            display: flex;
+            justify-content: space-between;
+            padding: 1% 4%;
+            flex: 1;
+            position: relative;
+            z-index: 2;
+        }
+
+        .card-info-side {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 3px;
+            text-align: right;
+            padding-left: 8px;
+        }
+
+        .card-title-pill {
+            font-size: 16px;
+            font-weight: 900;
+            color: var(--primary-green);
+            border-bottom: 2px solid var(--primary-red);
+            width: fit-content;
+            margin-bottom: 4px;
+            padding-bottom: 1px;
+        }
+
+        .card-row {
+            font-size: 13px;
+            font-weight: 800;
+            color: #1e293b;
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .card-row .c-label {
+            color: #000000;
+            font-weight: 800;
+            min-width: 85px;
+        }
+
+        .card-row .c-val {
+            color: #000000;
+            font-weight: 800;
+        }
+
+        .card-row.validity-row-c {
+            color: #0284c7;
+        }
+
+        .card-row.validity-row-c .c-label,
+        .card-row.validity-row-c .c-val {
+            color: #0369a1;
+            font-weight: 900;
+        }
+
+        .card-photo-side {
+            width: 110px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            flex-shrink: 0;
+        }
+
+        .card-reg-no {
+            font-size: 12px;
+            font-weight: 900;
+            color: var(--primary-red);
+            background: rgba(210, 43, 43, 0.08);
+            padding: 1px 8px;
+            border-radius: 4px;
+            direction: ltr;
+        }
+
+        .card-photo-frame {
+            width: 78px;
+            height: 98px;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 6px;
+            overflow: hidden;
+            background: #f1f5f9;
+        }
+
+        .card-photo-frame img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .card-director-sig {
+            font-size: 10px;
+            font-weight: 900;
+            color: #000;
+            text-align: center;
+            line-height: 1.1;
+        }
+
+        /* بدل الباركود: رقم التعريف الوظيفي */
+        .digital-jobid-bar {
+            height: 38px;
+            background: rgba(0, 98, 51, 0.05);
+            border-top: 1.5px dashed #cbd5e1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-family: monospace;
+            font-size: 15px;
+            font-weight: 900;
+            color: #0f172a;
+            letter-spacing: 2.5px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .digital-jobid-bar i {
+            color: var(--primary-green);
+            font-size: 16px;
+        }
+
+        .card-footer-inner {
+            background: var(--primary-green);
+            color: #ffffff;
+            text-align: center;
+            font-size: 10px;
+            font-weight: 800;
+            padding: 4px 0;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* الوجه الخلفي للبطاقة */
+        .back-face-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 16px 24px;
+            text-align: center;
+        }
+
+        .back-header-titles h3 {
+            font-size: 13.5px;
+            font-weight: 800;
+            color: #1e293b;
+        }
+
+        .back-header-titles h2 {
+            font-size: 16px;
+            font-weight: 900;
+            color: var(--primary-green);
+            margin-top: 2px;
+        }
+
+        .back-rules-list {
+            list-style: none;
+            text-align: right;
+            margin: 10px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .back-rules-list li {
+            font-size: 12px;
+            font-weight: 700;
+            color: #334155;
+            position: relative;
+            padding-right: 18px;
+            line-height: 1.4;
+        }
+
+        .back-rules-list li::before {
+            content: "•";
+            color: var(--primary-red);
+            font-size: 18px;
+            position: absolute;
+            right: 0;
+            top: -3px;
+        }
+
+        .watermark-bg {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 240px;
+            height: 240px;
+            background-image: url('https://pub-c986b46fc04145cfa01b9aa2c6197bac.r2.dev/cards/emp_ministry_logo_hq_circle_1792192626677_fbe8b5e4.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            opacity: 0.08;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* رسالة خطأ أو رمز غير صالح */
+        .error-card {
+            background: #ffffff;
+            border-radius: 18px;
+            padding: 30px 20px;
+            text-align: center;
+            box-shadow: var(--card-shadow);
+        }
+
+        .error-card i {
+            font-size: 55px;
+            color: #ef4444;
+            margin-bottom: 15px;
+        }
+
+        .error-card h3 {
+            font-size: 20px;
+            font-weight: 900;
+            color: #0f172a;
+            margin-bottom: 8px;
+        }
+
+        .error-card p {
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* التذييل العام */
+        .portal-footer {
+            text-align: center;
+            color: #94a3b8;
+            font-size: 12px;
+            font-weight: 700;
+            margin-top: 30px;
+        }
+
+        .portal-footer a {
+            color: #38bdf8;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- رأس الصفحة الوزاري والمديرية -->
+        <header class="portal-header">
+            <div class="top-logos">
+                <img src="https://pub-c986b46fc04145cfa01b9aa2c6197bac.r2.dev/cards/emp_ministry_logo_hq_circle_1792192626677_fbe8b5e4.png" alt="شعار وزارة التربية" class="ministry-logo">
+            </div>
+            <div class="republic-title">الجمهورية الجزائرية الديمقراطية الشعبية</div>
+            <div class="ministry-title">وزارة التربية الوطنية</div>
+            <div class="directorate-title">مديرية التربية لولاية توقرت</div>
+            <div>
+                <span class="security-badge-box">
+                    <i class="fa-solid fa-shield-check"></i>
+                    بطاقة مهنية رسمية موثقة ومعتمدة رقمياً
+                </span>
+            </div>
+        </header>
+
+        <!-- بطاقة اختيار الأيقونتين (بطاقة المعلومات / البطاقة الرقمية) -->
+        <nav class="tabs-card" id="tabs-navbar">
+            <button type="button" class="verify-tab-btn active" id="tab-btn-info" onclick="switchPortalTab('info')">
+                <div class="tab-icon-wrap">
+                    <i class="fa-solid fa-address-card"></i>
+                </div>
+                <div class="tab-text-wrap">
+                    <div class="tab-title">بطاقة المعلومات</div>
+                    <div class="tab-sub">بيانات وسجل الموظف بالتفصيل</div>
+                </div>
+            </button>
+
+            <button type="button" class="verify-tab-btn" id="tab-btn-card" onclick="switchPortalTab('card')">
+                <div class="tab-icon-wrap">
+                    <i class="fa-solid fa-id-card"></i>
+                </div>
+                <div class="tab-text-wrap">
+                    <div class="tab-title">البطاقة الرقمية</div>
+                    <div class="tab-sub">النموذج الرسمي برقم التعريف</div>
+                </div>
+            </button>
+        </nav>
+
+        <!-- الحاوية الديناميكية لمحتوى الموظف -->
+        <main id="portal-content-container">
+            <div style="text-align:center; padding:40px; color:#ffffff;">
+                <i class="fa-solid fa-circle-notch fa-spin fa-2x" style="color:#10b981;"></i>
+                <div style="margin-top:12px; font-weight:800; font-size:15px;">جاري فك تشفير البيانات والتحقق من السجل الرسمي...</div>
+            </div>
+        </main>
+
+        <footer class="portal-footer">
+            مديرية التربية لولاية توقرت &copy; 2026 | المنظومة الرقمية المعتمدة لبطاقات التعريف المهنية
+        </footer>
+    </div>
+
+    <!-- كود المنطق البرمجي للتحقق والعرض التفاعلي -->
+    <script>
+        let currentEmployee = null;
+        let isCardFlipped = false;
+
+        // استخراج التوكن المشفر من الرابط
+        function getTokenFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            let token = urlParams.get('token') || urlParams.get('v') || urlParams.get('data');
+            if (!token && window.location.hash) {
+                const hash = window.location.hash.substring(1);
+                const hashParams = new URLSearchParams(hash);
+                token = hashParams.get('token') || hash;
+            }
+            return token;
+        }
+
+        // التبديل بين بطاقة المعلومات والبطاقة الرقمية
+        window.switchPortalTab = function(tabName) {
+            const infoBtn = document.getElementById('tab-btn-info');
+            const cardBtn = document.getElementById('tab-btn-card');
+            const infoSec = document.getElementById('view-info');
+            const cardSec = document.getElementById('view-card');
+
+            if (!infoSec || !cardSec) return;
+
+            if (tabName === 'info') {
+                infoBtn.classList.add('active');
+                cardBtn.classList.remove('active');
+                infoSec.classList.add('active');
+                cardSec.classList.remove('active');
+            } else {
+                cardBtn.classList.add('active');
+                infoBtn.classList.remove('active');
+                cardSec.classList.add('active');
+                infoSec.classList.remove('active');
+            }
+        };
+
+        // قلب البطاقة الرقمية بين الوجهين الأمامي والخلفي
+        window.flipDigitalCard = function() {
+            const flipper = document.getElementById('digital-card-flipper');
+            if (!flipper) return;
+            isCardFlipped = !isCardFlipped;
+            if (isCardFlipped) {
+                flipper.classList.add('flipped');
+            } else {
+                flipper.classList.remove('flipped');
+            }
+        };
+
+        // نسخ رقم التعريف الوظيفي
+        window.copyJobId = function(val) {
+            navigator.clipboard.writeText(val).then(() => {
+                alert('تم نسخ رقم التعريف الوظيفي: ' + val);
+            }).catch(() => {});
+        };
+
+        // دالة التهيئة والتحقق
+        async function initVerificationPortal() {
+            const container = document.getElementById('portal-content-container');
+            const token = getTokenFromURL();
+
+            if (!token) {
+                renderErrorState('لم يتم العثور على رمز تشفير البطاقة المهنية. يرجى مسح رمز الاستجابة السريعة (QR) مباشرة من البطاقة.');
+                return;
+            }
+
+            // 1. فك تشفير البيانات المشفرة
+            let decryptedData = null;
+            if (typeof window.decryptSmartCardPayload === 'function') {
+                decryptedData = window.decryptSmartCardPayload(token);
+            }
+
+            if (!decryptedData || (!decryptedData.j && !decryptedData.n)) {
+                renderErrorState('رمز التشفير غير صالح أو غير معتمد من قبل مديرية التربية لولاية توقرت.');
+                return;
+            }
+
+            // تعيين بيانات الموظف الأساسية من التوكن
+            currentEmployee = {
+                jobId: decryptedData.j || '',
+                name: decryptedData.n || 'الموظف',
+                dob: decryptedData.d || '---',
+                rank: decryptedData.r || '---',
+                workplace: decryptedData.w || '---',
+                employmentType: decryptedData.t || 'مرسم',
+                substituteDuration: decryptedData.u || '',
+                registryNo: decryptedData.g || '---',
+                photoUrl: decryptedData.p || '',
+                stage: decryptedData.s || 'التعليم',
+                baladiya: decryptedData.b || '',
+                daaira: decryptedData.a || '',
+                issueDate: decryptedData.i || '2026',
+                director: decryptedData.m || 'بوعزيز صالح',
+                verifiedAt: new Date(decryptedData.ts || Date.now()).toLocaleDateString('ar-DZ')
+            };
+
+            // البحث عن الصورة في خريطة الصور Cloudflare إن لم تكن متوفرة
+            if (!currentEmployee.photoUrl && window.CF_PHOTOS_MAP && currentEmployee.jobId) {
+                const mapItem = window.CF_PHOTOS_MAP[currentEmployee.jobId];
+                if (mapItem && mapItem.cfUrl) {
+                    currentEmployee.photoUrl = mapItem.cfUrl;
+                }
+            }
+
+            // عرض الواجهتين فوراً بالبيانات الموثقة
+            renderPortalViews(currentEmployee, false);
+
+            // 2. التحقق الحي المتزامن مع قاعدة بيانات Supabase (Base-Touggourt)
+            try {
+                if (typeof window.getSupabaseClient === 'function' && currentEmployee.jobId) {
+                    const client = window.getSupabaseClient();
+                    if (client) {
+                        const { data: dbEmp, error } = await client
+                            .from('base-touggourt')
+                            .select('*')
+                            .eq('job_id', currentEmployee.jobId)
+                            .maybeSingle();
+
+                        if (dbEmp && !error) {
+                            // دمج أي بيانات إضافية من قاعدة البيانات الحية
+                            if (dbEmp.photo_url) currentEmployee.photoUrl = dbEmp.photo_url;
+                            if (dbEmp.etablissement) currentEmployee.workplace = dbEmp.etablissement;
+                            if (dbEmp.rank) currentEmployee.rank = dbEmp.rank;
+                            if (dbEmp.registry_no) currentEmployee.registryNo = dbEmp.registry_no;
+                            if (dbEmp.substitute_duration) currentEmployee.substituteDuration = dbEmp.substitute_duration;
+                            if (dbEmp.stage) currentEmployee.stage = dbEmp.stage;
+                            if (dbEmp.baladiya) currentEmployee.baladiya = dbEmp.baladiya;
+                            if (dbEmp.daaira) currentEmployee.daaira = dbEmp.daaira;
+
+                            // إعادة تحديث الواجهة وتأكيد التحقق المباشر
+                            renderPortalViews(currentEmployee, true);
+                        }
+                    }
+                }
+            } catch (err) {
+                console.warn('Live verification notice:', err);
+            }
+        }
+
+        // رسم محتوى الواجهتين (بطاقة المعلومات + البطاقة الرقمية)
+        function renderPortalViews(emp, isLiveVerified = false) {
+            const container = document.getElementById('portal-content-container');
+            const defaultAvatar = `<svg viewBox="0 0 24 24" fill="#94a3b8" style="width: 100%; height: 100%;"><path d="M12 12c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm0 2c-3.33 0-10 1.67-10 5v3h20v-3c0-3.33-6.67-5-10-5z"/></svg>`;
+            const photoSrc = emp.photoUrl ? `<img src="${emp.photoUrl}" alt="${emp.name}">` : defaultAvatar;
+
+            let typeBadgeClass = 'perm';
+            let typeLabel = 'مرسم';
+            if (emp.employmentType === 'مستخلف') {
+                typeBadgeClass = 'sub';
+                typeLabel = 'مستخلف';
+            } else if (emp.employmentType === 'متعاقد') {
+                typeBadgeClass = 'contract';
+                typeLabel = 'متعاقد';
+            }
+
+            const liveStatusBadge = isLiveVerified
+                ? `<div class="status-live-strip"><i class="fa-solid fa-circle-check" style="color:#059669; font-size:16px;"></i> <span>تم التحقق المباشر من قاعدة بيانات مديرية التربية لولاية توقرت (سجل معتمد ونشط)</span></div>`
+                : `<div class="status-live-strip"><i class="fa-solid fa-shield-check" style="color:#059669; font-size:16px;"></i> <span>تم التحقق بنجاح عبر التشفير الرقمي الأمني المعتمد لمديرية التربية لولاية توقرت</span></div>`;
+
+            const validitySectionInfo = emp.substituteDuration ? `
+                <div class="info-item full-width validity-item">
+                    <span class="info-item-label"><i class="fa-solid fa-calendar-check"></i> مدة الصلاحية:</span>
+                    <span class="info-item-val">${emp.substituteDuration}</span>
+                </div>
+            ` : '';
+
+            const validitySectionCard = emp.substituteDuration ? `
+                <div class="card-row validity-row-c">
+                    <span class="c-label">مدة الصلاحية:</span>
+                    <span class="c-val">${emp.substituteDuration}</span>
+                </div>
+            ` : '';
+
+            // صياغة رقم القيد
+            const formattedRegNo = emp.registryNo ? String(emp.registryNo).padStart(4, '0') : '---';
+
+            container.innerHTML = `
+                <!-- 1. واجهة بطاقة المعلومات التفصيلية -->
+                <section class="view-section active" id="view-info">
+                    <div class="info-card-box">
+                        <div class="info-card-header">
+                            <div class="emp-photo-container">
+                                ${photoSrc}
+                            </div>
+                            <h2 class="emp-main-name">${emp.name}</h2>
+                            <div>
+                                <span class="emp-type-badge ${typeBadgeClass}">
+                                    <i class="fa-solid fa-id-badge"></i> الصفة: ${typeLabel}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="info-card-body">
+                            ${liveStatusBadge}
+
+                            <div class="info-grid">
+                                <div class="info-item full-width">
+                                    <span class="info-item-label"><i class="fa-solid fa-briefcase"></i> الرتبة المهنية:</span>
+                                    <span class="info-item-val">${emp.rank}</span>
+                                </div>
+
+                                <div class="info-item full-width">
+                                    <span class="info-item-label"><i class="fa-solid fa-school"></i> مكان العمل (المؤسسة):</span>
+                                    <span class="info-item-val">${emp.workplace}</span>
+                                </div>
+
+                                <div class="info-item">
+                                    <span class="info-item-label"><i class="fa-solid fa-fingerprint"></i> رقم التعريف الوظيفي:</span>
+                                    <span class="info-item-val" style="font-family:monospace; direction:ltr; text-align:right;">
+                                        ${emp.jobId} 
+                                        <button class="copy-btn" onclick="copyJobId('${emp.jobId}')" title="نسخ الرقم"><i class="fa-solid fa-copy"></i></button>
+                                    </span>
+                                </div>
+
+                                <div class="info-item">
+                                    <span class="info-item-label"><i class="fa-solid fa-book-bookmark"></i> رقم القيد بسجل الولاية:</span>
+                                    <span class="info-item-val" style="font-weight:900; color:var(--primary-red); direction:ltr; text-align:right;">${formattedRegNo}</span>
+                                </div>
+
+                                <div class="info-item">
+                                    <span class="info-item-label"><i class="fa-solid fa-cake-candles"></i> تاريخ الميلاد:</span>
+                                    <span class="info-item-val" dir="ltr" style="text-align:right;">${emp.dob}</span>
+                                </div>
+
+                                <div class="info-item">
+                                    <span class="info-item-label"><i class="fa-solid fa-calendar-days"></i> تاريخ إصدار البطاقة:</span>
+                                    <span class="info-item-val" dir="ltr" style="text-align:right;">${emp.issueDate}</span>
+                                </div>
+
+                                <div class="info-item">
+                                    <span class="info-item-label"><i class="fa-solid fa-layer-group"></i> الطور التعليمي:</span>
+                                    <span class="info-item-val">${emp.stage || 'غير محدد'}</span>
+                                </div>
+
+                                <div class="info-item">
+                                    <span class="info-item-label"><i class="fa-solid fa-location-dot"></i> الدائرة والبلدية:</span>
+                                    <span class="info-item-val">${emp.baladiya || 'توقرت'} - ${emp.daaira || 'توقرت'}</span>
+                                </div>
+
+                                ${validitySectionInfo}
+                            </div>
+
+                            <div class="authority-sign-box">
+                                <div>
+                                    <div style="font-size:12px; color:var(--muted); font-weight:700;">السلطة الرسمية المصدرة:</div>
+                                    <div style="font-size:14px; font-weight:900; color:var(--dark);">مديرية التربية لولاية توقرت</div>
+                                </div>
+                                <div style="text-align:center;">
+                                    <div style="font-size:12px; color:var(--muted); font-weight:700;">مدير التربية</div>
+                                    <div style="font-size:15px; font-weight:900; color:var(--primary-green);">${emp.director}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 2. واجهة البطاقة الرقمية (النموذج الرسمي برقم التعريف الوظيفي) -->
+                <section class="view-section" id="view-card">
+                    <div class="digital-card-container">
+                        <!-- أزرار الإجراءات -->
+                        <div class="card-view-actions">
+                            <button type="button" class="card-action-btn" onclick="flipDigitalCard()">
+                                <i class="fa-solid fa-repeat" style="color:var(--primary-green);"></i> قلب البطاقة (معاينة الوجه الخلفي)
+                            </button>
+                            <button type="button" class="card-action-btn" onclick="window.print()">
+                                <i class="fa-solid fa-print" style="color:var(--slate);"></i> طباعة / حفظ البطاقة
+                            </button>
+                        </div>
+
+                        <!-- البطاقة الرقمية المتفاعلة ثلاثية الأبعاد -->
+                        <div class="card-scaler-wrap">
+                            <div class="card-flipper" id="digital-card-flipper">
+                                
+                                <!-- الوجه الأمامي للبطاقة (مطابق للنموذج الأول + رقم التعريف الوظيفي بدل الباركود) -->
+                                <div class="digital-card-face front" dir="rtl">
+                                    <div class="watermark-bg"></div>
+
+                                    <!-- الشريط العلوي المزدوج -->
+                                    <div class="top-deco-strip">
+                                        <div class="deco-red"></div>
+                                        <div class="deco-green"></div>
+                                    </div>
+
+                                    <!-- الرأس -->
+                                    <div class="card-header-inner">
+                                        <div class="header-logo-side">
+                                            <img src="https://pub-c986b46fc04145cfa01b9aa2c6197bac.r2.dev/cards/emp_ministry_logo_hq_circle_1792192626677_fbe8b5e4.png" alt="وزارة التربية">
+                                            <span>وزارة التربية الوطنية</span>
+                                        </div>
+                                        <div class="header-republic-center">
+                                            الجمهورية الجزائرية الديمقراطية الشعبية
+                                        </div>
+                                        <div class="header-logo-side">
+                                            <img src="https://pub-c986b46fc04145cfa01b9aa2c6197bac.r2.dev/cards/emp_ministry_logo_hq_circle_1792192626677_fbe8b5e4.png" alt="مديرية توقرت">
+                                            <span>مديرية التربية لولاية توقرت</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- جسم البطاقة -->
+                                    <div class="card-body-inner">
+                                        <div class="card-info-side">
+                                            <div class="card-title-pill">بطاقة التعريف المهنية</div>
+                                            <div class="card-row">
+                                                <span class="c-label">الاسم واللقب:</span>
+                                                <span class="c-val">${emp.name}</span>
+                                            </div>
+                                            <div class="card-row">
+                                                <span class="c-label">تاريخ الميلاد:</span>
+                                                <span class="c-val" dir="ltr">${emp.dob}</span>
+                                            </div>
+                                            <div class="card-row">
+                                                <span class="c-label">الرتبة:</span>
+                                                <span class="c-val">${emp.rank}</span>
+                                            </div>
+                                            <div class="card-row" style="white-space:normal;">
+                                                <span class="c-label">مكان العمل:</span>
+                                                <span class="c-val" style="word-break:break-word;">${emp.workplace}</span>
+                                            </div>
+                                            ${validitySectionCard}
+                                            <div class="card-row">
+                                                <span class="c-label">تاريخ الإصدار:</span>
+                                                <span class="c-val" dir="ltr">${emp.issueDate}</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="card-photo-side">
+                                            <div class="card-reg-no">${formattedRegNo}</div>
+                                            <div class="card-photo-frame">
+                                                ${photoSrc}
+                                            </div>
+                                            <div class="card-director-sig">
+                                                مدير التربية<br>${emp.director}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- شريط رقم التعريف الوظيفي المعتمد بدل الباركود -->
+                                    <div class="digital-jobid-bar">
+                                        <i class="fa-solid fa-fingerprint"></i>
+                                        <span>رقم التعريف الوظيفي:</span>
+                                        <strong>${emp.jobId}</strong>
+                                    </div>
+
+                                    <!-- التذييل -->
+                                    <div class="card-footer-inner">
+                                        على السلطات المدنية والعسكرية أن تسمح لحامل هذه البطاقة بالمرور في كل الحالات
+                                    </div>
+                                </div>
+
+                                <!-- الوجه الخلفي للبطاقة -->
+                                <div class="digital-card-face back" dir="rtl">
+                                    <div class="watermark-bg"></div>
+                                    
+                                    <div class="back-face-body">
+                                        <div class="back-header-titles">
+                                            <h3>الجمهورية الجزائرية الديمقراطية الشعبية</h3>
+                                            <h2>وزارة التربية الوطنية</h2>
+                                        </div>
+
+                                        <div style="background:rgba(0, 98, 51, 0.04); border:1px solid #cbd5e1; border-radius:10px; padding:12px;">
+                                            <div style="font-size:13.5px; font-weight:900; color:var(--primary-red); margin-bottom:6px; text-align:right;">
+                                                <i class="fa-solid fa-triangle-exclamation"></i> تنبيه هام:
+                                            </div>
+                                            <ul class="back-rules-list">
+                                                <li>كل استعمال غير قانوني أو لأغراض غير مهنية للبطاقة، يعرض صاحبها لعقوبات تأديبية.</li>
+                                                <li>في حالة التقاعد، الإستقالة، أو النقل خارج الولاية، يُلزم الموظف بتسليم البطاقة للإدارة.</li>
+                                            </ul>
+                                        </div>
+
+                                        <div style="font-size:11.5px; font-weight:700; color:#475569; line-height:1.4;">
+                                            في حالة العثور على هذه البطاقة، يرجى تسليمها إلى مديرية التربية لولاية توقرت أو أقرب مؤسسة تربوية.
+                                        </div>
+
+                                        <div style="display:flex; justify-content:center; align-items:center; gap:8px; font-size:12px; font-weight:800; color:var(--primary-green);">
+                                            <i class="fa-solid fa-shield-halved"></i> وثيقة رسمية صادرة عن مديرية التربية لولاية توقرت
+                                        </div>
+                                    </div>
+
+                                    <div class="card-footer-inner">
+                                        الجمهورية الجزائرية الديمقراطية الشعبية - وزارة التربية الوطنية
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            `;
+        }
+
+        function renderErrorState(message) {
+            const container = document.getElementById('portal-content-container');
+            container.innerHTML = `
+                <div class="error-card">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <h3>تعذر التحقق من البطاقة المهنية</h3>
+                    <p>${message}</p>
+                    <div style="margin-top:20px;">
+                        <a href="index.html" style="display:inline-flex; align-items:center; gap:6px; padding:10px 20px; background:#006233; color:white; border-radius:10px; text-decoration:none; font-weight:800; font-size:13.5px;">
+                            <i class="fa-solid fa-arrow-right"></i> العودة للبوابة الرئيسية
+                        </a>
+                    </div>
+                </div>
+            `;
+        }
+
+        // تشغيل التحقق عند اكتمال تحميل الصفحة
+        document.addEventListener('DOMContentLoaded', initVerificationPortal);
+    </script>
+</body>
+</html>

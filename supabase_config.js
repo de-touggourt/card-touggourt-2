@@ -1094,6 +1094,147 @@
             .subscribe();
     }
 
+    // =========================================================================
+    // منظومة التشفير وتوليد روابط التحقق الذكي للبطاقات المهنية الرقمية (النموذج 3)
+    // =========================================================================
+    const SMART_CARD_SECRET = "DEDZ_TOUGGOURT_CARD_SEC_2026";
+
+    function safeBtoa(str) {
+        if (typeof btoa === 'function') return btoa(str);
+        if (typeof window !== 'undefined' && typeof window.btoa === 'function') return window.btoa(str);
+        if (typeof globalThis !== 'undefined' && typeof globalThis.btoa === 'function') return globalThis.btoa(str);
+        if (typeof Buffer !== 'undefined') return Buffer.from(str, 'binary').toString('base64');
+        return '';
+    }
+
+    function safeAtob(b64) {
+        if (typeof atob === 'function') return atob(b64);
+        if (typeof window !== 'undefined' && typeof window.atob === 'function') return window.atob(b64);
+        if (typeof globalThis !== 'undefined' && typeof globalThis.atob === 'function') return globalThis.atob(b64);
+        if (typeof Buffer !== 'undefined') return Buffer.from(b64, 'base64').toString('binary');
+        return '';
+    }
+
+    function b64ToUrl(b64) {
+        return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+
+    function urlToB64(url) {
+        let b64 = url.replace(/-/g, '+').replace(/_/g, '/');
+        while (b64.length % 4) b64 += '=';
+        return b64;
+    }
+
+    function encryptSmartCardPayload(obj) {
+        try {
+            const text = JSON.stringify(obj);
+            let utf8Bytes;
+            if (typeof TextEncoder !== 'undefined') {
+                utf8Bytes = new TextEncoder().encode(text);
+            } else if (typeof Buffer !== 'undefined') {
+                utf8Bytes = Buffer.from(text, 'utf8');
+            } else {
+                utf8Bytes = [];
+                for (let i = 0; i < text.length; i++) utf8Bytes.push(text.charCodeAt(i));
+            }
+            const salt = Math.floor(Math.random() * 0xFFFFFF).toString(16).padStart(6, '0');
+            const key = SMART_CARD_SECRET + salt;
+            const out = new Uint8Array(utf8Bytes.length);
+            for (let i = 0; i < utf8Bytes.length; i++) {
+                const k = key.charCodeAt(i % key.length) ^ (i & 0xFF);
+                out[i] = utf8Bytes[i] ^ k;
+            }
+            let binary = '';
+            for (let i = 0; i < out.length; i++) {
+                binary += String.fromCharCode(out[i]);
+            }
+            const cipherB64 = safeBtoa(binary);
+            const combined = salt + ':' + cipherB64;
+            const finalB64 = safeBtoa(combined);
+            return b64ToUrl(finalB64);
+        } catch (e) {
+            console.error('Error encrypting smart card payload:', e);
+            return '';
+        }
+    }
+
+    function decryptSmartCardPayload(token) {
+        try {
+            if (!token) return null;
+            const b64 = urlToB64(token);
+            const combined = safeAtob(b64);
+            const parts = combined.split(':');
+            if (parts.length < 2) return null;
+            const salt = parts[0];
+            const cipherB64 = parts[1];
+            if (!salt || !cipherB64) return null;
+            const key = SMART_CARD_SECRET + salt;
+            const binary = safeAtob(cipherB64);
+            const out = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) {
+                const k = key.charCodeAt(i % key.length) ^ (i & 0xFF);
+                out[i] = binary.charCodeAt(i) ^ k;
+            }
+            let decryptedStr;
+            if (typeof TextDecoder !== 'undefined') {
+                decryptedStr = new TextDecoder().decode(out);
+            } else if (typeof Buffer !== 'undefined') {
+                decryptedStr = Buffer.from(out).toString('utf8');
+            } else {
+                decryptedStr = '';
+                for (let i = 0; i < out.length; i++) decryptedStr += String.fromCharCode(out[i]);
+            }
+            return JSON.parse(decryptedStr);
+        } catch (e) {
+            console.error('Error decrypting smart card token:', e);
+            return null;
+        }
+    }
+
+    function generateSmartCardVerificationUrl(emp, config = {}) {
+        const photoUrl = (emp.photoUrl || emp.photo || '').startsWith('http') ? (emp.photoUrl || emp.photo) : '';
+        let issueDateStr = '';
+        let directorStr = 'بوعزيز صالح';
+        let yearStr = '2026';
+
+        if (typeof config === 'string') {
+            issueDateStr = config;
+        } else if (config) {
+            issueDateStr = config.cardCustomDate || config.issueDate || config.globalCardDate || (config.autoDate ? new Date().toISOString().split('T')[0] : '') || '';
+            directorStr = config.globalDirector || config.director || 'بوعزيز صالح';
+            yearStr = config.globalYear || config.year || '2026';
+        }
+
+        const payload = {
+            j: emp.jobId || '',
+            n: emp.name || '',
+            d: emp.dob || '',
+            r: emp.rank || '',
+            w: emp.workplace || emp.inst || '',
+            t: emp.employmentType || emp.status || emp.type || 'مرسم',
+            u: emp.substituteDuration || '',
+            g: emp.registryNo || '',
+            p: photoUrl,
+            s: emp.stage || '',
+            b: emp.baladiya || '',
+            a: emp.daaira || '',
+            i: issueDateStr,
+            m: directorStr,
+            y: yearStr,
+            ts: Date.now()
+        };
+        const token = encryptSmartCardPayload(payload);
+        let origin = '';
+        if (typeof window !== 'undefined' && window.location) {
+            const loc = window.location;
+            const pathParts = loc.pathname.split('/');
+            pathParts.pop(); // remove current file name
+            const basePath = pathParts.join('/') + '/';
+            origin = loc.origin + basePath;
+        }
+        return (origin || './') + 'verify.html?token=' + encodeURIComponent(token);
+    }
+
     // تصدير الكائنات والدوال للنطاق العام (window)
     window.SUPABASE_CONFIG = SUPABASE_CONFIG;
     window.getSupabaseClient = getSupabaseClient;
@@ -1121,5 +1262,8 @@
     window.deleteEmployeeLive = deleteEmployeeLive;
     window.fetchModificationsHistory = fetchModificationsHistory;
     window.subscribeToSystemSettings = subscribeToSystemSettings;
+    window.encryptSmartCardPayload = encryptSmartCardPayload;
+    window.decryptSmartCardPayload = decryptSmartCardPayload;
+    window.generateSmartCardVerificationUrl = generateSmartCardVerificationUrl;
 
 })(typeof window !== 'undefined' ? window : this);
