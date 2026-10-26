@@ -1206,6 +1206,9 @@
         <button class="custom-tab-btn" onclick="switchTab(event, 'registry-tab')">
             <i class="fa-solid fa-book-bookmark"></i> سجل القيد والترقيم الرسمي
         </button>
+        <button class="custom-tab-btn" onclick="switchTab(event, 'issuedate-tab')">
+            <i class="fa-solid fa-calendar-check"></i> سجل تواريخ الإصدار
+        </button>
         <button class="custom-tab-btn" id="tab-btn-settings" onclick="switchTab(event, 'settings-tab')" style="display: none;">
             <i class="fa-solid fa-sliders"></i> الصلاحيات والإعدادات المركزية
         </button>
@@ -1770,7 +1773,98 @@
         <div id="registry-pagination-container" style="display:none; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-top:16px; padding:12px 18px; background:white; border:1px solid #cbd5e1; border-radius:12px; box-shadow:0 2px 6px rgba(0,0,0,0.03);"></div>
     </div>
 
-    <!-- ==================== التبويب 5: الصلاحيات والإعدادات المركزية ==================== -->
+    <!-- ==================== التبويب 5: سجل تواريخ الإصدار الرسمية ==================== -->
+    <div id="issuedate-tab" class="tab-content">
+        <!-- شريط ملخص سجل تواريخ الإصدار -->
+        <div class="registry-stats-box" style="background: linear-gradient(135deg, #065f46 0%, #047857 50%, #0f766e 100%);">
+            <div>
+                <h2 style="margin: 0 0 6px 0; font-size: 22px; font-weight: 900;"><i class="fa-solid fa-calendar-check" style="color:#fde68a;"></i> سجل تواريخ إصدار بطاقات التعريف المهنية</h2>
+                <p style="margin: 0; color: #a7f3d0; font-size: 14px;">منظومة توثيق وتعيين تاريخ الإصدار الرسمي المعتمد في البطاقات وقاعدة البيانات لكل موظف.</p>
+            </div>
+            <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+                <div style="text-align: center;">
+                    <div style="font-size: 12px; color: #fde68a; font-weight: 700;">إجمالي موظفي الولاية</div>
+                    <div style="font-size: 26px; font-weight: 900;" id="issue-total-employees">0</div>
+                </div>
+                <div style="text-align: center; border-right: 1px solid rgba(255,255,255,0.2); padding-right: 20px;">
+                    <div style="font-size: 12px; color: #a7f3d0; font-weight: 700;">محدد لهم تاريخ إصدار</div>
+                    <div style="font-size: 26px; font-weight: 900;" id="issue-assigned-count">0</div>
+                </div>
+                <div style="text-align: center; border-right: 1px solid rgba(255,255,255,0.2); padding-right: 20px;">
+                    <div style="font-size: 12px; color: #fca5a5; font-weight: 700;">بدون تاريخ (الجدد)</div>
+                    <div style="font-size: 26px; font-weight: 900; color: #fecaca;" id="issue-unassigned-count">0</div>
+                </div>
+                <div style="text-align: center; border-right: 1px solid rgba(255,255,255,0.2); padding-right: 20px;">
+                    <div style="font-size: 12px; color: #fde68a; font-weight: 700;">التاريخ الافتراضي العام</div>
+                    <div style="font-size: 22px; font-weight: 900; direction: ltr;" id="issue-default-date">---</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- أزرار إدارة تواريخ الإصدار -->
+        <div style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; align-items: center;">
+            <button class="btn btn-emerald" onclick="assignIssueDateToUnassigned()" title="تعيين تاريخ إصدار للموظفين الجدد الذين ليس لديهم تاريخ إصدار بعد">
+                <i class="fa-solid fa-calendar-plus"></i> تعيين تاريخ للجدد وغير المحددين <span id="issue-unassigned-badge" style="display:none; background:#ef4444; color:white; padding:2px 8px; border-radius:10px; font-size:12px; font-weight:900; margin-right:6px;">0</span>
+            </button>
+            <button class="btn btn-gold" onclick="bulkSetIssueDateAll()" title="تحديث وتوحيد تاريخ الإصدار لجميع موظفي الولاية دفعة واحدة">
+                <i class="fa-solid fa-calendar-days"></i> تعيين تاريخ إصدار موحد للجميع
+            </button>
+            <button class="btn btn-dark" onclick="printIssueDateReport()">
+                <i class="fa-solid fa-print"></i> طباعة سجل تواريخ الإصدار A4
+            </button>
+            <button class="btn btn-danger" onclick="clearAllIssueDatesUI()">
+                <i class="fa-solid fa-trash-can"></i> تصفير تواريخ الإصدار
+            </button>
+        </div>
+
+        <!-- شريط التصفية والبحث السريع -->
+        <div style="background: white; border: 1.5px solid var(--border); border-radius: 14px; padding: 14px 18px; margin-bottom: 20px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; justify-content: space-between;">
+            <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; flex: 1;">
+                <label style="font-weight: 800; font-size: 13.5px; color: var(--dark); white-space: nowrap;"><i class="fa-solid fa-school" style="color:var(--emerald);"></i> المؤسسة:</label>
+                <select id="issue-filter-inst" onchange="renderIssueDateTab(true)" style="padding: 9px 14px; border: 1.5px solid #cbd5e1; border-radius: 9px; font-weight: 700; min-width: 240px; flex: 1; max-width: 380px; font-family: inherit;">
+                    <option value="">جميع المؤسسات التربوية</option>
+                </select>
+
+                <label style="font-weight: 800; font-size: 13.5px; color: var(--dark); white-space: nowrap;"><i class="fa-solid fa-filter" style="color:var(--emerald);"></i> الحالة:</label>
+                <select id="issue-filter-status" onchange="renderIssueDateTab(true)" style="padding: 9px 14px; border: 1.5px solid #cbd5e1; border-radius: 9px; font-weight: 700; min-width: 160px; font-family: inherit;">
+                    <option value="all">كافة الموظفين</option>
+                    <option value="unassigned">غير محدد (الجدد فقط)</option>
+                    <option value="assigned">محدد لهم تاريخ</option>
+                    <option value="disabled">البطاقات المعطلة</option>
+                </select>
+
+                <input type="text" id="issue-search-input" oninput="renderIssueDateTab(true)" placeholder="بحث بالاسم أو الرتبة أو الرقم الوظيفي..." style="padding: 9px 14px; border: 1.5px solid #cbd5e1; border-radius: 9px; font-weight: 600; min-width: 220px; font-family: inherit;">
+            </div>
+            <button class="btn btn-primary" onclick="printSelectedInstitutionIssueDates()" style="white-space: nowrap;">
+                <i class="fa-solid fa-print"></i> طباعة تواريخ مؤسسة محددة A4
+            </button>
+        </div>
+
+        <!-- جدول سجل تواريخ الإصدار -->
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 140px; text-align: center;">تاريخ الإصدار</th>
+                        <th>الرقم الوظيفي</th>
+                        <th>الاسم واللقب</th>
+                        <th>الرتبة</th>
+                        <th>المؤسسة التربوية</th>
+                        <th style="text-align: center;">حالة البطاقة</th>
+                        <th style="text-align: center;">إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody id="issuedate-table-body">
+                    <tr><td colspan="7" style="text-align: center; padding: 30px; color: var(--gray);">جاري تحميل سجل تواريخ الإصدار...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- شريط ترقيم صفحات سجل تواريخ الإصدار (10 صفوف) -->
+        <div id="issuedate-pagination-container" style="display:none; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-top:16px; padding:12px 18px; background:white; border:1px solid #cbd5e1; border-radius:12px; box-shadow:0 2px 6px rgba(0,0,0,0.03);"></div>
+    </div>
+
+    <!-- ==================== التبويب 6: الصلاحيات والإعدادات المركزية ==================== -->
     <div id="settings-tab" class="tab-content">
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 24px;">
             
@@ -2271,6 +2365,12 @@
                 fetchEmployeesData(false);
             } else {
                 renderRegistryTab(false);
+            }
+        } else if(tabId === 'issuedate-tab') {
+            if(allEmployeesData.length === 0) {
+                fetchEmployeesData(false);
+            } else {
+                renderIssueDateTab(false);
             }
         } else if(tabId === 'settings-tab') {
             if (typeof updateInstSyncStatusUI === 'function') {
@@ -4446,6 +4546,7 @@
                     <div class="emp-actions" style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
                         <button class="btn btn-emerald" onclick="printSingleEmp('${escapeHtml(emp.jobId)}')"><i class="fa-solid fa-print"></i> طباعة</button>
                         <button class="btn btn-gold" onclick="editEmpByJobId('${escapeHtml(emp.jobId)}')"><i class="fa-solid fa-pen"></i> تعديل</button>
+                        <button class="btn ${emp.isCardDisabled ? 'btn-emerald' : 'btn-danger'}" onclick="openCardStatusModal('${escapeHtml(emp.jobId)}')" title="${emp.isCardDisabled ? 'إعادة تفعيل البطاقة' : 'تعطيل البطاقة'}"><i class="fa-solid ${emp.isCardDisabled ? 'fa-check' : 'fa-ban'}"></i> ${emp.isCardDisabled ? 'تفعيل' : 'تعطيل'}</button>
                         ${toggleModCardBtn}
                         <button class="btn btn-danger" onclick="deleteEmp('${escapeHtml(emp.jobId)}')"><i class="fa-solid fa-trash"></i> حذف</button>
                     </div>
@@ -4481,6 +4582,7 @@
                             </label>
                             ${photoSrc ? `<button class="btn btn-danger" style="padding:5px 8px; font-size:12px;" onclick="deleteFloatingPhoto('${escapeHtml(emp.jobId)}', '${escapeHtml(emp.name)}')" title="حذف صورة الموظف"><i class="fa-solid fa-image-slash"></i></button>` : ''}
                             <button class="btn btn-gold" style="padding:5px 8px; font-size:12px;" onclick="editEmpByJobId('${escapeHtml(emp.jobId)}')" title="تعديل"><i class="fa-solid fa-pen"></i></button>
+                            <button class="btn ${emp.isCardDisabled ? 'btn-emerald' : 'btn-danger'}" style="padding:5px 8px; font-size:12px;" onclick="openCardStatusModal('${escapeHtml(emp.jobId)}')" title="${emp.isCardDisabled ? 'إعادة تفعيل البطاقة' : 'تعطيل البطاقة'}"><i class="fa-solid ${emp.isCardDisabled ? 'fa-check' : 'fa-ban'}"></i></button>
                             ${toggleModTableBtn}
                             <button class="btn btn-danger" style="padding:5px 8px; font-size:12px;" onclick="deleteEmp('${escapeHtml(emp.jobId)}')" title="حذف"><i class="fa-solid fa-trash"></i></button>
                         </div>
@@ -6037,6 +6139,652 @@
     }
 
     // ==========================================
+    // ==========================================
+    // نظام وسجل تواريخ الإصدار الرسمية وتعطيل البطاقات
+    // ==========================================
+    // ==========================================
+    let issueCurrentPage = 1;
+    const issueRowsPerPage = 10;
+    window.lastIssueFilteredCount = 0;
+
+    function renderIssueDateTab(resetPage = false) {
+        if (resetPage) issueCurrentPage = 1;
+
+        // ملء قائمة المؤسسات في تصفية تواريخ الإصدار
+        const instSelect = document.getElementById('issue-filter-inst');
+        if (instSelect && instSelect.options.length <= 1) {
+            const baseList = (typeof getBaseInstitutionsList === 'function') ? getBaseInstitutionsList() : [];
+            const seen = new Set();
+            baseList.forEach(item => {
+                const name = (item.inst || '').trim();
+                if (name && !seen.has(name)) {
+                    seen.add(name);
+                    const opt = document.createElement('option');
+                    opt.value = name;
+                    opt.textContent = name;
+                    instSelect.appendChild(opt);
+                }
+            });
+        }
+
+        const selectedInst = (document.getElementById('issue-filter-inst') ? document.getElementById('issue-filter-inst').value : '').trim();
+        const statusFilter = (document.getElementById('issue-filter-status') ? document.getElementById('issue-filter-status').value : 'all');
+        const searchVal = (document.getElementById('issue-search-input') ? document.getElementById('issue-search-input').value.trim().toLowerCase() : '');
+
+        const filtered = allEmployeesData.filter(emp => {
+            let matchInst = true;
+            if (selectedInst) {
+                const eInst = (emp.inst || emp.canonicalInst || emp.workplace || '').trim();
+                if (typeof matchToCanonicalInstitution === 'function') {
+                    const eCanonical = emp.canonicalInst || matchToCanonicalInstitution(eInst) || eInst;
+                    const instCanonical = matchToCanonicalInstitution(selectedInst) || selectedInst;
+                    matchInst = (eInst === selectedInst || eCanonical === selectedInst || eCanonical === instCanonical);
+                } else {
+                    matchInst = (eInst === selectedInst);
+                }
+            }
+
+            let matchStatus = true;
+            if (statusFilter === 'unassigned') {
+                matchStatus = !emp.issueDate;
+            } else if (statusFilter === 'assigned') {
+                matchStatus = !!emp.issueDate;
+            } else if (statusFilter === 'disabled') {
+                matchStatus = !!emp.isCardDisabled;
+            }
+
+            const matchSearch = (!searchVal ||
+                (emp.name && emp.name.toLowerCase().includes(searchVal)) ||
+                (emp.jobId && String(emp.jobId).includes(searchVal)) ||
+                (emp.rank && emp.rank.toLowerCase().includes(searchVal)) ||
+                (emp.inst && emp.inst.toLowerCase().includes(searchVal))
+            );
+
+            return matchInst && matchStatus && matchSearch;
+        });
+
+        // فرز: غير المحددين في البداية ثم حسب الاسم
+        filtered.sort((a, b) => {
+            if (!a.issueDate && b.issueDate) return -1;
+            if (a.issueDate && !b.issueDate) return 1;
+            return (a.name || '').localeCompare(b.name || '', 'ar');
+        });
+
+        let assignedCount = 0;
+        let unassignedCount = 0;
+        allEmployeesData.forEach(e => {
+            if (e.issueDate) assignedCount++;
+            else unassignedCount++;
+        });
+
+        const totalEmps = allEmployeesData.length;
+        const defaultDate = (typeof getCardDateDisplay === 'function') ? getCardDateDisplay(centralConfig) : '2026';
+
+        if (document.getElementById('issue-total-employees')) document.getElementById('issue-total-employees').textContent = totalEmps;
+        if (document.getElementById('issue-assigned-count')) document.getElementById('issue-assigned-count').textContent = assignedCount;
+        if (document.getElementById('issue-unassigned-count')) document.getElementById('issue-unassigned-count').textContent = unassignedCount;
+        if (document.getElementById('issue-default-date')) document.getElementById('issue-default-date').textContent = defaultDate || '---';
+
+        const unassignedBadge = document.getElementById('issue-unassigned-badge');
+        if (unassignedBadge) {
+            if (unassignedCount > 0) {
+                unassignedBadge.textContent = unassignedCount;
+                unassignedBadge.style.display = 'inline-block';
+            } else {
+                unassignedBadge.style.display = 'none';
+            }
+        }
+
+        const tbody = document.getElementById('issuedate-table-body');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        if (allEmployeesData.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--gray);">يرجى تحميل بيانات الموظفين أولاً...</td></tr>';
+            renderIssuePagination(1, 0, 0, 0);
+            return;
+        }
+
+        if (filtered.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--gray);">لا يوجد موظفون مطابقون لشروط التصفية الحالية</td></tr>';
+            renderIssuePagination(1, 0, 0, 0);
+            return;
+        }
+
+        window.lastIssueFilteredCount = filtered.length;
+        const totalPages = Math.ceil(filtered.length / issueRowsPerPage) || 1;
+        if (issueCurrentPage > totalPages) issueCurrentPage = totalPages;
+        if (issueCurrentPage < 1) issueCurrentPage = 1;
+
+        const startIdx = (issueCurrentPage - 1) * issueRowsPerPage;
+        const endIdx = Math.min(startIdx + issueRowsPerPage, filtered.length);
+        const toDisplay = filtered.slice(startIdx, endIdx);
+
+        let rowsHtml = '';
+        toDisplay.forEach(emp => {
+            const dateBadge = emp.issueDate
+                ? `<span style="background:#ecfdf5; color:#047857; font-weight:900; padding:4px 10px; border-radius:6px; font-size:13px; font-family:monospace; direction:ltr; display:inline-block; border:1px solid #a7f3d0;">${escapeHtml(emp.issueDate)}</span>`
+                : `<span style="background:#fee2e2; color:#b91c1c; font-weight:900; padding:4px 10px; border-radius:6px; font-size:12px; display:inline-block; border:1px solid #fecaca;"><i class="fa-solid fa-triangle-exclamation"></i> غير محدد (جديد)</span>`;
+
+            const statusBadge = emp.isCardDisabled
+                ? `<span style="background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; font-weight:800; padding:3px 8px; border-radius:6px; font-size:11px;" title="${escapeHtml(emp.cardDisableReason || '')}"><i class="fa-solid fa-ban"></i> معطلة: ${escapeHtml(emp.cardDisableReason || 'بقرار رسمي')}</span>`
+                : `<span style="background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; font-weight:800; padding:3px 8px; border-radius:6px; font-size:11px;"><i class="fa-solid fa-circle-check"></i> نشطة</span>`;
+
+            rowsHtml += `
+                <tr>
+                    <td style="text-align: center;">${dateBadge}</td>
+                    <td style="font-family:monospace; font-weight:bold;">${escapeHtml(emp.jobId || '---')}</td>
+                    <td style="font-weight:800;">${escapeHtml(emp.name)}</td>
+                    <td>${escapeHtml(emp.rank || '---')}</td>
+                    <td>${escapeHtml(emp.inst || '---')}</td>
+                    <td style="text-align: center;">${statusBadge}</td>
+                    <td style="text-align: center; white-space: nowrap;">
+                        <button class="btn btn-gold" style="padding:4px 8px; font-size:11px; margin-left:4px;" onclick="editEmployeeIssueDate('${escapeHtml(emp.jobId)}')">
+                            <i class="fa-solid fa-calendar-pen"></i> تاريخ الإصدار
+                        </button>
+                        <button class="btn ${emp.isCardDisabled ? 'btn-emerald' : 'btn-danger'}" style="padding:4px 8px; font-size:11px;" onclick="openCardStatusModal('${escapeHtml(emp.jobId)}')">
+                            <i class="fa-solid ${emp.isCardDisabled ? 'fa-check' : 'fa-ban'}"></i> ${emp.isCardDisabled ? 'تفعيل' : 'تعطيل'}
+                        </button>
+                    </td>
+                </tr>`;
+        });
+        tbody.innerHTML = rowsHtml;
+
+        renderIssuePagination(totalPages, filtered.length, startIdx, endIdx);
+    }
+    window.renderIssueDateTab = renderIssueDateTab;
+
+    function renderIssuePagination(totalPages, totalCount, startIdx, endIdx) {
+        const container = document.getElementById('issuedate-pagination-container');
+        if (!container) return;
+
+        if (totalCount === 0) {
+            container.style.display = 'none';
+            return;
+        }
+        container.style.display = 'flex';
+
+        let pageBtnsHtml = '';
+        const maxVisibleButtons = 5;
+        let startPage = Math.max(1, issueCurrentPage - 2);
+        let endPage = Math.min(totalPages, startPage + maxVisibleButtons - 1);
+        if (endPage - startPage < maxVisibleButtons - 1) {
+            startPage = Math.max(1, endPage - maxVisibleButtons + 1);
+        }
+
+        if (startPage > 1) {
+            pageBtnsHtml += `<button class="btn btn-outline" style="padding:4px 9px; font-size:12px; border:1px solid #cbd5e1; border-radius:6px;" onclick="changeIssuePage(1)">1</button>`;
+            if (startPage > 2) pageBtnsHtml += `<span style="color:#94a3b8; font-weight:bold;">...</span>`;
+        }
+
+        for (let p = startPage; p <= endPage; p++) {
+            const isActive = (p === issueCurrentPage);
+            const activeStyle = isActive ? 'background:var(--primary); color:white; font-weight:900; border-color:var(--primary);' : 'background:white; color:var(--dark); border:1px solid #cbd5e1;';
+            pageBtnsHtml += `<button class="btn" style="padding:4px 10px; font-size:12px; border-radius:6px; ${activeStyle}" onclick="changeIssuePage(${p})">${p}</button>`;
+        }
+
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) pageBtnsHtml += `<span style="color:#94a3b8; font-weight:bold;">...</span>`;
+            pageBtnsHtml += `<button class="btn btn-outline" style="padding:4px 9px; font-size:12px; border:1px solid #cbd5e1; border-radius:6px;" onclick="changeIssuePage(${totalPages})">${totalPages}</button>`;
+        }
+
+        container.innerHTML = `
+            <div style="font-weight:700; font-size:13px; color:var(--dark); display:flex; align-items:center; gap:6px;">
+                <i class="fa-solid fa-calendar-check" style="color:var(--emerald);"></i>
+                عرض <strong>${totalCount > 0 ? (startIdx + 1) : 0}</strong> إلى <strong>${endIdx}</strong> من إجمالي <strong>${totalCount}</strong> موظف
+            </div>
+            <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap;">
+                <button class="btn btn-outline" style="padding:5px 10px; font-size:12px; border:1px solid #cbd5e1; border-radius:6px;" onclick="changeIssuePage('first')" ${issueCurrentPage === 1 ? 'disabled style="opacity:0.5;"' : ''}><i class="fa-solid fa-angles-right"></i> الأولى</button>
+                <button class="btn btn-outline" style="padding:5px 10px; font-size:12px; border:1px solid #cbd5e1; border-radius:6px;" onclick="changeIssuePage('prev')" ${issueCurrentPage === 1 ? 'disabled style="opacity:0.5;"' : ''}><i class="fa-solid fa-angle-right"></i> السابقة</button>
+                <div style="display:flex; gap:3px; align-items:center;">${pageBtnsHtml}</div>
+                <button class="btn btn-outline" style="padding:5px 10px; font-size:12px; border:1px solid #cbd5e1; border-radius:6px;" onclick="changeIssuePage('next')" ${issueCurrentPage >= totalPages ? 'disabled style="opacity:0.5;"' : ''}>التالية <i class="fa-solid fa-angle-left"></i></button>
+                <button class="btn btn-outline" style="padding:5px 10px; font-size:12px; border:1px solid #cbd5e1; border-radius:6px;" onclick="changeIssuePage('last')" ${issueCurrentPage >= totalPages ? 'disabled style="opacity:0.5;"' : ''}>الأخيرة <i class="fa-solid fa-angles-left"></i></button>
+            </div>
+            <div style="display:flex; align-items:center; gap:6px;">
+                <span style="font-size:12.5px; font-weight:700; color:var(--gray);">الصفحة ${issueCurrentPage} من ${totalPages} | الذهاب إلى:</span>
+                <input type="number" min="1" max="${totalPages}" value="${issueCurrentPage}" style="width:55px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:6px; text-align:center; font-weight:800; font-size:12.5px;" onchange="jumpToIssuePage(this.value)">
+            </div>
+        `;
+    }
+
+    function changeIssuePage(target) {
+        const totalPages = Math.ceil((window.lastIssueFilteredCount || allEmployeesData.length) / issueRowsPerPage) || 1;
+        if (target === 'first') issueCurrentPage = 1;
+        else if (target === 'prev') issueCurrentPage = Math.max(1, issueCurrentPage - 1);
+        else if (target === 'next') issueCurrentPage = Math.min(totalPages, issueCurrentPage + 1);
+        else if (target === 'last') issueCurrentPage = totalPages;
+        else if (typeof target === 'number') issueCurrentPage = Math.max(1, Math.min(totalPages, target));
+        renderIssueDateTab(false);
+    }
+    window.changeIssuePage = changeIssuePage;
+
+    function jumpToIssuePage(pageVal) {
+        const p = parseInt(pageVal);
+        if (!isNaN(p)) changeIssuePage(p);
+    }
+    window.jumpToIssuePage = jumpToIssuePage;
+
+    // تعديل تاريخ إصدار موظف فردي
+    async function editEmployeeIssueDate(jobId) {
+        const emp = allEmployeesData.find(e => String(e.jobId) === String(jobId));
+        if (!emp) return Swal.fire('خطأ', 'لم يتم العثور على الموظف', 'error');
+
+        const curDate = emp.issueDate || (typeof getCardDateDisplay === 'function' ? getCardDateDisplay(centralConfig) : '2026');
+
+        const { value: newDate } = await Swal.fire({
+            title: '<div style="font-size:18px; font-weight:900;"><i class="fa-solid fa-calendar-pen" style="color:var(--gold);"></i> تعديل تاريخ إصدار البطاقة</div>',
+            html: `
+                <div style="text-align:right; font-size:13.5px; margin-bottom:12px;">
+                    <div>الموظف: <strong>${escapeHtml(emp.name)}</strong></div>
+                    <div style="color:var(--muted); font-size:12px;">المؤسسة: ${escapeHtml(emp.inst)} | الرقم الوظيفي: ${escapeHtml(emp.jobId)}</div>
+                </div>
+                <div style="text-align:right;">
+                    <label style="font-weight:bold; display:block; margin-bottom:4px; font-size:13px;">تاريخ الإصدار المعتمد:</label>
+                    <input id="swal-single-issue-date" value="${escapeHtml(curDate)}" placeholder="YYYY-MM-DD" dir="ltr" style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-weight:800; text-align:center;">
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'حفظ وتثبيت التاريخ',
+            cancelButtonText: 'إلغاء',
+            confirmButtonColor: 'var(--emerald)',
+            preConfirm: () => {
+                const val = document.getElementById('swal-single-issue-date').value.trim();
+                if (!val) {
+                    Swal.showValidationMessage('يرجى كتابة أو اختيار تاريخ الإصدار');
+                    return false;
+                }
+                return val;
+            }
+        });
+
+        if (newDate) {
+            Swal.fire({ title: 'جاري الحفظ في قاعدة البيانات...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                if (typeof window.updateEmployeeIssueDate === 'function') {
+                    await window.updateEmployeeIssueDate(jobId, newDate, 'central_admin');
+                }
+                emp.issueDate = newDate;
+                renderIssueDateTab(false);
+                Swal.fire({
+                    icon: 'success',
+                    title: 'تم حفظ تاريخ الإصدار بنجاح',
+                    text: `تم تعيين تاريخ الإصدار (${newDate}) للموظف ${emp.name} بنجاح.`,
+                    timer: 1600,
+                    showConfirmButton: false
+                });
+            } catch(err) {
+                Swal.fire('خطأ', 'فشل حفظ تاريخ الإصدار: ' + (err.message || err), 'error');
+            }
+        }
+    }
+    window.editEmployeeIssueDate = editEmployeeIssueDate;
+
+    // تعيين تاريخ للجدد وغير المحددين
+    async function assignIssueDateToUnassigned() {
+        const unassignedList = allEmployeesData.filter(e => !e.issueDate);
+        if (unassignedList.length === 0) {
+            return Swal.fire({
+                icon: 'info',
+                title: 'مكتمل بالكامل',
+                text: 'كافة موظفي الولاية مسجل لهم تاريخ إصدار بالفعل!'
+            });
+        }
+
+        const defaultDate = (typeof getCardDateDisplay === 'function' ? getCardDateDisplay(centralConfig) : '') || new Date().toISOString().split('T')[0];
+
+        const { value: chosenDate } = await Swal.fire({
+            title: '<div style="font-size:18px; font-weight:900;"><i class="fa-solid fa-calendar-plus" style="color:var(--emerald);"></i> تعيين تاريخ للموظفين الجدد وغير المحددين</div>',
+            html: `
+                <div style="text-align:right; margin-bottom:12px; font-size:13.5px;">
+                    يوجد حالياً <strong style="color:var(--primary-red); font-size:16px;">${unassignedList.length}</strong> موظف جديد بدون تاريخ إصدار.
+                    سيتم تعيين التاريخ المختار لهم وحفظه رسمياً في قاعدة البيانات.
+                </div>
+                <div style="text-align:right;">
+                    <label style="font-weight:bold; display:block; margin-bottom:4px; font-size:13px;">تاريخ الإصدار للموظفين الجدد:</label>
+                    <input type="text" id="swal-unassigned-date" value="${defaultDate}" placeholder="YYYY-MM-DD" dir="ltr" style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-weight:800; text-align:center;">
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: `تثبيت لـ ${unassignedList.length} موظف`,
+            cancelButtonText: 'إلغاء',
+            confirmButtonColor: 'var(--emerald)',
+            preConfirm: () => {
+                const val = document.getElementById('swal-unassigned-date').value.trim();
+                if (!val) {
+                    Swal.showValidationMessage('يرجى تحديد تاريخ الإصدار');
+                    return false;
+                }
+                return val;
+            }
+        });
+
+        if (chosenDate) {
+            const issueMap = {};
+            unassignedList.forEach(e => {
+                issueMap[String(e.jobId)] = chosenDate;
+            });
+
+            Swal.fire({
+                title: 'جاري تعيين وحفظ تواريخ الإصدار...',
+                html: '<div id="bulk-issue-prog-text">جاري بدء الحفظ في قاعدة البيانات السحابية...</div>',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            try {
+                if (typeof window.bulkUpdateIssueDates === 'function') {
+                    await window.bulkUpdateIssueDates(issueMap, 'central_admin', (completed, total) => {
+                        const el = document.getElementById('bulk-issue-prog-text');
+                        if (el) el.textContent = `تم معالجة ${completed} من ${total} موظف...`;
+                    });
+                }
+                unassignedList.forEach(e => { e.issueDate = chosenDate; });
+                renderIssueDateTab(true);
+                Swal.fire({
+                    icon: 'success',
+                    title: 'تم التعيين بنجاح',
+                    text: `تم تعيين تاريخ الإصدار (${chosenDate}) لعدد ${unassignedList.length} موظفاً وتوثيقه في قاعدة البيانات.`
+                });
+            } catch(err) {
+                renderIssueDateTab(false);
+                Swal.fire('خطأ', 'حدث خطأ أثناء حفظ تواريخ الإصدار: ' + (err.message || err), 'error');
+            }
+        }
+    }
+    window.assignIssueDateToUnassigned = assignIssueDateToUnassigned;
+
+    // تعيين تاريخ إصدار شامل لجميع الموظفين
+    async function bulkSetIssueDateAll() {
+        if (!allEmployeesData || allEmployeesData.length === 0) {
+            return Swal.fire('تنبيه', 'يرجى تحميل بيانات الموظفين أولاً', 'info');
+        }
+
+        const defaultDate = (typeof getCardDateDisplay === 'function' ? getCardDateDisplay(centralConfig) : '') || '2026';
+
+        const { value: chosenDate } = await Swal.fire({
+            title: '<div style="font-size:18px; font-weight:900;"><i class="fa-solid fa-calendar-days" style="color:var(--gold);"></i> تعيين تاريخ إصدار موحد وشامل</div>',
+            html: `
+                <div style="text-align:right; margin-bottom:12px; font-size:13.5px;">
+                    سيتم تعيين تاريخ الإصدار لجميع موظفي الولاية المسجلين (<strong style="color:var(--primary-green); font-size:16px;">${allEmployeesData.length}</strong> موظف) وتوحيد تاريخ بطاقاتهم.
+                </div>
+                <div style="text-align:right;">
+                    <label style="font-weight:bold; display:block; margin-bottom:4px; font-size:13px;">تاريخ الإصدار الموحد:</label>
+                    <input type="text" id="swal-bulk-all-date" value="${defaultDate}" placeholder="YYYY-MM-DD" dir="ltr" style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-weight:800; text-align:center;">
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'تطبيق وتعميم على الجميع',
+            cancelButtonText: 'إلغاء',
+            confirmButtonColor: 'var(--gold)',
+            preConfirm: () => {
+                const val = document.getElementById('swal-bulk-all-date').value.trim();
+                if (!val) {
+                    Swal.showValidationMessage('يرجى تحديد تاريخ الإصدار');
+                    return false;
+                }
+                return val;
+            }
+        });
+
+        if (chosenDate) {
+            const issueMap = {};
+            allEmployeesData.forEach(e => {
+                issueMap[String(e.jobId)] = chosenDate;
+            });
+
+            Swal.fire({
+                title: 'جاري تعميم تاريخ الإصدار على كافة الموظفين...',
+                html: '<div id="bulk-issue-prog-text">جاري الحفظ في قاعدة البيانات السحابية...</div>',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            try {
+                if (typeof window.bulkUpdateIssueDates === 'function') {
+                    await window.bulkUpdateIssueDates(issueMap, 'central_admin', (completed, total) => {
+                        const el = document.getElementById('bulk-issue-prog-text');
+                        if (el) el.textContent = `تم تحديث ${completed} من ${total} موظف...`;
+                    });
+                }
+                allEmployeesData.forEach(e => { e.issueDate = chosenDate; });
+                renderIssueDateTab(false);
+                Swal.fire({
+                    icon: 'success',
+                    title: 'تم التعميم الشامل بنجاح',
+                    text: `تم تعيين تاريخ الإصدار (${chosenDate}) لكافة موظفي الولاية (${allEmployeesData.length} موظف) بنجاح.`
+                });
+            } catch(err) {
+                renderIssueDateTab(false);
+                Swal.fire('خطأ', 'حدث خطأ أثناء تعميم تواريخ الإصدار: ' + (err.message || err), 'error');
+            }
+        }
+    }
+    window.bulkSetIssueDateAll = bulkSetIssueDateAll;
+
+    // تصفير تواريخ الإصدار
+    async function clearAllIssueDatesUI() {
+        const res = await Swal.fire({
+            title: 'هل أنت متأكد من تصفير كافة تواريخ الإصدار؟',
+            text: 'سيتم مسح تواريخ الإصدار المحفوظة لكافة الموظفين في قاعدة البيانات.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'نعم، تصفير التواريخ',
+            cancelButtonText: 'إلغاء',
+            confirmButtonColor: '#ef4444'
+        });
+
+        if (res.isConfirmed) {
+            Swal.fire({ title: 'جاري تصفير التواريخ في قاعدة البيانات...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                if (typeof window.clearAllIssueDatesLive === 'function') {
+                    await window.clearAllIssueDatesLive();
+                }
+                allEmployeesData.forEach(e => { e.issueDate = null; });
+                renderIssueDateTab(true);
+                Swal.fire('تم التصفير', 'تم تصفير تواريخ الإصدار بنجاح.', 'success');
+            } catch(err) {
+                Swal.fire('خطأ', 'فشل تصفير تواريخ الإصدار: ' + (err.message || err), 'error');
+            }
+        }
+    }
+    window.clearAllIssueDatesUI = clearAllIssueDatesUI;
+
+    // نافذة تعطيل وتفعيل البطاقة مع ذكر السبب
+    async function openCardStatusModal(jobId) {
+        const emp = allEmployeesData.find(e => String(e.jobId) === String(jobId));
+        if (!emp) return Swal.fire('خطأ', 'لم يتم العثور على الموظف', 'error');
+
+        const isCurrentlyDisabled = !!emp.isCardDisabled;
+        const currentReason = emp.cardDisableReason || '';
+
+        const { value: result } = await Swal.fire({
+            title: `<div style="font-size:19px; font-weight:900;"><i class="fa-solid fa-id-card-clip" style="color:var(--emerald);"></i> إدارة وتعديل حالة صلاحية البطاقة</div>`,
+            html: `
+                <div style="text-align:right; margin-bottom:14px; font-size:13.5px; background:#f8fafc; border:1px solid #cbd5e1; border-radius:10px; padding:12px;">
+                    <div>الموظف: <strong>${escapeHtml(emp.name)}</strong></div>
+                    <div style="color:var(--muted); font-size:12px; margin-top:3px;">المؤسسة: ${escapeHtml(emp.inst)} | الرقم الوظيفي: ${escapeHtml(emp.jobId)}</div>
+                    <div style="margin-top:6px; font-size:12.5px;">
+                        الحالة الحالية: ${isCurrentlyDisabled 
+                            ? `<span style="color:#b91c1c; font-weight:900;"><i class="fa-solid fa-ban"></i> معطلة (${escapeHtml(currentReason || 'بقرار رسمي')})</span>` 
+                            : `<span style="color:#15803d; font-weight:900;"><i class="fa-solid fa-circle-check"></i> نشطة وصالحة للاستعمال</span>`}
+                    </div>
+                </div>
+
+                <div style="text-align:right; margin-bottom:14px;">
+                    <label style="font-weight:bold; display:block; margin-bottom:6px; font-size:13px;">تحديد حالة البطاقة:</label>
+                    <div style="display:flex; gap:12px;">
+                        <label style="flex:1; display:flex; align-items:center; gap:8px; padding:10px; border:1.5px solid #86efac; border-radius:8px; background:#f0fdf4; cursor:pointer;">
+                            <input type="radio" name="card_status_radio" value="active" ${!isCurrentlyDisabled ? 'checked' : ''} onchange="document.getElementById('card-reason-box').style.display='none';">
+                            <span style="font-weight:800; color:#166534; font-size:13px;"><i class="fa-solid fa-check"></i> نشطة ومفعلة</span>
+                        </label>
+                        <label style="flex:1; display:flex; align-items:center; gap:8px; padding:10px; border:1.5px solid #fca5a5; border-radius:8px; background:#fef2f2; cursor:pointer;">
+                            <input type="radio" name="card_status_radio" value="disabled" ${isCurrentlyDisabled ? 'checked' : ''} onchange="document.getElementById('card-reason-box').style.display='block';">
+                            <span style="font-weight:800; color:#991b1b; font-size:13px;"><i class="fa-solid fa-ban"></i> معطلة وملغاة</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div id="card-reason-box" style="text-align:right; display:${isCurrentlyDisabled ? 'block' : 'none'}; background:#fff1f2; border:1.5px solid #fecdd3; border-radius:10px; padding:12px;">
+                    <label style="font-weight:bold; display:block; margin-bottom:6px; font-size:13px; color:#9f1239;">سبب تعطيل البطاقة (يظهر رسمياً عند مسح رمز التحقق QR):</label>
+                    <select id="swal-reason-select" style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; margin-bottom:8px; font-family:inherit; font-size:13px; font-weight:700;" onchange="
+                        const customIn = document.getElementById('swal-reason-custom');
+                        if (customIn) {
+                            if (this.value === 'أخرى') { customIn.style.display='block'; customIn.focus(); }
+                            else { customIn.style.display='none'; }
+                        }
+                    ">
+                        <option value="تقاعد الموظف" ${currentReason.includes('تقاعد') ? 'selected' : ''}>تقاعد الموظف</option>
+                        <option value="استقالة الموظف" ${currentReason.includes('استقالة') ? 'selected' : ''}>استقالة الموظف</option>
+                        <option value="إنهاء المهام" ${currentReason.includes('إنهاء') ? 'selected' : ''}>إنهاء المهام</option>
+                        <option value="نقل خارج ولاية توقرت" ${currentReason.includes('نقل') ? 'selected' : ''}>نقل خارج ولاية توقرت</option>
+                        <option value="عقوبة تأديبية" ${currentReason.includes('عقوبة') ? 'selected' : ''}>عقوبة تأديبية</option>
+                        <option value="فقدان أو ضياع البطاقة" ${currentReason.includes('فقدان') || currentReason.includes('ضياع') ? 'selected' : ''}>فقدان أو ضياع البطاقة</option>
+                        <option value="أخرى" ${(!['تقاعد الموظف','استقالة الموظف','إنهاء المهام','نقل خارج ولاية توقرت','عقوبة تأديبية','فقدان أو ضياع البطاقة'].includes(currentReason) && currentReason) ? 'selected' : ''}>أسباب أخرى (تخصيص يدوياً)...</option>
+                    </select>
+                    <input type="text" id="swal-reason-custom" value="${escapeHtml(currentReason)}" placeholder="اكتب سبب التعطيل بالتفصيل..." style="display:${(!['تقاعد الموظف','استقالة الموظف','إنهاء المهام','نقل خارج ولاية توقرت','عقوبة تأديبية','فقدان أو ضياع البطاقة'].includes(currentReason) && currentReason) ? 'block' : 'none'}; width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px;">
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'حفظ وتطبيق القرار',
+            cancelButtonText: 'إلغاء',
+            confirmButtonColor: 'var(--emerald)',
+            preConfirm: () => {
+                const radios = document.getElementsByName('card_status_radio');
+                let selectedVal = 'active';
+                radios.forEach(r => { if (r.checked) selectedVal = r.value; });
+                const isDisabled = (selectedVal === 'disabled');
+
+                let finalReason = '';
+                if (isDisabled) {
+                    const sel = document.getElementById('swal-reason-select');
+                    const custom = document.getElementById('swal-reason-custom');
+                    if (sel && sel.value === 'أخرى') {
+                        finalReason = (custom ? custom.value.trim() : '') || 'أسباب إدارية معتمدة';
+                    } else if (sel) {
+                        finalReason = sel.value;
+                    }
+                }
+                return { isDisabled, finalReason };
+            }
+        });
+
+        if (result) {
+            Swal.fire({ title: 'جاري تحديث حالة البطاقة في قاعدة البيانات...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                if (typeof window.setCardDisabledStatus === 'function') {
+                    await window.setCardDisabledStatus(jobId, result.isDisabled, result.finalReason, 'central_admin');
+                }
+                emp.isCardDisabled = result.isDisabled;
+                emp.cardDisableReason = result.finalReason;
+
+                if (typeof renderIssueDateTab === 'function') renderIssueDateTab(false);
+                if (typeof renderRegistryTab === 'function') renderRegistryTab(false);
+                if (typeof renderEmployees === 'function') renderEmployees(false);
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'تم تحديث حالة البطاقة بنجاح',
+                    text: result.isDisabled 
+                        ? `تم تعطيل بطاقة الموظف (${emp.name}) رسمياً مع تسجيل السبب: "${result.finalReason}".`
+                        : `تم إعادة تفعيل بطاقة الموظف (${emp.name}) بنجاح.`,
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            } catch(err) {
+                Swal.fire('خطأ', 'فشل تحديث حالة البطاقة: ' + (err.message || err), 'error');
+            }
+        }
+    }
+    window.openCardStatusModal = openCardStatusModal;
+
+    // طباعة سجل تواريخ الإصدار A4
+    function printIssueDateReport(instFilter = '') {
+        const selectedInst = instFilter || (document.getElementById('issue-filter-inst') ? document.getElementById('issue-filter-inst').value : '');
+        let emps = allEmployeesData;
+        if (selectedInst) {
+            emps = emps.filter(e => {
+                const eInst = (e.inst || e.canonicalInst || e.workplace || '').trim();
+                return eInst === selectedInst;
+            });
+        }
+
+        if (emps.length === 0) return Swal.fire('تنبيه', 'لا يوجد موظفون في السجل للطباعة', 'info');
+
+        const title = selectedInst ? `سجل تواريخ إصدار البطاقات المهنية - ${selectedInst}` : 'سجل تواريخ إصدار البطاقات المهنية لولاية توقرت';
+        let tableRows = '';
+        emps.forEach((emp, idx) => {
+            const dateStr = emp.issueDate || 'غير محدد';
+            const statusStr = emp.isCardDisabled ? `معطلة (${emp.cardDisableReason || ''})` : 'نشطة';
+            tableRows += `
+                <tr>
+                    <td style="text-align:center;">${idx + 1}</td>
+                    <td style="text-align:center; font-family:monospace; font-weight:bold;">${emp.jobId || '---'}</td>
+                    <td style="font-weight:bold;">${emp.name}</td>
+                    <td>${emp.rank || '---'}</td>
+                    <td>${emp.inst || '---'}</td>
+                    <td style="text-align:center; direction:ltr; font-weight:bold;">${dateStr}</td>
+                    <td style="text-align:center;">${statusStr}</td>
+                </tr>`;
+        });
+
+        const printWin = window.open('', '_blank');
+        printWin.document.write(`
+            <!DOCTYPE html>
+            <html lang="ar" dir="rtl">
+            <head>
+                <meta charset="UTF-8">
+                <title>${title}</title>
+                <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+                <style>
+                    body { font-family: 'Cairo', sans-serif; padding: 20px; direction: rtl; }
+                    .header { text-align: center; margin-bottom: 25px; border-bottom: 2px solid #006233; padding-bottom: 15px; }
+                    .header h2 { margin: 0 0 5px 0; color: #006233; }
+                    .header h4 { margin: 0; color: #475569; }
+                    table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
+                    th, td { border: 1px solid #cbd5e1; padding: 8px 10px; text-align: right; }
+                    th { background-color: #f1f5f9; color: #0f172a; font-weight: 800; }
+                    @media print { @page { size: A4 landscape; margin: 15mm; } }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <h2>الجمهورية الجزائرية الديمقراطية الشعبية</h2>
+                    <h3>وزارة التربية الوطنية - مديرية التربية لولاية توقرت</h3>
+                    <h4>${title} | تاريخ التقرير: ${new Date().toLocaleDateString('ar-DZ')} | إجمالي الموظفين: ${emps.length}</h4>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:40px; text-align:center;">#</th>
+                            <th style="width:140px; text-align:center;">الرقم الوظيفي</th>
+                            <th>الاسم واللقب</th>
+                            <th>الرتبة</th>
+                            <th>المؤسسة</th>
+                            <th style="width:120px; text-align:center;">تاريخ الإصدار</th>
+                            <th style="width:120px; text-align:center;">حالة البطاقة</th>
+                        </tr>
+                    </thead>
+                    <tbody>${tableRows}</tbody>
+                </table>
+                <script>window.onload = function() { window.print(); }<\/script>
+            </body>
+            </html>
+        `);
+        printWin.document.close();
+    }
+    window.printIssueDateReport = printIssueDateReport;
+
+    function printSelectedInstitutionIssueDates() {
+        const sel = document.getElementById('issue-filter-inst');
+        const instName = sel ? sel.value : '';
+        if (!instName) {
+            return Swal.fire('تنبيه', 'يرجى اختيار مؤسسة من القائمة المنسدلة أولاً.', 'info');
+        }
+        printIssueDateReport(instName);
+    }
+    window.printSelectedInstitutionIssueDates = printSelectedInstitutionIssueDates;
+
+    // ==========================================
     // نظام إحصائيات المؤسسات حسب الأطوار
     // ==========================================
     let currentWilayaStatsFilter = 'all';
@@ -7293,7 +8041,7 @@
         const showDate = centralConfig.showCardDate;
         const showReg = centralConfig.showRegistryNo;
         const numberDisplayHtml = formatCardNumberHTML(emp.registryNo, currentYear, showReg, centralConfig.registryFormat);
-        const dateText = getCardDateDisplay(centralConfig);
+        const dateText = (emp && emp.issueDate) ? emp.issueDate : getCardDateDisplay(centralConfig);
         const workplaceText = emp.inst || emp.workplace || '';
 
         // الوجه الخلفي: يرتبط بالنموذج (النموذج 1 و 3 -> Theme 4، النموذج 2 -> Theme 3)
@@ -7411,7 +8159,7 @@
                         <div class="card-name-title">بطاقة التعريف المهنية</div>
                         <div class="info-row"><span class="label">الاسم واللقب:</span><span class="value" style="font-size: 22px; font-weight: 900;">${emp.name}</span></div>
                         <div class="info-row"><span class="label">تاريخ الإصدار:</span><span class="value" dir="ltr" style="font-weight: 800;">${dateText}</span></div>
-                        <div class="smart-qr-center-box" style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 6px auto 0 auto; padding: 6px; background: #ffffff; border: 1.5px solid #006233; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); width: fit-content;">
+                        <div class="smart-qr-center-box" style="display: flex; flex-direction: column; align-items: center; justify-content: center; align-self: flex-start; margin-top: 8px; margin-right: 0; padding: 4px; background: transparent; border: 1.5px solid #006233; border-radius: 8px; box-shadow: none; width: fit-content;">
                             <div class="smart-qr-target" data-verify-url="${verifyUrl}" style="width: 105px; height: 105px; display: flex; align-items: center; justify-content: center;">
                                 <canvas class="smart-qr-canvas" style="width: 105px; height: 105px; display: block;"></canvas>
                             </div>
@@ -7421,12 +8169,19 @@
                         </div>
                     </div>
                     <div class="photo-section">
-                        <div class="serial-number" style="font-weight: 900; letter-spacing: 1px; direction: ltr;">${regNoOnly}</div>
+                        <div class="serial-number" style="display: flex; align-items: center; justify-content: center; text-align: center; font-weight: 900; letter-spacing: 1.5px; direction: ltr;">${regNoOnly}</div>
                         <div class="photo-frame">${photoHTML}</div>
                         <div class="signature-title" style="line-height: 1.2;">مدير التربية<br><span style="font-size: 15px; font-weight: 800; color: #000;">${currentDirector}</span></div>
                     </div>
                 </div>
-                <div class="smart-jobid-bar" style="height: 34px; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: monospace; font-size: 15px; font-weight: 900; color: #0f172a; letter-spacing: 2px; border-top: 1.5px dashed #cbd5e1; background: rgba(0, 98, 51, 0.04);"><i class="fa-solid fa-fingerprint" style="color: #006233; font-size: 14px;"></i> رقم التعريف الوظيفي: ${emp.jobId || '---'}</div>
+                <div class="barcode-container" style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: auto; margin-bottom: 8px;">
+                    <i class="fa-solid fa-fingerprint" style="color: #006233; font-size: 26px;"></i>
+                    <svg class="barcode-render"
+                        jsbarcode-value="${emp.jobId || '0000000000'}" jsbarcode-format="CODE128"
+                        jsbarcode-displayValue="false" jsbarcode-height="32"
+                        jsbarcode-width="2.1" jsbarcode-margin="0" jsbarcode-background="transparent">
+                    </svg>
+                </div>
                 <div class="footer">على السلطات المدنية والعسكرية أن تسمح لحامل هذه البطاقة بالمرور في كل الحالات</div>
             </div>`;
         }
@@ -7525,14 +8280,15 @@
                     stage.className = 'preview-card-box ' + themeClass;
                     stage.innerHTML = getSingleCardHTML(sampleEmp, templateId, curFace);
 
-                    if (curFace === 'front' && templateId === 1 && typeof JsBarcode === 'function') {
+                    if (curFace === 'front' && (templateId === 1 || templateId === 3) && typeof JsBarcode === 'function') {
                         const bc = stage.querySelector('.barcode-render');
                         if (bc) {
                             try {
                                 JsBarcode(bc, sampleEmp.jobId || '0000000000', { format: 'CODE128', displayValue: false, height: 32, width: 2.1, margin: 0, background: 'transparent' });
                             } catch(e){}
                         }
-                    } else if (curFace === 'front' && templateId === 3 && typeof QRious === 'function') {
+                    }
+                    if (curFace === 'front' && templateId === 3 && typeof QRious === 'function') {
                         const target = stage.querySelector('.smart-qr-target');
                         if (target) {
                             const qrCanvas = target.querySelector('canvas');
@@ -7685,7 +8441,7 @@
                 if(printDob.includes('/')){ let p = printDob.split('/'); if(p.length===3) printDob = `${p[2]}-${p[1]}-${p[0]}`; }
 
                 const numberDisplayHtml = formatCardNumberHTML(emp.registryNo, currentYear, showReg, centralConfig.registryFormat);
-                const dateText = getCardDateDisplay(centralConfig);
+                const dateText = (emp && emp.issueDate) ? emp.issueDate : getCardDateDisplay(centralConfig);
 
                 // الوجه الخلفي المعتمد للبطاقة (النموذج 1 و 3 يرتبط بـ Theme 4 والنموذج 2 يرتبط بـ Theme 3)
                 if(face === 'back') {
@@ -7810,7 +8566,7 @@
                                     <div class="card-name-title">بطاقة التعريف المهنية</div>
                                     <div class="info-row"><span class="label">الاسم واللقب:</span><span class="value" style="font-size: 22px; font-weight: 900;">${emp.name}</span></div>
                                     <div class="info-row"><span class="label">تاريخ الإصدار:</span><span class="value" dir="ltr" style="font-weight: 800;">${dateText}</span></div>
-                                    <div class="smart-qr-center-box" style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 6px auto 0 auto; padding: 6px; background: #ffffff; border: 1.5px solid #006233; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); width: fit-content;">
+                                    <div class="smart-qr-center-box" style="display: flex; flex-direction: column; align-items: center; justify-content: center; align-self: flex-start; margin-top: 8px; margin-right: 0; padding: 4px; background: transparent; border: 1.5px solid #006233; border-radius: 8px; box-shadow: none; width: fit-content;">
                                         <div class="smart-qr-target" data-verify-url="${verifyUrl}" style="width: 105px; height: 105px; display: flex; align-items: center; justify-content: center;">
                                             <canvas class="smart-qr-canvas" style="width: 105px; height: 105px; display: block;"></canvas>
                                         </div>
@@ -7820,12 +8576,19 @@
                                     </div>
                                 </div>
                                 <div class="photo-section">
-                                    <div class="serial-number" style="font-weight: 900; letter-spacing: 1px; direction: ltr;">${regNoOnly}</div>
+                                    <div class="serial-number" style="display: flex; align-items: center; justify-content: center; text-align: center; font-weight: 900; letter-spacing: 1.5px; direction: ltr;">${regNoOnly}</div>
                                     <div class="photo-frame">${photoHTML}</div>
                                     <div class="signature-title" style="line-height: 1.2;">مدير التربية<br><span style="font-size: 15px; font-weight: 800; color: #000;">${currentDirector}</span></div>
                                 </div>
                             </div>
-                            <div class="smart-jobid-bar" style="height: 34px; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: monospace; font-size: 15px; font-weight: 900; color: #0f172a; letter-spacing: 2px; border-top: 1.5px dashed #cbd5e1; background: rgba(0, 98, 51, 0.04);"><i class="fa-solid fa-fingerprint" style="color: #006233; font-size: 14px;"></i> رقم التعريف الوظيفي: ${emp.jobId || '---'}</div>
+                            <div class="barcode-container" style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: auto; margin-bottom: 8px;">
+                                <i class="fa-solid fa-fingerprint" style="color: #006233; font-size: 26px;"></i>
+                                <svg class="barcode-render"
+                                    jsbarcode-value="${emp.jobId || '0000000000'}" jsbarcode-format="CODE128"
+                                    jsbarcode-displayValue="false" jsbarcode-height="32"
+                                    jsbarcode-width="2.1" jsbarcode-margin="0" jsbarcode-background="transparent">
+                                </svg>
+                            </div>
                             <div class="footer">على السلطات المدنية والعسكرية أن تسمح لحامل هذه البطاقة بالمرور في كل الحالات</div>
                         </div>
                     </div>`;
@@ -7872,8 +8635,8 @@
             container.innerHTML += pageHTML;
         }
 
-        // توليد الباركود إذا كان النموذج 1
-        if (templateId === 1 && typeof JsBarcode === 'function') {
+        // توليد الباركود إذا كان النموذج 1 أو 3
+        if ((templateId === 1 || templateId === 3) && typeof JsBarcode === 'function') {
             container.querySelectorAll('.barcode-render').forEach(el => {
                 try {
                     const val = el.getAttribute('jsbarcode-value') || '0000000000';
@@ -7958,6 +8721,7 @@
         const existingMod = (isEditing && window.modifiedEmployeesMap) ? window.modifiedEmployeesMap[String(jobId)] : null;
 
         const currentRegNo = (existingMod && existingMod.registryNo) ? existingMod.registryNo : (empObj ? (empObj.registryNo || '') : '');
+        const initialIssueDate = (existingMod && existingMod.issueDate) ? existingMod.issueDate : (empObj ? (empObj.issueDate || '') : (typeof getCardDateDisplay === 'function' ? getCardDateDisplay(centralConfig) : ''));
         const isActiveChecked = existingMod ? (existingMod.isActive !== false) : true;
         const initialName = (existingMod && existingMod.name) ? existingMod.name : oldName;
         const initialRank = (existingMod && existingMod.rank) ? existingMod.rank : oldRank;
@@ -8084,9 +8848,15 @@
                         <input id="swal-duration" value="${escapeHtml(initialDur)}" placeholder="مثال: من 2026/01/15 إلى 2026/06/30" style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px;">
                     </div>
                 </div>
-                <div style="text-align: right; margin-bottom: 15px;">
-                    <label style="font-weight:bold; display:block; margin-bottom:4px; font-size:13px; color:var(--dark);">رقم القيد في السجل:</label>
-                    <input id="swal-regno" value="${currentRegNo}" placeholder="رقم القيد التسلسلي..." dir="ltr" style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px;">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom: 15px;">
+                    <div style="text-align: right;">
+                        <label style="font-weight:bold; display:block; margin-bottom:4px; font-size:13px; color:var(--dark);">رقم القيد في السجل:</label>
+                        <input id="swal-regno" value="${currentRegNo}" placeholder="رقم القيد..." dir="ltr" style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px;">
+                    </div>
+                    <div style="text-align: right;">
+                        <label style="font-weight:bold; display:block; margin-bottom:4px; font-size:13px; color:var(--dark);">تاريخ إصدار البطاقة:</label>
+                        <input id="swal-issuedate" value="${escapeHtml(initialIssueDate)}" placeholder="YYYY-MM-DD" dir="ltr" style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px;">
+                    </div>
                 </div>
                 <div style="background: #f8fafc; border: 1.5px dashed #cbd5e1; border-radius: 10px; padding: 12px 14px; text-align: right;">
                     <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; margin: 0;">
@@ -8116,6 +8886,7 @@
                 const rank = document.getElementById('swal-rank').value.trim();
                 const dob = document.getElementById('swal-dob').value.trim();
                 const regno = document.getElementById('swal-regno').value.trim();
+                const issueDate = document.getElementById('swal-issuedate') ? document.getElementById('swal-issuedate').value.trim() : '';
                 const isActive = document.getElementById('swal-active').checked;
                 const typeSelect = document.getElementById('swal-type');
                 const employmentType = typeSelect ? typeSelect.value : 'مرسم';
@@ -8135,7 +8906,7 @@
                     Swal.showValidationMessage('رقم التعريف الوطني للموظف المستخلف أو المتعاقد يجب أن يتكون من 18 رقماً بالضبط!');
                     return false;
                 }
-                return { name, inst, jobId: jid, rank, dob, regno, isActive, employmentType, substituteDuration };
+                return { name, inst, jobId: jid, rank, dob, regno, issueDate, isActive, employmentType, substituteDuration };
             }
         });
 
@@ -8195,37 +8966,67 @@
                     updatedBy: 'central_admin'
                 });
 
-                // الحفظ المباشر في قاعدة بيانات Supabase الحية
-                if (typeof window.updateEmployeeWithHistory === 'function') {
+                // 2. الحفظ المباشر في قاعدة بيانات Supabase الحية (جدول الأساس base-touggourt وسجل التعديلات)
+                let newNom = (formValues.name || '').trim();
+                let newPrenom = '';
+                const nameParts = newNom.split(/\s+/);
+                const compoundPrefixes = ['بن', 'ابن', 'بو', 'بل', 'بوزيد', 'عبد', 'ولد', 'آيت', 'أيت'];
+                if (nameParts.length > 2 && compoundPrefixes.includes(nameParts[0])) {
+                    newNom = nameParts[0] + ' ' + nameParts[1];
+                    newPrenom = nameParts.slice(2).join(' ');
+                } else if (nameParts.length > 1) {
+                    newNom = nameParts[0];
+                    newPrenom = nameParts.slice(1).join(' ');
+                }
+
+                if (!isEditing || !empObj) {
+                    // إضافة موظف جديد مباشرة في جدول قاعدة البيانات الأساسية base-touggourt ليتم حسابه في المجموع
+                    if (typeof window.addNewEmployeeLive === 'function') {
+                        try {
+                            await window.addNewEmployeeLive({
+                                jobId: jid,
+                                matricule: jid,
+                                name: formValues.name,
+                                nomAr: newNom,
+                                prenomAr: newPrenom,
+                                inst: formValues.inst,
+                                rank: formValues.rank,
+                                dob: formValues.dob,
+                                status: formValues.employmentType,
+                                registryNo: regNum,
+                                issueDate: formValues.issueDate || null,
+                                photoUrl: currentPhoto
+                            }, 'central_admin');
+                        } catch(addErr) { console.warn("Supabase new emp insert warning:", addErr); }
+                    }
+                } else {
+                    // تعديل موظف موجود بالفعل في قاعدة البيانات
+                    if (typeof window.updateEmployeeWithHistory === 'function') {
+                        try {
+                            const isTransfer = (oldInst && formValues.inst && oldInst !== formValues.inst);
+                            const actionType = isTransfer ? 'TRANSFER_INSTITUTION' : 'ADMIN_EDIT';
+                            const updateFields = {
+                                nomAr: newNom,
+                                prenomAr: newPrenom,
+                                etablissement: formValues.inst || '',
+                                rawEtab: formValues.inst || '',
+                                grade: formValues.rank || '',
+                                dateNais: formValues.dob || '',
+                                situationAdmin: formValues.employmentType || 'مرسم',
+                                photo_url: currentPhoto,
+                                registry_no: regNum ? parseInt(regNum, 10) : null
+                            };
+                            if (formValues.issueDate) updateFields.issue_date = formValues.issueDate;
+                            await window.updateEmployeeWithHistory(jid, updateFields, 'ADMIN', actionType);
+                        } catch(baseErr) { console.warn("Supabase save warning:", baseErr); }
+                    }
+                }
+
+                // حفظ تاريخ الإصدار المنفرد إن وجد
+                if (formValues.issueDate && typeof window.updateEmployeeIssueDate === 'function') {
                     try {
-                        let newNom = (formValues.name || '').trim();
-                        let newPrenom = '';
-                        const nameParts = newNom.split(/\s+/);
-                        const compoundPrefixes = ['بن', 'ابن', 'بو', 'بل', 'بوزيد', 'عبد', 'ولد', 'آيت', 'أيت'];
-                        if (nameParts.length > 2 && compoundPrefixes.includes(nameParts[0])) {
-                            newNom = nameParts[0] + ' ' + nameParts[1];
-                            newPrenom = nameParts.slice(2).join(' ');
-                        } else if (nameParts.length > 1) {
-                            newNom = nameParts[0];
-                            newPrenom = nameParts.slice(1).join(' ');
-                        }
-
-                        const isTransfer = (oldInst && formValues.inst && oldInst !== formValues.inst);
-                        const actionType = isTransfer ? 'TRANSFER_INSTITUTION' : 'ADMIN_EDIT';
-
-                        const updateFields = {
-                            nomAr: newNom,
-                            prenomAr: newPrenom,
-                            etablissement: formValues.inst || '',
-                            rawEtab: formValues.inst || '',
-                            grade: formValues.rank || '',
-                            dateNais: formValues.dob || '',
-                            situationAdmin: formValues.employmentType || 'مرسم',
-                            photo_url: currentPhoto,
-                            registry_no: regNum ? parseInt(regNum, 10) : null
-                        };
-                        await window.updateEmployeeWithHistory(jid, updateFields, 'ADMIN', actionType);
-                    } catch(baseErr) { console.warn("Supabase save warning:", baseErr); }
+                        await window.updateEmployeeIssueDate(jid, formValues.issueDate, 'central_admin');
+                    } catch(iErr){}
                 }
 
                 // 3. تحديث الذاكرة المحلية والواجهة فوراً
@@ -8235,6 +9036,8 @@
                     target.hasMod = true;
                     target.isModActive = formValues.isActive;
                     target.modDoc = modData;
+                    if (formValues.issueDate) target.issueDate = formValues.issueDate;
+                    if (regNum) target.registryNo = regNum;
                     if (formValues.isActive) {
                         target.name = formValues.name;
                         target.inst = formValues.inst;
@@ -8247,7 +9050,6 @@
                         target.dob = formValues.dob;
                         target.employmentType = formValues.employmentType;
                         target.substituteDuration = formValues.substituteDuration;
-                        if (regNum) target.registryNo = regNum;
                     } else if (target._rawBase) {
                         target.name = target._rawBase.name;
                         target.inst = target._rawBase.inst;
@@ -8261,12 +9063,28 @@
                     }
                 } else {
                     const canonInst = matchToCanonicalInstitution(formValues.inst) || formValues.inst;
-                    allEmployeesData.push({
-                        jobId: jid, name: formValues.name, inst: canonInst, canonicalInst: canonInst,
-                        rank: formValues.rank, dob: formValues.dob,
-                        employmentType: formValues.employmentType, substituteDuration: formValues.substituteDuration,
-                        registryNo: regNum, hasMod: true, isModActive: formValues.isActive, modDoc: modData
-                    });
+                    const newEmpObj = {
+                        jobId: jid,
+                        matricule: jid,
+                        name: formValues.name,
+                        inst: canonInst,
+                        canonicalInst: canonInst,
+                        originalInst: formValues.inst,
+                        workplace: formValues.inst,
+                        place: formValues.inst,
+                        rank: formValues.rank,
+                        dob: formValues.dob,
+                        employmentType: formValues.employmentType,
+                        substituteDuration: formValues.substituteDuration,
+                        registryNo: regNum,
+                        issueDate: formValues.issueDate || null,
+                        isCardDisabled: false,
+                        cardDisableReason: '',
+                        hasMod: true,
+                        isModActive: formValues.isActive,
+                        modDoc: modData
+                    };
+                    allEmployeesData.unshift(newEmpObj);
                 }
 
                 const liveCounts = calculateAccurateInstitutionCounts();
@@ -8283,6 +9101,8 @@
 
                 renderEmployees();
                 renderRegistryTab();
+                if (typeof renderIssueDateTab === 'function') renderIssueDateTab();
+                if (typeof calculateAndRenderKpis === 'function') calculateAndRenderKpis();
                 if (typeof updateModifiedEmployeesBadge === 'function') updateModifiedEmployeesBadge();
                 if (typeof renderCards === 'function') renderCards();
                 Swal.close();

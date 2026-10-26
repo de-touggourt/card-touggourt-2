@@ -460,6 +460,12 @@
             photo: photoVal,                   // رابط صورة Cloudflare المعتمد
             photoUrl: photoVal,
             registryNo: (d.registry_no !== undefined && d.registry_no !== null && d.registry_no !== '') ? parseInt(d.registry_no, 10) : null,
+            issueDate: String(d.issue_date || d.issueDate || '').trim(),
+            isCardDisabled: !!(d.is_card_disabled || d.isCardDisabled),
+            cardDisableReason: String(d.card_disable_reason || d.cardDisableReason || '').trim(),
+            stage: String(d.stage || d.typeEtab || '').trim(),
+            baladiya: String(d.communeEtab || d.baladiya || d.communeResidence || '').trim(),
+            daaira: String(d.daaira || '').trim(),
             telephone: d.telephone || '',
             sexe: d.sexe || '',
             raw: d
@@ -526,12 +532,12 @@
             chunkPromises.push(fetchChunkWithRetry(from, to));
         }
 
-        // جلب خريطة أرقام القيد بالتوازي مع دفعات الموظفين دون انتظار تسلسلي وبشكل آمن
+        // جلب خريطة أرقام القيد وتواريخ الإصدار والبطاقات المعطلة بالتوازي مع دفعات الموظفين
         const settingsPromise = (async () => {
             try {
                 return await client
                     .from(SUPABASE_CONFIG.tables.settings)
-                    .select('registry_map')
+                    .select('registry_map, extra_config')
                     .eq('id', 'config')
                     .maybeSingle();
             } catch(e) {
@@ -545,15 +551,33 @@
         ]);
 
         let regMap = null;
-        if (setRowRes && setRowRes.data && setRowRes.data.registry_map && typeof setRowRes.data.registry_map === 'object') {
-            regMap = setRowRes.data.registry_map;
+        let issueDateMap = null;
+        let disabledCardsMap = null;
+        if (setRowRes && setRowRes.data) {
+            if (setRowRes.data.registry_map && typeof setRowRes.data.registry_map === 'object') {
+                regMap = setRowRes.data.registry_map;
+            }
+            if (setRowRes.data.extra_config && typeof setRowRes.data.extra_config === 'object') {
+                issueDateMap = setRowRes.data.extra_config.issue_date_map || null;
+                disabledCardsMap = setRowRes.data.extra_config.disabled_cards_map || null;
+            }
         }
 
         const allRows = chunkResults.flat();
         const formatted = allRows.map(row => {
             const emp = formatEmployeeRecord(row);
-            if (emp && (!emp.registryNo || isNaN(emp.registryNo)) && regMap && regMap[emp.jobId]) {
-                emp.registryNo = parseInt(regMap[emp.jobId], 10);
+            if (emp) {
+                if ((!emp.registryNo || isNaN(emp.registryNo)) && regMap && regMap[emp.jobId]) {
+                    emp.registryNo = parseInt(regMap[emp.jobId], 10);
+                }
+                if (!emp.issueDate && issueDateMap && issueDateMap[emp.jobId]) {
+                    emp.issueDate = issueDateMap[emp.jobId];
+                }
+                if (disabledCardsMap && disabledCardsMap[emp.jobId]) {
+                    emp.isCardDisabled = !!disabledCardsMap[emp.jobId].disabled;
+                    emp.cardDisableReason = disabledCardsMap[emp.jobId].reason || '';
+                    emp.cardDisabledAt = disabledCardsMap[emp.jobId].date || '';
+                }
             }
             return emp;
         });
@@ -591,16 +615,24 @@
             throw error;
         }
 
-        // جلب خريطة أرقام القيد الاحتياطية إن وجدت
+        // جلب خريطة أرقام القيد وتواريخ الإصدار والبطاقات المعطلة الاحتياطية إن وجدت
         let regMap = null;
+        let issueDateMap = null;
+        let disabledCardsMap = null;
         try {
             const { data: setRow } = await client
                 .from(SUPABASE_CONFIG.tables.settings)
-                .select('registry_map')
+                .select('registry_map, extra_config')
                 .eq('id', 'config')
                 .maybeSingle();
-            if (setRow && setRow.registry_map && typeof setRow.registry_map === 'object') {
-                regMap = setRow.registry_map;
+            if (setRow) {
+                if (setRow.registry_map && typeof setRow.registry_map === 'object') {
+                    regMap = setRow.registry_map;
+                }
+                if (setRow.extra_config && typeof setRow.extra_config === 'object') {
+                    issueDateMap = setRow.extra_config.issue_date_map || null;
+                    disabledCardsMap = setRow.extra_config.disabled_cards_map || null;
+                }
             }
         } catch(e) {}
 
@@ -631,8 +663,18 @@
 
         const formatted = filteredRows.map(row => {
             const emp = formatEmployeeRecord(row);
-            if (emp && (!emp.registryNo || isNaN(emp.registryNo)) && regMap && regMap[emp.jobId]) {
-                emp.registryNo = parseInt(regMap[emp.jobId], 10);
+            if (emp) {
+                if ((!emp.registryNo || isNaN(emp.registryNo)) && regMap && regMap[emp.jobId]) {
+                    emp.registryNo = parseInt(regMap[emp.jobId], 10);
+                }
+                if (!emp.issueDate && issueDateMap && issueDateMap[emp.jobId]) {
+                    emp.issueDate = issueDateMap[emp.jobId];
+                }
+                if (disabledCardsMap && disabledCardsMap[emp.jobId]) {
+                    emp.isCardDisabled = !!disabledCardsMap[emp.jobId].disabled;
+                    emp.cardDisableReason = disabledCardsMap[emp.jobId].reason || '';
+                    emp.cardDisabledAt = disabledCardsMap[emp.jobId].date || '';
+                }
             }
             return emp;
         });
@@ -947,6 +989,213 @@
     }
 
     /**
+     * تحديث تاريخ إصدار البطاقة لموظف فردي
+     */
+    async function updateEmployeeIssueDate(matriculeId, issueDate, modifiedBy = 'ADMIN') {
+        const cleanId = String(matriculeId).trim();
+        const client = getSupabaseClient();
+        if (!client) throw new Error("Supabase client is not initialized");
+
+        const dateVal = String(issueDate || '').trim();
+
+        // 1. تحديث في system_settings.extra_config.issue_date_map لضمان الحفظ المباشر
+        try {
+            const { data: setRow } = await client
+                .from(SUPABASE_CONFIG.tables.settings)
+                .select('extra_config')
+                .eq('id', 'config')
+                .maybeSingle();
+
+            const extra = (setRow && setRow.extra_config) || {};
+            extra.issue_date_map = extra.issue_date_map || {};
+            if (dateVal) {
+                extra.issue_date_map[cleanId] = dateVal;
+            } else {
+                delete extra.issue_date_map[cleanId];
+            }
+            await client
+                .from(SUPABASE_CONFIG.tables.settings)
+                .update({ extra_config: extra, updated_at: new Date().toISOString() })
+                .eq('id', 'config');
+        } catch(e) {
+            console.warn("Notice saving issue_date_map to settings:", e.message);
+        }
+
+        // 2. محاولة التحديث في عمود issue_date في جدول base-touggourt إن كان العمود موجوداً
+        try {
+            await client
+                .from(SUPABASE_CONFIG.tables.employees)
+                .update({ issue_date: dateVal || null })
+                .eq('matricule', cleanId);
+        } catch(e) {}
+
+        // 3. توثيق التعديل في سجل التعديلات
+        try {
+            await client.from(SUPABASE_CONFIG.tables.history).insert([{
+                employee_id: cleanId,
+                action_type: 'ISSUE_DATE_UPDATE',
+                previous_data: {},
+                new_data: { issue_date: dateVal },
+                modified_by: modifiedBy,
+                modified_at: new Date().toISOString()
+            }]);
+        } catch(e) {}
+
+        return true;
+    }
+
+    /**
+     * تحديث تواريخ الإصدار المعتمدة لعدة موظفين دفعة واحدة
+     */
+    async function bulkUpdateIssueDates(issueDateMap, modifiedBy = 'ADMIN', onProgress = null) {
+        const client = getSupabaseClient();
+        if (!client) throw new Error("Supabase client is not initialized");
+
+        const entries = Object.entries(issueDateMap || {});
+        if (entries.length === 0) return true;
+
+        console.log(`🔄 [Supabase Live] جاري تحديث ${entries.length} تاريخ إصدار في قاعدة البيانات...`);
+
+        // 1. حفظ خريطة تواريخ الإصدار كاملة في system_settings.extra_config.issue_date_map
+        try {
+            const { data: setRow } = await client
+                .from(SUPABASE_CONFIG.tables.settings)
+                .select('extra_config')
+                .eq('id', 'config')
+                .maybeSingle();
+
+            const extra = (setRow && setRow.extra_config) || {};
+            extra.issue_date_map = Object.assign({}, extra.issue_date_map || {}, issueDateMap);
+            await client
+                .from(SUPABASE_CONFIG.tables.settings)
+                .update({ 
+                    extra_config: extra,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', 'config');
+            console.log("✅ [Supabase Live] تم توثيق خريطة تواريخ الإصدار في إعدادات النظام.");
+        } catch(setErr) {
+            console.warn("Notice saving issue_date_map to settings:", setErr.message);
+        }
+
+        // 2. تحديث سجلات الموظفين في base-touggourt بدفعات
+        const batchSize = 60;
+        let completed = 0;
+        for (let i = 0; i < entries.length; i += batchSize) {
+            const batch = entries.slice(i, i + batchSize);
+            await Promise.all(batch.map(async ([jid, dStr]) => {
+                const cleanId = String(jid).trim();
+                if (!cleanId) return;
+                try {
+                    await client
+                        .from(SUPABASE_CONFIG.tables.employees)
+                        .update({ issue_date: String(dStr).trim() })
+                        .eq('matricule', cleanId);
+                } catch(e) {}
+            }));
+            completed += batch.length;
+            if (typeof onProgress === 'function') {
+                onProgress(completed, entries.length);
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * تصفير تواريخ الإصدار لجميع الموظفين
+     */
+    async function clearAllIssueDatesLive() {
+        const client = getSupabaseClient();
+        if (!client) throw new Error("Supabase client is not initialized");
+
+        try {
+            const { data: setRow } = await client
+                .from(SUPABASE_CONFIG.tables.settings)
+                .select('extra_config')
+                .eq('id', 'config')
+                .maybeSingle();
+            const extra = (setRow && setRow.extra_config) || {};
+            extra.issue_date_map = {};
+            await client
+                .from(SUPABASE_CONFIG.tables.settings)
+                .update({ extra_config: extra, updated_at: new Date().toISOString() })
+                .eq('id', 'config');
+        } catch(err) {}
+
+        try {
+            await client
+                .from(SUPABASE_CONFIG.tables.employees)
+                .update({ issue_date: null })
+                .neq('matricule', '___NONE___');
+        } catch(err) {}
+
+        return true;
+    }
+
+    /**
+     * تعطيل أو إعادة تفعيل بطاقة موظف مع تسجيل السبب
+     */
+    async function setCardDisabledStatus(matriculeId, isDisabled, reason = '', modifiedBy = 'ADMIN') {
+        const cleanId = String(matriculeId).trim();
+        const client = getSupabaseClient();
+        if (!client) throw new Error("Supabase client is not initialized");
+
+        // 1. تحديث في system_settings.extra_config.disabled_cards_map
+        try {
+            const { data: setRow } = await client
+                .from(SUPABASE_CONFIG.tables.settings)
+                .select('extra_config')
+                .eq('id', 'config')
+                .maybeSingle();
+
+            const extra = (setRow && setRow.extra_config) || {};
+            extra.disabled_cards_map = extra.disabled_cards_map || {};
+            if (isDisabled) {
+                extra.disabled_cards_map[cleanId] = {
+                    disabled: true,
+                    reason: String(reason || 'معطلة بقرار إداري من مديرية التربية').trim(),
+                    date: new Date().toISOString(),
+                    by: modifiedBy
+                };
+            } else {
+                delete extra.disabled_cards_map[cleanId];
+            }
+            await client
+                .from(SUPABASE_CONFIG.tables.settings)
+                .update({ extra_config: extra, updated_at: new Date().toISOString() })
+                .eq('id', 'config');
+        } catch(e) {
+            console.warn("Notice saving disabled_cards_map:", e.message);
+        }
+
+        // 2. محاولة التحديث في base-touggourt إن كان العمود متوفراً
+        try {
+            await client
+                .from(SUPABASE_CONFIG.tables.employees)
+                .update({ 
+                    is_card_disabled: !!isDisabled,
+                    card_disable_reason: isDisabled ? String(reason || '').trim() : null
+                })
+                .eq('matricule', cleanId);
+        } catch(e) {}
+
+        // 3. توثيق في سجل التاريخ
+        try {
+            await client.from(SUPABASE_CONFIG.tables.history).insert([{
+                employee_id: cleanId,
+                action_type: isDisabled ? 'CARD_DISABLE' : 'CARD_ENABLE',
+                previous_data: {},
+                new_data: { disabled: isDisabled, reason: reason },
+                modified_by: modifiedBy,
+                modified_at: new Date().toISOString()
+            }]);
+        } catch(e) {}
+
+        return true;
+    }
+
+    /**
      * إضافة موظف جديد مباشرة إلى Supabase
      */
     async function addNewEmployeeLive(empData, createdBy = 'DIRECTOR') {
@@ -972,13 +1221,57 @@
             sexe: empData.sexe || 'ذكر'
         };
 
-        const { data, error } = await client
+        if (empData.issueDate || empData.issue_date) {
+            payload.issue_date = String(empData.issueDate || empData.issue_date).trim();
+        }
+
+        let insertRes = await client
             .from(SUPABASE_CONFIG.tables.employees)
             .insert([payload])
             .select()
             .maybeSingle();
 
-        if (error) throw error;
+        if (insertRes.error && payload.issue_date) {
+            delete payload.issue_date;
+            insertRes = await client
+                .from(SUPABASE_CONFIG.tables.employees)
+                .insert([payload])
+                .select()
+                .maybeSingle();
+        }
+
+        if (insertRes.error) throw insertRes.error;
+        const data = insertRes.data;
+
+        // تحديث خرائط الإعدادات المركزية
+        if (empData.registryNo || empData.issueDate || empData.issue_date) {
+            try {
+                const { data: setRow } = await client
+                    .from(SUPABASE_CONFIG.tables.settings)
+                    .select('registry_map, extra_config')
+                    .eq('id', 'config')
+                    .maybeSingle();
+                if (setRow) {
+                    const rMap = setRow.registry_map || {};
+                    const extra = setRow.extra_config || {};
+                    extra.issue_date_map = extra.issue_date_map || {};
+                    let needUpdate = false;
+                    if (empData.registryNo) {
+                        rMap[jid] = parseInt(empData.registryNo, 10);
+                        needUpdate = true;
+                    }
+                    if (empData.issueDate || empData.issue_date) {
+                        extra.issue_date_map[jid] = String(empData.issueDate || empData.issue_date).trim();
+                        needUpdate = true;
+                    }
+                    if (needUpdate) {
+                        await client.from(SUPABASE_CONFIG.tables.settings)
+                            .update({ registry_map: rMap, extra_config: extra, updated_at: new Date().toISOString() })
+                            .eq('id', 'config');
+                    }
+                }
+            } catch(e) {}
+        }
 
         // تسجيل في سجل التعديلات
         try {
@@ -1258,6 +1551,10 @@
     window.updateEmployeeRegistryNo = updateEmployeeRegistryNo;
     window.bulkUpdateRegistryNumbers = bulkUpdateRegistryNumbers;
     window.clearAllRegistryNumbersLive = clearAllRegistryNumbersLive;
+    window.updateEmployeeIssueDate = updateEmployeeIssueDate;
+    window.bulkUpdateIssueDates = bulkUpdateIssueDates;
+    window.clearAllIssueDatesLive = clearAllIssueDatesLive;
+    window.setCardDisabledStatus = setCardDisabledStatus;
     window.addNewEmployeeLive = addNewEmployeeLive;
     window.deleteEmployeeLive = deleteEmployeeLive;
     window.fetchModificationsHistory = fetchModificationsHistory;

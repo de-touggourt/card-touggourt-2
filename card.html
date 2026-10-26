@@ -4394,7 +4394,7 @@ function renderTable() {
                 const verifyUrl = (typeof window.generateSmartCardVerificationUrl === 'function')
                     ? window.generateSmartCardVerificationUrl(emp, window.centralDirectorateConfig || centralDirectorateConfig)
                     : `verify.html?id=${emp.jobId}`;
-                const cardDateText = getCardDateDisplay(window.centralDirectorateConfig || centralDirectorateConfig);
+                const cardDateText = (emp && emp.issueDate) ? emp.issueDate : getCardDateDisplay(window.centralDirectorateConfig || centralDirectorateConfig);
 
                 return `
                 <div class="card" style="${cardPrintStyle}" dir="rtl">
@@ -4416,7 +4416,7 @@ function renderTable() {
                             <div class="card-name-title">بطاقة التعريف المهنية</div>
                             <div class="info-row"><span class="label">الاسم واللقب:</span><span class="value" style="font-size:22px; font-weight:900;">${emp.name}</span></div>
                             <div class="info-row"><span class="label">تاريخ الإصدار:</span><span class="value" dir="ltr" style="font-weight:800;">${cardDateText}</span></div>
-                            <div class="smart-qr-center-box" style="display:flex; flex-direction:column; align-items:center; justify-content:center; margin:6px auto 0 auto; padding:6px; background:#ffffff; border:1.5px solid #006233; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.06); width:fit-content;">
+                            <div class="smart-qr-center-box" style="display:flex; flex-direction:column; align-items:center; justify-content:center; align-self:flex-start; margin-top:8px; margin-right:0; padding:4px; background:transparent; border:1.5px solid #006233; border-radius:8px; box-shadow:none; width:fit-content;">
                                 <div class="smart-qr-target" data-verify-url="${verifyUrl}" style="width:105px; height:105px; display:flex; align-items:center; justify-content:center;">
                                     <canvas class="smart-qr-canvas" style="width:105px; height:105px; display:block;"></canvas>
                                 </div>
@@ -4426,12 +4426,19 @@ function renderTable() {
                             </div>
                         </div>
                         <div class="photo-section">
-                            <div class="serial-number" style="font-weight:900; letter-spacing:1px; direction:ltr;">${regNoOnly}</div>
+                            <div class="serial-number" style="display:flex; align-items:center; justify-content:center; text-align:center; font-weight:900; letter-spacing:1.5px; direction:ltr;">${regNoOnly}</div>
                             <div class="photo-frame">${photoHTML}</div>
                             <div class="signature-title" style="line-height: 1.2;">مدير التربية<br><span style="font-size: 15px; font-weight: 800; color: #000;">${currentDirector}</span></div>
                         </div>
                     </div>
-                    <div class="smart-jobid-bar" style="height:34px; display:flex; align-items:center; justify-content:center; gap:8px; font-family:monospace; font-size:15px; font-weight:900; color:#0f172a; letter-spacing:2px; border-top:1.5px dashed #cbd5e1; background:rgba(0,98,51,0.04);"><i class="fa-solid fa-fingerprint" style="color:#006233; font-size:14px;"></i> رقم التعريف الوظيفي: ${emp.jobId || '---'}</div>
+                    <div class="barcode-container" style="display:flex; align-items:center; justify-content:center; gap:10px; margin-top:auto; margin-bottom:8px;">
+                        <i class="fa-solid fa-fingerprint" style="color:#006233; font-size:26px;"></i>
+                        <svg class="barcode-render"
+                            jsbarcode-value="${emp.jobId || '0000000000'}" jsbarcode-format="CODE128"
+                            jsbarcode-displayValue="false" jsbarcode-height="32"
+                            jsbarcode-width="2.1" jsbarcode-margin="0" jsbarcode-background="transparent">
+                        </svg>
+                    </div>
                     <div class="footer">على السلطات المدنية والعسكرية أن تسمح لحامل هذه البطاقة بالمرور في كل الحالات</div>
                 </div>`;
             }
@@ -4754,7 +4761,7 @@ window.toggleSelectAll = function(customVal) {
                     if(printDob.includes('/')){ let p = printDob.split('/'); if(p.length===3) printDob = `${p[2]}-${p[1]}-${p[0]}`; }
 
                     const numberDisplayHtml = formatCardNumberHTML(emp.registryNo, currentYear, showReg, regFormat);
-                    const dateText = getCardDateDisplay(window.centralDirectorateConfig || centralDirectorateConfig);
+                    const dateText = (emp && emp.issueDate) ? emp.issueDate : getCardDateDisplay(window.centralDirectorateConfig || centralDirectorateConfig);
 
                     // الوجه الخلفي المعتمد للبطاقة (النموذج 1 و 3 يرتبط بـ Theme 4 والنموذج 2 يرتبط بـ Theme 3)
                     if(face === 'back') {
@@ -4879,7 +4886,7 @@ window.toggleSelectAll = function(customVal) {
                                         <div class="card-name-title">بطاقة التعريف المهنية</div>
                                         <div class="info-row"><span class="label">الاسم واللقب:</span><span class="value" style="font-size: 22px; font-weight: 900;">${emp.name}</span></div>
                                         <div class="info-row"><span class="label">تاريخ الإصدار:</span><span class="value" dir="ltr" style="font-weight: 800;">${dateText}</span></div>
-                                        <div class="smart-qr-center-box" style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 6px auto 0 auto; padding: 6px; background: #ffffff; border: 1.5px solid #006233; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); width: fit-content;">
+                                        <div class="smart-qr-center-box" style="display: flex; flex-direction: column; align-items: center; justify-content: center; align-self: flex-start; margin-top: 8px; margin-right: 0; padding: 4px; background: transparent; border: 1.5px solid #006233; border-radius: 8px; box-shadow: none; width: fit-content;">
                                             <div class="smart-qr-target" data-verify-url="${verifyUrl}" style="width: 105px; height: 105px; display: flex; align-items: center; justify-content: center;">
                                                 <canvas class="smart-qr-canvas" style="width: 105px; height: 105px; display: block;"></canvas>
                                             </div>
@@ -4889,12 +4896,19 @@ window.toggleSelectAll = function(customVal) {
                                         </div>
                                     </div>
                                     <div class="photo-section">
-                                        <div class="serial-number" style="font-weight: 900; letter-spacing: 1px; direction: ltr;">${regNoOnly}</div>
+                                        <div class="serial-number" style="display: flex; align-items: center; justify-content: center; text-align: center; font-weight: 900; letter-spacing: 1.5px; direction: ltr;">${regNoOnly}</div>
                                         <div class="photo-frame">${photoHTML}</div>
                                         <div class="signature-title" style="line-height: 1.2;">مدير التربية<br><span style="font-size: 15px; font-weight: 800; color: #000;">${currentDirector}</span></div>
                                     </div>
                                 </div>
-                                <div class="smart-jobid-bar" style="height: 34px; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: monospace; font-size: 15px; font-weight: 900; color: #0f172a; letter-spacing: 2px; border-top: 1.5px dashed #cbd5e1; background: rgba(0, 98, 51, 0.04);"><i class="fa-solid fa-fingerprint" style="color: #006233; font-size: 14px;"></i> رقم التعريف الوظيفي: ${emp.jobId || '---'}</div>
+                                <div class="barcode-container" style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: auto; margin-bottom: 8px;">
+                                    <i class="fa-solid fa-fingerprint" style="color: #006233; font-size: 26px;"></i>
+                                    <svg class="barcode-render"
+                                        jsbarcode-value="${emp.jobId || '0000000000'}" jsbarcode-format="CODE128"
+                                        jsbarcode-displayValue="false" jsbarcode-height="32"
+                                        jsbarcode-width="2.1" jsbarcode-margin="0" jsbarcode-background="transparent">
+                                    </svg>
+                                </div>
                                 <div class="footer">على السلطات المدنية والعسكرية أن تسمح لحامل هذه البطاقة بالمرور في كل الحالات</div>
                             </div>
                         </div>`;
@@ -4941,8 +4955,8 @@ window.toggleSelectAll = function(customVal) {
                 container.innerHTML += pageHTML;
             }
 
-            // توليد الباركود إذا كان النموذج 1
-            if (templateId === 1 && typeof JsBarcode === 'function') {
+            // توليد الباركود إذا كان النموذج 1 أو 3
+            if ((templateId === 1 || templateId === 3) && typeof JsBarcode === 'function') {
                 container.querySelectorAll('.barcode-render').forEach(el => {
                     try {
                         const val = el.getAttribute('jsbarcode-value') || '0000000000';
