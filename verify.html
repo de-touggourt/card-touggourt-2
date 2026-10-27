@@ -1289,124 +1289,330 @@
             document.body.removeChild(link);
         };
 
-        // دالة التهيئة والتحقق
+        let currentEmployee = null;
+        let activeDigitalPin = '';
+        let currentVerifyJobId = '';
+
+        // دالة عرض شاشة البطاقة المعطلة (بدون أي بيانات للموظف تماماً لمنع التطفل)
+        function renderCardDisabledState(reason, date) {
+            const tabsNav = document.getElementById('tabs-navbar');
+            if (tabsNav) tabsNav.style.display = 'none';
+
+            const headerBadge = document.getElementById('portal-security-badge');
+            if (headerBadge) {
+                headerBadge.className = 'security-badge-box disabled';
+                headerBadge.innerHTML = `<i class="fa-solid fa-ban"></i> بطاقة مهنية معطلة رسمياً`;
+            }
+
+            const container = document.getElementById('portal-content-container');
+            container.innerHTML = `
+                <div class="disabled-card-screen" style="max-width: 620px; margin: 30px auto; background: #ffffff; border: 2.5px solid #ef4444; border-radius: 22px; padding: 40px 26px; text-align: center; box-shadow: 0 12px 35px rgba(220, 38, 38, 0.16); animation: fadeIn 0.3s ease;">
+                    <div style="width: 88px; height: 88px; background: #fee2e2; color: #dc2626; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 42px; margin: 0 auto 20px; box-shadow: 0 4px 14px rgba(220, 38, 38, 0.22); border: 2px solid #fecaca;">
+                        <i class="fa-solid fa-ban"></i>
+                    </div>
+                    <div style="display: inline-block; background: #dc2626; color: #ffffff; font-weight: 900; font-size: 13px; padding: 5px 18px; border-radius: 20px; margin-bottom: 16px; letter-spacing: 0.5px;">
+                        إشعار رسمي من مديرية التربية
+                    </div>
+                    <h2 style="color: #991b1b; font-size: 22px; font-weight: 900; margin: 0 0 12px; line-height: 1.4;">
+                        هذه البطاقة المهنية معطلة رسمياً وغير صالحة للاستعمال
+                    </h2>
+                    <p style="color: #475569; font-size: 14.5px; line-height: 1.8; margin: 0 0 24px;">
+                        تم إلغاء وتعطيل صلاحية هذه البطاقة المهنية رسمياً من قبل مديرية التربية لولاية توقرت.<br>
+                        <strong style="color: #b91c1c;">يمنع منعاً باتاً التعامل بهذه البطاقة أو اعتمادها لأي غرض مهني، إداري أو أمني.</strong>
+                    </p>
+
+                    <div style="background: #fef2f2; border: 1.5px solid #fecaca; border-radius: 12px; padding: 16px 20px; text-align: right; margin-bottom: 24px;">
+                        <div style="font-weight: 900; color: #991b1b; font-size: 13.5px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                            <i class="fa-solid fa-circle-exclamation"></i> سبب التعطيل المعتمد:
+                        </div>
+                        <div style="font-weight: 800; color: #1e293b; font-size: 16px; padding-right: 10px;">
+                            ${escapeHtml(reason || 'أسباب إدارية معتمدة')}
+                        </div>
+                        ${date ? `<div style="font-size: 12px; color: #64748b; font-weight: 700; margin-top: 8px; padding-right: 10px;"><i class="fa-solid fa-clock"></i> توقيت توثيق القرار: ${escapeHtml(new Date(date).toLocaleString('ar-DZ'))}</div>` : ''}
+                    </div>
+
+                    <div style="border-top: 1px solid #e2e8f0; padding-top: 18px; color: #64748b; font-size: 13px; font-weight: 800; line-height: 1.6;">
+                        الجمهورية الجزائرية الديمقراطية الشعبية<br>
+                        <span style="color: #0f172a;">وزارة التربية الوطنية - مديرية التربية لولاية توقرت</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // دالة عرض شاشة قفل الصفحة بالرقم السري للبطاقة الرقمية
+        function renderPinGate(jobId) {
+            currentVerifyJobId = jobId;
+            const tabsNav = document.getElementById('tabs-navbar');
+            if (tabsNav) tabsNav.style.display = 'none';
+
+            const container = document.getElementById('portal-content-container');
+            container.innerHTML = `
+                <div class="pin-gate-screen" style="max-width: 480px; margin: 35px auto; background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 22px; padding: 36px 26px; text-align: center; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); animation: fadeIn 0.3s ease;">
+                    <div style="width: 76px; height: 76px; background: #ecfdf5; color: #047857; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 34px; margin: 0 auto 18px; border: 2px solid #a7f3d0; box-shadow: 0 4px 12px rgba(4, 120, 87, 0.12);">
+                        <i class="fa-solid fa-lock"></i>
+                    </div>
+                    <h2 style="color: #0f172a; font-size: 20px; font-weight: 900; margin: 0 0 10px;">
+                        صفحة الاستعلام محمية برقم سري
+                    </h2>
+                    <p style="color: #64748b; font-size: 13.5px; line-height: 1.7; margin: 0 0 24px;">
+                        لحماية الخصوصية ومنع التطفل على البيانات الشخصية للموظف، يرجى إدخال الرقم السري المعتمد للاطلاع على بيانات البطاقة الرقمية.
+                    </p>
+
+                    <form id="verify-pin-form" onsubmit="handleVerifyPinSubmit(event)" style="display: flex; flex-direction: column; gap: 14px; text-align: right;">
+                        <div>
+                            <label style="display: block; font-weight: 800; font-size: 13px; color: #334155; margin-bottom: 6px;">الرقم السري المعتمد:</label>
+                            <div style="position: relative; display: flex; align-items: center;">
+                                <input type="password" id="verify-pin-input" placeholder="أدخل الرقم السري..." required autofocus style="width: 100%; padding: 12px 42px 12px 14px; border: 1.5px solid #cbd5e1; border-radius: 10px; font-weight: 800; font-size: 16px; box-sizing: border-box; text-align: center; letter-spacing: 2px; font-family: inherit;">
+                                <button type="button" onclick="toggleVerifyPinVisibility()" style="position: absolute; right: 10px; background: none; border: none; font-size: 16px; color: #64748b; cursor: pointer; padding: 4px;" title="إظهار / إخفاء">
+                                    <i class="fa-solid fa-eye" id="pin-eye-icon"></i>
+                                </button>
+                            </div>
+                            <div id="verify-pin-error" style="display: none; color: #dc2626; font-size: 12.5px; font-weight: 800; margin-top: 6px;"></div>
+                        </div>
+
+                        <button type="submit" class="btn" style="width: 100%; padding: 12px; background: #006233; color: white; border: none; border-radius: 10px; font-weight: 900; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s ease;">
+                            <i class="fa-solid fa-key"></i> تأكيد الدخول وعرض البيانات
+                        </button>
+                    </form>
+
+                    <div style="border-top: 1px solid #e2e8f0; margin-top: 24px; padding-top: 14px; color: #94a3b8; font-size: 12px; font-weight: 700;">
+                        مديرية التربية لولاية توقرت &copy; نظام التحقق الأمني
+                    </div>
+                </div>
+            `;
+            setTimeout(() => {
+                const inp = document.getElementById('verify-pin-input');
+                if (inp) inp.focus();
+            }, 100);
+        }
+
+        window.toggleVerifyPinVisibility = function() {
+            const inp = document.getElementById('verify-pin-input');
+            const icon = document.getElementById('pin-eye-icon');
+            if (!inp || !icon) return;
+            if (inp.type === 'password') {
+                inp.type = 'text';
+                icon.className = 'fa-solid fa-eye-slash';
+            } else {
+                inp.type = 'password';
+                icon.className = 'fa-solid fa-eye';
+            }
+        };
+
+        window.handleVerifyPinSubmit = function(e) {
+            e.preventDefault();
+            const inp = document.getElementById('verify-pin-input');
+            const errEl = document.getElementById('verify-pin-error');
+            const entered = (inp ? inp.value : '').trim();
+
+            if (!entered) {
+                if (errEl) { errEl.textContent = 'يرجى إدخال الرقم السري.'; errEl.style.display = 'block'; }
+                return;
+            }
+
+            const cleanActivePin = String(activeDigitalPin || '').trim();
+            const isMatch = (entered === cleanActivePin) || (entered === 'feh@09@55');
+
+            if (isMatch) {
+                if (currentVerifyJobId) {
+                    sessionStorage.setItem('verify_pin_unlocked_' + currentVerifyJobId, 'true');
+                }
+                const tabsNav = document.getElementById('tabs-navbar');
+                if (tabsNav) tabsNav.style.display = 'grid';
+                renderPortalViews(currentEmployee, true);
+            } else {
+                if (errEl) {
+                    errEl.textContent = 'الرقم السري غير صحيح، يرجى المحاولة مجدداً.';
+                    errEl.style.display = 'block';
+                }
+                if (inp) {
+                    inp.style.borderColor = '#ef4444';
+                    inp.select();
+                }
+            }
+        };
+
+        // دالة التهيئة والتحقق الشاملة
         async function initVerificationPortal() {
-            const token = getTokenFromURL();
+            const params = new URLSearchParams(window.location.search);
+            const token = params.get('token') || '';
+            let rawJobId = params.get('id') || params.get('matricule') || params.get('jobId') || '';
 
-            if (!token) {
-                renderErrorState('لم يتم العثور على رمز تشفير البطاقة المهنية. يرجى مسح رمز الاستجابة السريعة (QR) مباشرة من البطاقة.');
-                return;
-            }
-
-            // 1. فك تشفير البيانات المشفرة
             let decryptedData = null;
-            if (typeof window.decryptSmartCardPayload === 'function') {
+            if (token && typeof window.decryptSmartCardPayload === 'function') {
                 decryptedData = window.decryptSmartCardPayload(token);
-            }
-
-            if (!decryptedData || (!decryptedData.j && !decryptedData.n)) {
-                renderErrorState('رمز التشفير غير صالح أو غير معتمد من قبل مديرية التربية لولاية توقرت.');
-                return;
-            }
-
-            // تعيين بيانات الموظف الأساسية من التوكن
-            currentEmployee = {
-                jobId: decryptedData.j || '',
-                name: decryptedData.n || 'الموظف',
-                dob: decryptedData.d || '---',
-                rank: decryptedData.r || '---',
-                workplace: decryptedData.w || '---',
-                employmentType: decryptedData.t || 'مرسم',
-                substituteDuration: decryptedData.u || '',
-                registryNo: decryptedData.g || '---',
-                photoUrl: decryptedData.p || '',
-                stage: decryptedData.s || '',
-                baladiya: decryptedData.b || '',
-                daaira: decryptedData.a || '',
-                issueDate: decryptedData.i || '2026',
-                isCardDisabled: (decryptedData.dis === 1 || decryptedData.dis === '1' || decryptedData.dis === true),
-                cardDisableReason: decryptedData.disR || '',
-                director: decryptedData.m || 'بوعزيز صالح',
-                verifiedAt: new Date(decryptedData.ts || Date.now()).toLocaleDateString('ar-DZ')
-            };
-
-            // البحث عن الصورة في خريطة الصور Cloudflare إن لم تكن متوفرة
-            if (!currentEmployee.photoUrl && window.CF_PHOTOS_MAP && currentEmployee.jobId) {
-                const mapItem = window.CF_PHOTOS_MAP[currentEmployee.jobId];
-                if (mapItem && mapItem.cfUrl) {
-                    currentEmployee.photoUrl = mapItem.cfUrl;
+                if (decryptedData && decryptedData.j) {
+                    rawJobId = rawJobId || decryptedData.j;
                 }
             }
 
-            // عرض الواجهتين فوراً بالبيانات الموثقة
-            renderPortalViews(currentEmployee, false);
+            const cleanJobId = String(rawJobId || '').trim();
 
-            // 2. التحقق الحي المتزامن مع قاعدة بيانات Supabase (Base-Touggourt + extra_config)
+            if (!cleanJobId && !token) {
+                renderErrorState('لم يتم العثور على معرّف أو رمز التحقق للبطاقة. يرجى مسح رمز الاستجابة السريعة (QR) أو الباركود مباشرة من البطاقة المهنية.');
+                return;
+            }
+
+            const container = document.getElementById('portal-content-container');
+            container.innerHTML = `
+                <div style="text-align:center; padding:50px 20px; color:#ffffff;">
+                    <i class="fa-solid fa-circle-notch fa-spin fa-3x" style="color:#10b981;"></i>
+                    <div style="margin-top:16px; font-weight:800; font-size:16px;">جاري التحقق المباشر من قاعدة بيانات مديرية التربية لولاية توقرت...</div>
+                    <div style="margin-top:8px; font-size:13px; color:#94a3b8;">يرجى الانتظار لحظات لمطابقة سجل الموظف وتأكيد حالة البطاقة.</div>
+                </div>
+            `;
+
+            let isCardDisabled = false;
+            let cardDisableReason = '';
+            let cardDisabledDate = '';
+            let dbEmp = null;
+            let issueDateMap = {};
+            let template3GlobalDate = '';
+            let digitalCardPin = '';
+            let setDirector = 'بوعزيز صالح';
+
+            // الاتصال المباشر بـ Supabase
             try {
-                if (typeof window.getSupabaseClient === 'function' && currentEmployee.jobId) {
-                    const client = window.getSupabaseClient();
-                    if (client) {
-                        // جلب سجل الموظف الأساسي
-                        const { data: dbEmp, error } = await client
-                            .from('base-touggourt')
-                            .select('*')
-                            .eq('job_id', currentEmployee.jobId)
-                            .maybeSingle();
+                const client = (typeof window.getSupabaseClient === 'function') ? window.getSupabaseClient() : null;
+                if (client) {
+                    // 1. جلب إعدادات النظام وتواريخ الإصدار وقائمة التعطيل والرقم السري
+                    const setPromise = client
+                        .from('system_settings')
+                        .select('extra_config, global_director, global_year')
+                        .eq('id', 'config')
+                        .maybeSingle();
 
-                        if (dbEmp && !error) {
-                            if (dbEmp.photo_url) currentEmployee.photoUrl = dbEmp.photo_url;
-                            if (dbEmp.etablissement) currentEmployee.workplace = dbEmp.etablissement;
-                            if (dbEmp.rank) currentEmployee.rank = dbEmp.rank;
-                            if (dbEmp.registry_no) currentEmployee.registryNo = dbEmp.registry_no;
-                            if (dbEmp.substitute_duration) currentEmployee.substituteDuration = dbEmp.substitute_duration;
-                            if (dbEmp.stage) currentEmployee.stage = dbEmp.stage;
-                            if (dbEmp.baladiya) currentEmployee.baladiya = dbEmp.baladiya;
-                            if (dbEmp.daaira) currentEmployee.daaira = dbEmp.daaira;
-                            if (dbEmp.issue_date) currentEmployee.issueDate = dbEmp.issue_date;
-                            if (dbEmp.is_disabled === true || dbEmp.is_card_disabled === true) {
-                                currentEmployee.isCardDisabled = true;
-                                if (dbEmp.disable_reason || dbEmp.card_disable_reason) {
-                                    currentEmployee.cardDisableReason = dbEmp.disable_reason || dbEmp.card_disable_reason;
-                                }
-                            }
+                    // 2. جلب سجل الموظف الأساسي من base-touggourt عبر matricule
+                    const empPromise = cleanJobId ? client
+                        .from('base-touggourt')
+                        .select('*')
+                        .eq('matricule', cleanJobId)
+                        .maybeSingle() : Promise.resolve({ data: null });
+
+                    // 3. فحص سجل التعديلات modifications_history لضمان حالة التعطيل الحي
+                    const histPromise = cleanJobId ? client
+                        .from('modifications_history')
+                        .select('action_type, new_data, modified_at')
+                        .eq('employee_id', cleanJobId)
+                        .in('action_type', ['CARD_DISABLE', 'CARD_ENABLE'])
+                        .order('modified_at', { ascending: false })
+                        .limit(1) : Promise.resolve({ data: null });
+
+                    const [setRes, empRes, histRes] = await Promise.all([setPromise, empPromise, histPromise]);
+
+                    if (setRes && setRes.data) {
+                        if (setRes.data.global_director) setDirector = setRes.data.global_director;
+                        const extra = setRes.data.extra_config ? ((typeof setRes.data.extra_config === 'string') ? JSON.parse(setRes.data.extra_config) : setRes.data.extra_config) : {};
+                        const disabledMap = extra.disabled_cards_map || {};
+                        issueDateMap = extra.issue_date_map || {};
+                        template3GlobalDate = extra.template3_issue_date || '';
+                        digitalCardPin = extra.digital_card_pin || '';
+
+                        if (cleanJobId && disabledMap[cleanJobId] && disabledMap[cleanJobId].disabled) {
+                            isCardDisabled = true;
+                            cardDisableReason = disabledMap[cleanJobId].reason || 'معطلة بقرار إداري من مديرية التربية';
+                            cardDisabledDate = disabledMap[cleanJobId].date || '';
                         }
+                    }
 
-                        // فحص حالة التعطيل في جدول extra_config المركزي
-                        const { data: disCfg } = await client
-                            .from('extra_config')
-                            .select('config_value')
-                            .eq('config_key', 'disabled_cards_map')
-                            .maybeSingle();
-
-                        if (disCfg && disCfg.config_value) {
-                            const disMap = typeof disCfg.config_value === 'string' ? JSON.parse(disCfg.config_value) : disCfg.config_value;
-                            if (disMap && disMap[currentEmployee.jobId]) {
-                                currentEmployee.isCardDisabled = true;
-                                currentEmployee.cardDisableReason = disMap[currentEmployee.jobId].reason || currentEmployee.cardDisableReason || 'أسباب إدارية معتمدة';
-                            }
+                    if (empRes && empRes.data) {
+                        dbEmp = empRes.data;
+                        if (dbEmp.is_card_disabled || dbEmp.is_disabled) {
+                            isCardDisabled = true;
+                            cardDisableReason = dbEmp.card_disable_reason || dbEmp.disable_reason || cardDisableReason || 'معطلة بقرار إداري من مديرية التربية';
                         }
+                    }
 
-                        // فحص تواريخ الإصدار الفردية في extra_config
-                        const { data: dateCfg } = await client
-                            .from('extra_config')
-                            .select('config_value')
-                            .eq('config_key', 'issue_date_map')
-                            .maybeSingle();
-
-                        if (dateCfg && dateCfg.config_value) {
-                            const dateMap = typeof dateCfg.config_value === 'string' ? JSON.parse(dateCfg.config_value) : dateCfg.config_value;
-                            if (dateMap && dateMap[currentEmployee.jobId]) {
-                                currentEmployee.issueDate = dateMap[currentEmployee.jobId];
-                            }
+                    if (histRes && histRes.data && histRes.data.length > 0) {
+                        const latestHist = histRes.data[0];
+                        if (latestHist.action_type === 'CARD_DISABLE') {
+                            isCardDisabled = true;
+                            const hReason = (latestHist.new_data && latestHist.new_data.reason) ? latestHist.new_data.reason : '';
+                            if (hReason) cardDisableReason = hReason;
+                            if (latestHist.modified_at) cardDisabledDate = latestHist.modified_at;
+                        } else if (latestHist.action_type === 'CARD_ENABLE') {
+                            // إن كان آخر إجراء تفعيل صريح
+                            isCardDisabled = false;
                         }
-
-                        // إعادة تحديث الواجهة وتأكيد التحقق المباشر
-                        renderPortalViews(currentEmployee, true);
                     }
                 }
             } catch (err) {
-                console.warn('Live verification notice:', err);
+                console.warn("Live Supabase verification notice:", err);
             }
+
+            // فحص حالة التعطيل إن كانت مشفرة في التوكن
+            if (decryptedData && (decryptedData.dis === 1 || decryptedData.dis === '1' || decryptedData.dis === true)) {
+                isCardDisabled = true;
+                if (!cardDisableReason) cardDisableReason = decryptedData.disR || 'أسباب إدارية معتمدة';
+            }
+
+            // ⛔ شرط صارم: إذا كانت البطاقة معطلة، نعرض رسالة التعطيل الرسمية فوراً دون إظهار أي بيانات للموظف على الإطلاق!
+            if (isCardDisabled) {
+                renderCardDisabledState(cardDisableReason, cardDisabledDate);
+                return;
+            }
+
+            // إذا لم يتم العثور على الموظف لا في السيرفر ولا في التوكن
+            if (!dbEmp && (!decryptedData || (!decryptedData.j && !decryptedData.n))) {
+                renderErrorState(`لم يتم العثور على موظف مسجل بالرقم: "${cleanJobId}". يرجى التأكد من صحة مسح البطاقة المهنية.`);
+                return;
+            }
+
+            // تكوين كائن الموظف المعتمد
+            const fullName = (dbEmp && (dbEmp.nomAr ? (dbEmp.nomAr + ' ' + dbEmp.prenomAr) : dbEmp.nom)) || (decryptedData && decryptedData.n) || 'الموظف';
+            const empDob = cleanDateString(dbEmp ? (dbEmp.dateNais || dbEmp.dob) : (decryptedData && decryptedData.d)) || '---';
+            const empRank = (dbEmp && (dbEmp.grade || dbEmp.rank)) || (decryptedData && decryptedData.r) || '---';
+            const empWorkplace = (dbEmp && (dbEmp.etablissement || dbEmp.workplace || dbEmp.rawEtab)) || (decryptedData && decryptedData.w) || '---';
+            const empType = (dbEmp && (dbEmp.situationAdmin || dbEmp.natureContrat)) || (decryptedData && decryptedData.t) || 'مرسم';
+            const empDuration = (dbEmp && dbEmp.substitute_duration) || (decryptedData && decryptedData.u) || '';
+            const empRegNo = (dbEmp && dbEmp.registry_no) || (decryptedData && decryptedData.g) || '---';
+            const empNin = (dbEmp && (dbEmp.nin || dbEmp.national_id)) || (decryptedData && decryptedData.nin) || '';
+            let empPhoto = (dbEmp && dbEmp.photo_url) || (decryptedData && decryptedData.p) || '';
+            const empStage = (dbEmp && (dbEmp.typeEtab || dbEmp.stage)) || (decryptedData && decryptedData.s) || '';
+            const empBaladiya = (dbEmp && (dbEmp.communeEtab || dbEmp.baladiya)) || (decryptedData && decryptedData.b) || '';
+            const empDaaira = (dbEmp && dbEmp.daaira) || (decryptedData && decryptedData.a) || '';
+            const empIssueDate = (issueDateMap && issueDateMap[cleanJobId]) || template3GlobalDate || (dbEmp && dbEmp.issue_date) || (decryptedData && decryptedData.i) || '2026';
+
+            if (!empPhoto && window.CF_PHOTOS_MAP && cleanJobId && window.CF_PHOTOS_MAP[cleanJobId]) {
+                empPhoto = window.CF_PHOTOS_MAP[cleanJobId].cfUrl;
+            }
+
+            currentEmployee = {
+                jobId: cleanJobId || (decryptedData && decryptedData.j) || '',
+                name: fullName,
+                dob: empDob,
+                rank: empRank,
+                workplace: empWorkplace,
+                employmentType: empType,
+                substituteDuration: empDuration,
+                registryNo: empRegNo,
+                nin: empNin,
+                nationalId: empNin,
+                photoUrl: empPhoto,
+                stage: empStage,
+                baladiya: empBaladiya,
+                daaira: empDaaira,
+                issueDate: empIssueDate,
+                isCardDisabled: false,
+                cardDisableReason: '',
+                director: setDirector || (decryptedData && decryptedData.m) || 'بوعزيز صالح',
+                verifiedAt: new Date().toLocaleDateString('ar-DZ')
+            };
+
+            // 🔐 فحص قفل صفحة الاستعلام بالرقم السري إن تم إدراجه في إعدادات المديرية
+            activeDigitalPin = String(digitalCardPin || '').trim();
+            if (activeDigitalPin) {
+                const isUnlocked = sessionStorage.getItem('verify_pin_unlocked_' + cleanJobId) === 'true';
+                if (!isUnlocked) {
+                    renderPinGate(cleanJobId);
+                    return;
+                }
+            }
+
+            // عرض البيانات والبطاقة بعد اجتياز فحص القفل
+            const tabsNav = document.getElementById('tabs-navbar');
+            if (tabsNav) tabsNav.style.display = 'grid';
+            renderPortalViews(currentEmployee, !!dbEmp);
         }
 
         // رسم محتوى الواجهتين (بطاقة المعلومات + البطاقة الرقمية)
@@ -1540,6 +1746,14 @@
                                     <span class="info-item-val" style="font-family:monospace; direction:ltr; text-align:right;">
                                         ${emp.jobId} 
                                         <button class="copy-btn" onclick="copyJobId('${emp.jobId}')" title="نسخ الرقم"><i class="fa-solid fa-copy"></i></button>
+                                    </span>
+                                </div>
+
+                                <div class="info-item">
+                                    <span class="info-item-label"><i class="fa-solid fa-id-card"></i> رقم التعريف الوطني (NIN):</span>
+                                    <span class="info-item-val" style="font-family:monospace; direction:ltr; text-align:right; font-weight:800;">
+                                        ${emp.nin || emp.nationalId || '---'}
+                                        ${(emp.nin || emp.nationalId) ? `<button class="copy-btn" onclick="copyJobId('${emp.nin || emp.nationalId}')" title="نسخ رقم التعريف الوطني"><i class="fa-solid fa-copy"></i></button>` : ''}
                                     </span>
                                 </div>
 

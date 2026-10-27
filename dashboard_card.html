@@ -926,23 +926,23 @@
         :is(#card-container, .preview-card-box).theme-1 .logo-box { display: flex; flex-direction: column; align-items: center; min-width: 100px; }
         :is(#card-container, .preview-card-box).theme-1 .header-logo { width: 70px !important; height: 70px !important; aspect-ratio: 1 / 1 !important; object-fit: contain !important; transform: scaleX(1.06013) !important; transform-origin: center center !important; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.1)); image-rendering: -webkit-optimize-contrast; image-rendering: high-quality; }
         :is(#card-container, .preview-card-box).theme-1 .logo-text { font-family: 'Cairo', sans-serif; font-size: 15px; font-weight: 900; margin-top: 4px; white-space: nowrap; }
-        :is(#card-container, .preview-card-box).theme-1 .card-body { position: relative; z-index: 2; display: flex; flex-grow: 1; padding: 5px 25px 0 25px; box-sizing: border-box; }
-        :is(#card-container, .preview-card-box).theme-1 .info-section { flex: 1; max-width: 505px; display: flex; flex-direction: column; justify-content: center; box-sizing: border-box; padding-left: 10px; }
-        :is(#card-container, .preview-card-box).theme-1 .card-name-title { font-family: 'Cairo', sans-serif; font-size: 26px; font-weight: 700; color: var(--primary-green); border-bottom: 2px solid var(--primary-red); margin-bottom: 8px; width: fit-content; }
-        :is(#card-container, .preview-card-box).theme-1 .info-row { display: flex; align-items: baseline; margin-bottom: 6px; font-size: 20px; line-height: 1.3; }
-        :is(#card-container, .preview-card-box).theme-1 .label { font-family: 'Cairo', sans-serif; font-weight: 700; color: #000; min-width: 120px; font-size: 20px; white-space: nowrap; }
-        :is(#card-container, .preview-card-box).theme-1 .value { font-family: 'Cairo', sans-serif; font-weight: 700; color: #000; margin-right: 5px; font-size: 20px; }
+        :is(#card-container, .preview-card-box).theme-1 .card-body { position: relative; z-index: 2; display: flex; flex-grow: 1; padding: 2px 25px 0 25px; box-sizing: border-box; }
+        :is(#card-container, .preview-card-box).theme-1 .info-section { flex: 1; max-width: 505px; display: flex; flex-direction: column; justify-content: flex-start; padding-top: 2px; box-sizing: border-box; padding-left: 10px; }
+        :is(#card-container, .preview-card-box).theme-1 .card-name-title { font-family: 'Cairo', sans-serif; font-size: 24px; font-weight: 700; color: var(--primary-green); border-bottom: 2px solid var(--primary-red); margin-bottom: 5px; width: fit-content; }
+        :is(#card-container, .preview-card-box).theme-1 .info-row { display: flex; align-items: baseline; margin-bottom: 4px; font-size: 19px; line-height: 1.25; }
+        :is(#card-container, .preview-card-box).theme-1 .label { font-family: 'Cairo', sans-serif; font-weight: 700; color: #000; min-width: 115px; font-size: 19px; white-space: nowrap; flex-shrink: 0; }
+        :is(#card-container, .preview-card-box).theme-1 .value { font-family: 'Cairo', sans-serif; font-weight: 700; color: #000; margin-right: 5px; font-size: 19px; }
+        :is(#card-container, .preview-card-box).theme-1 .info-row.rank-row { display: flex; align-items: flex-start; }
+        :is(#card-container, .preview-card-box).theme-1 .info-row.rank-row .rank-val { white-space: normal !important; word-break: break-word; line-height: 1.2; flex: 1; display: inline-block; }
         :is(#card-container, .preview-card-box).theme-1 .info-row.workplace-row { display: flex; align-items: flex-start; }
-        :is(#card-container, .preview-card-box).theme-1 .info-row.workplace-row .workplace-val { white-space: normal !important; word-break: break-word; line-height: 1.25; flex: 1; display: inline-block; }
-        :is(#card-container, .preview-card-box).theme-1 .info-row.validity-row { display: flex; align-items: baseline; margin-bottom: 5px; }
-        :is(#card-container, .preview-card-box).theme-1 .info-row.validity-row .validity-val { color: #b91c1c; font-weight: 700; }
-        :is(#card-container, .preview-card-box).theme-1 .photo-section { font-family: 'Cairo', sans-serif; flex: 0 0 170px; width: 170px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 8px; margin-left: 15px; box-sizing: border-box; }
-        :is(#card-container, .preview-card-box).theme-1 .serial-number { font-family: 'Cairo', sans-serif; font-weight: 700; font-size: 16px; color: var(--primary-red); background: rgba(210, 43, 43, 0.05); padding: 3px 10px; border-radius: 8px; width: 150px; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; margin-top: 0; margin-bottom: 10px; }
-        :is(#card-container, .preview-card-box).theme-1 .photo-frame { width: 125px; height: 160px; background-color: #fafafa; border: 2px solid #fff; box-shadow: 0 4px 8px rgba(0,0,0,0.15); border-radius: 6px; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; overflow: hidden; box-sizing: border-box; }
-        :is(#card-container, .preview-card-box).theme-1 .signature-title { font-family: 'Cairo', sans-serif; font-weight: 700; font-size: 14px; color: #000; border-top: 1px solid #ddd; width: 85%; text-align: center; padding-top: 4px; }
-        :is(#card-container, .preview-card-box).theme-1 .barcode-container { width: 100%; display: flex; justify-content: center; align-items: center; margin-top: auto; margin-bottom: 8px; z-index: 5; }
-        :is(#card-container, .preview-card-box).theme-1 .barcode-container svg { height: 32px; max-width: 440px; width: auto; }
-        :is(#card-container, .preview-card-box).theme-1 .footer { background-color: var(--primary-green); color: white; display: flex; justify-content: center; align-items: center; width: 100%; padding: 6px 0; font-family: 'Cairo', sans-serif; font-size: 15px; font-weight: 600; position: relative; z-index: 10; }
+        :is(#card-container, .preview-card-box).theme-1 .info-row.workplace-row .workplace-val { white-space: normal !important; word-break: break-word; line-height: 1.2; flex: 1; display: inline-block; }
+        :is(#card-container, .preview-card-box).theme-1 .photo-section { font-family: 'Cairo', sans-serif; flex: 0 0 160px; width: 160px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 2px; margin-left: 15px; box-sizing: border-box; }
+        :is(#card-container, .preview-card-box).theme-1 .serial-number { font-family: 'Cairo', sans-serif; font-weight: 700; font-size: 15px; color: var(--primary-red); background: rgba(210, 43, 43, 0.05); padding: 2px 10px; border-radius: 8px; width: 145px; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; margin-top: 0; margin-bottom: 6px; }
+        :is(#card-container, .preview-card-box).theme-1 .photo-frame { width: 120px; height: 152px; background-color: #fafafa; border: 2px solid #fff; box-shadow: 0 4px 8px rgba(0,0,0,0.15); border-radius: 6px; display: flex; align-items: center; justify-content: center; margin-bottom: 6px; overflow: hidden; box-sizing: border-box; }
+        :is(#card-container, .preview-card-box).theme-1 .signature-title { font-family: 'Cairo', sans-serif; font-weight: 700; font-size: 13.5px; color: #000; border-top: 1px solid #ddd; width: 85%; text-align: center; padding-top: 3px; }
+        :is(#card-container, .preview-card-box).theme-1 .barcode-container { width: 100%; display: flex; justify-content: center; align-items: center; margin-top: auto; margin-bottom: 5px; z-index: 5; }
+        :is(#card-container, .preview-card-box).theme-1 .barcode-container svg { height: 28px; max-width: 440px; width: auto; }
+        :is(#card-container, .preview-card-box).theme-1 .footer { background-color: var(--primary-green); color: white; display: flex; justify-content: center; align-items: center; width: 100%; padding: 5px 0; font-family: 'Cairo', sans-serif; font-size: 14.5px; font-weight: 600; position: relative; z-index: 10; }
 
         /* ---------------- الوجه الخلفي للنموذج 2 (Theme 3) ---------------- */
         :is(#card-container, .preview-card-box).theme-3 .page-a4-large { width: 297mm; height: 210mm; background: white; margin: 0 auto; display: grid; grid-template-columns: repeat(2, 100mm); grid-template-rows: repeat(2, 67mm); column-gap: 15mm; row-gap: 4mm; justify-content: center; align-content: start; padding-top: 10mm; box-sizing: border-box; overflow: hidden; page-break-after: always; }
@@ -1801,20 +1801,35 @@
             </div>
         </div>
 
-        <!-- أزرار إدارة تواريخ الإصدار -->
-        <div style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; align-items: center;">
-            <button class="btn btn-emerald" onclick="assignIssueDateToUnassigned()" title="تعيين تاريخ إصدار للموظفين الجدد الذين ليس لديهم تاريخ إصدار بعد">
-                <i class="fa-solid fa-calendar-plus"></i> تعيين تاريخ للجدد وغير المحددين <span id="issue-unassigned-badge" style="display:none; background:#ef4444; color:white; padding:2px 8px; border-radius:10px; font-size:12px; font-weight:900; margin-right:6px;">0</span>
-            </button>
-            <button class="btn btn-gold" onclick="bulkSetIssueDateAll()" title="تحديث وتوحيد تاريخ الإصدار لجميع موظفي الولاية دفعة واحدة">
-                <i class="fa-solid fa-calendar-days"></i> تعيين تاريخ إصدار موحد للجميع
-            </button>
-            <button class="btn btn-dark" onclick="printIssueDateReport()">
-                <i class="fa-solid fa-print"></i> طباعة سجل تواريخ الإصدار A4
-            </button>
-            <button class="btn btn-danger" onclick="clearAllIssueDatesUI()">
-                <i class="fa-solid fa-trash-can"></i> تصفير تواريخ الإصدار
-            </button>
+        <!-- لوحة التحكم في تاريخ الإصدار وتعميمه على الكل أو الجدد -->
+        <div style="background: white; border: 1.5px solid var(--border); border-radius: 14px; padding: 16px 20px; margin-bottom: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
+            <div style="display: flex; gap: 14px; align-items: center; flex-wrap: wrap;">
+                <div style="display: flex; flex-direction: column; gap: 4px; min-width: 260px; flex: 1;">
+                    <label style="font-weight: 800; font-size: 13.5px; color: var(--dark); display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-calendar-pen" style="color:var(--emerald);"></i>
+                        <span>تاريخ الإصدار المعتمد للبطاقات (خاص بالنموذج 3 الذكي حصرياً):</span>
+                    </label>
+                    <div style="position: relative; display: flex; align-items: center;">
+                        <input type="text" id="issue-global-field-date" placeholder="مثال: 2026/10/26 أو 2026-10-26" dir="ltr" style="padding: 10px 14px; border: 1.5px solid #cbd5e1; border-radius: 9px; font-weight: 800; font-size: 15px; color: #0f172a; width: 100%; box-sizing: border-box; background: #f8fafc;">
+                    </div>
+                    <span style="font-size: 11.5px; color: var(--gray);"><strong style="color: #047857;">ملاحظة هامة:</strong> هذا التاريخ خاص حصرياً بالنموذج الثالث (الرقمي الذكي). تواريخ النموذجين الأول والثاني تُضبط من تبويب "الإعدادات" في سطر "توقرت في:".</span>
+                </div>
+
+                <div style="display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; margin-top: auto;">
+                    <button class="btn btn-emerald" onclick="applyIssueDateFromTab(false)" style="padding: 10px 16px; font-weight: 800;" title="تطبيق التاريخ المكتوب على الموظفين الجدد فقط (الذين ليس لديهم تاريخ إصدار بعد)">
+                        <i class="fa-solid fa-calendar-plus"></i> تطبيق على الموظفين الجدد <span id="issue-unassigned-badge" style="display:none; background:#ef4444; color:white; padding:2px 8px; border-radius:10px; font-size:12px; font-weight:900; margin-right:6px;">0</span>
+                    </button>
+                    <button class="btn btn-gold" onclick="applyIssueDateFromTab(true)" style="padding: 10px 16px; font-weight: 800;" title="تطبيق وتعميم التاريخ المكتوب على جميع موظفي الولاية دفعة واحدة">
+                        <i class="fa-solid fa-calendar-days"></i> تطبيق وتعميم على الكل (<span id="issue-tab-total-badge">0</span>)
+                    </button>
+                    <button class="btn btn-dark" onclick="printIssueDateReport()" style="padding: 10px 14px;">
+                        <i class="fa-solid fa-print"></i> طباعة سجل تواريخ الإصدار A4
+                    </button>
+                    <button class="btn btn-danger" onclick="clearAllIssueDatesUI()" style="padding: 10px 14px;">
+                        <i class="fa-solid fa-trash-can"></i> تصفير تواريخ الإصدار
+                    </button>
+                </div>
+            </div>
         </div>
 
         <!-- شريط التصفية والبحث السريع -->
@@ -1889,10 +1904,28 @@
                 </div>
 
                 <div>
-                    <label style="display: block; font-weight: 800; font-size: 13.5px; margin-bottom: 8px;">تاريخ الإصدار المخصص (اختياري، يظهر مباشرة على البطاقة):</label>
+                    <label style="display: block; font-weight: 800; font-size: 13.5px; margin-bottom: 8px;">تاريخ الإصدار المعتمد للنموذج 1 و 2 (خاص بسطر "توقرت في:"):</label>
                     <div style="display: flex;">
                         <input type="text" id="setting-custom-date" placeholder="مثال: 2026/05/10 (اتركه فارغاً للاعتماد التلقائي)" style="padding: 12px; border: 1px solid #cbd5e1; border-radius: 0 10px 10px 0; flex: 1; font-weight: 800; font-size: 15px;">
                         <button class="btn btn-emerald" style="border-radius: 10px 0 0 10px;" onclick="saveSettingField('customDate')">حفظ وتعميم</button>
+                    </div>
+                    <div style="font-size: 11.5px; color: var(--gray); margin-top: 5px;">خاص فقط بالنموذجين الأول والثاني. بالنسبة للنموذج الثالث يتم ضبط تاريخ إصداره حصرياً من تبويب "تواريخ الإصدار".</div>
+                </div>
+
+                <!-- إعداد الرقم السري للبطاقة الرقمية -->
+                <div style="margin-top: 18px; padding-top: 16px; border-top: 1.5px dashed #cbd5e1;">
+                    <label style="display: block; font-weight: 800; font-size: 13.5px; margin-bottom: 6px; color: #1e3a8a;">
+                        <i class="fa-solid fa-key" style="color: #2563eb; margin-left: 6px;"></i> الرقم السري للبطاقة الرقمية (قفل صفحة الاستعلام):
+                    </label>
+                    <div style="font-size: 11.5px; color: var(--gray); margin-bottom: 8px; line-height: 1.5;">
+                        عند تحديد رقم سري، يتم قفل صفحة الاستعلام الرقمية (<code style="background:#e2e8f0; padding:1px 5px; border-radius:4px;">verify.html</code>) عند مسح الباركود، ولا تظهر بيانات الموظف إلا بعد إدخال هذا الرقم السري لمنع التطفل. (اتركه فارغاً لإلغاء القفل وجعلها متاحة بدون رمز).
+                    </div>
+                    <div style="display: flex;">
+                        <input type="password" id="setting-digital-pin" placeholder="مثال: 1234 أو اتركه فارغاً" style="padding: 12px; border: 1px solid #cbd5e1; border-radius: 0 10px 10px 0; flex: 1; font-weight: 800; font-size: 15px; letter-spacing: 2px;">
+                        <button type="button" class="btn" style="border-radius: 0; border: 1px solid #cbd5e1; border-left: none; background: #f8fafc; padding: 0 14px; cursor: pointer;" onclick="togglePinVisibility()" title="إظهار / إخفاء الرمز">
+                            <i class="fa-solid fa-eye" id="pin-toggle-icon"></i>
+                        </button>
+                        <button class="btn btn-emerald" style="border-radius: 10px 0 0 10px;" onclick="saveSettingField('digitalPin')">حفظ وتعميم الرمز</button>
                     </div>
                 </div>
             </div>
@@ -1903,8 +1936,8 @@
                 
                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid #e2e8f0;">
                     <div>
-                        <strong style="display: block; font-size: 14px;">إظهار تاريخ الإصدار على البطاقة</strong>
-                        <span style="font-size: 12px; color: var(--gray);">إذا تم إلغاؤه، لن يظهر سطر "توقرت في:" على بطاقات الموظفين كلياً.</span>
+                        <strong style="display: block; font-size: 14px;">إظهار تاريخ الإصدار للنموذج 1 و 2 (سطر "توقرت في:")</strong>
+                        <span style="font-size: 12px; color: var(--gray);">خاص بالنموذجين الأول والثاني فقط. إذا تم إلغاؤه، لن يظهر سطر "توقرت في:".</span>
                     </div>
                     <label class="switch">
                         <input type="checkbox" id="setting-show-date" checked onchange="toggleMasterPermission('showCardDate', this.checked)">
@@ -2286,7 +2319,11 @@
         employeeMovementInstitutions: [],
         allowAddEmployee: 'all', // 'all', 'none', 'selected'
         addEmployeeInstitutions: [],
-        isPlatformOpen: true
+        isPlatformOpen: true,
+        template3GlobalIssueDate: '',
+        digitalCardPin: '',
+        issueDateMap: {},
+        disabledCardsMap: {}
     };
 
     // دالة تحديد نص تاريخ البطاقة حسب إعداد التاريخ التلقائي والمخصص
@@ -2304,6 +2341,46 @@
         }
         return 'توقرت في:';
     }
+
+    // دالة استخراج وتجريد تاريخ نقي بدون عبارة "توقرت في"
+    function extractCleanDate(raw) {
+        if (!raw) return '';
+        return String(raw).replace(/^توقرت في\s*:?\s*/, '').trim();
+    }
+    window.extractCleanDate = extractCleanDate;
+
+    // دالة استخراج تاريخ الإصدار المعتمد للبطاقة خالياً من عبارة "توقرت في" لاستخدامه في النموذج الأول والثاني
+    function getCleanIssueDateDisplay(emp, cfg) {
+        const c = cfg || centralConfig;
+        if (c.showCardDate === false) return '';
+        let raw = (emp && emp.issueDate) ? emp.issueDate : '';
+        if (!raw && c.cardCustomDate && c.cardCustomDate.trim()) {
+            raw = c.cardCustomDate.trim();
+        }
+        if (!raw && c.autoDate !== false) {
+            const d = new Date();
+            raw = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+        }
+        if (!raw) return '';
+        return extractCleanDate(raw);
+    }
+    window.getCleanIssueDateDisplay = getCleanIssueDateDisplay;
+
+    // دالة استخراج تاريخ الإصدار المعتمد للنموذج الثالث حصرياً (مستقل تماماً عن إعدادات توقرت في للنموذج 1 و 2)
+    function getCleanIssueDateTemplate3(emp, cfg) {
+        const c = cfg || centralConfig;
+        if (emp && emp.issueDate && String(emp.issueDate).trim()) {
+            return extractCleanDate(emp.issueDate);
+        }
+        if (emp && emp.jobId && c.issueDateMap && c.issueDateMap[emp.jobId]) {
+            return extractCleanDate(c.issueDateMap[emp.jobId]);
+        }
+        if (c.template3GlobalIssueDate && String(c.template3GlobalIssueDate).trim()) {
+            return extractCleanDate(c.template3GlobalIssueDate);
+        }
+        return '';
+    }
+    window.getCleanIssueDateTemplate3 = getCleanIssueDateTemplate3;
 
     // دالة إنشاء سطر التاريخ في البطاقة بنفس محاذاة ونقطة بداية التسميات الأخرى تماماً
     function formatCardDateHTML(cfg) {
@@ -2423,6 +2500,12 @@
                     if (data.directorate_theme) centralConfig.directorateTheme = data.directorate_theme;
                     if (data.is_platform_open !== undefined) centralConfig.isPlatformOpen = !!data.is_platform_open;
                     if (data.isPlatformOpen !== undefined) centralConfig.isPlatformOpen = !!data.isPlatformOpen;
+                    if (data.template3_issue_date !== undefined) centralConfig.template3GlobalIssueDate = data.template3_issue_date;
+                    if (data.template3GlobalIssueDate !== undefined) centralConfig.template3GlobalIssueDate = data.template3GlobalIssueDate;
+                    if (data.digital_card_pin !== undefined) centralConfig.digitalCardPin = data.digital_card_pin;
+                    if (data.digitalCardPin !== undefined) centralConfig.digitalCardPin = data.digitalCardPin;
+                    if (data.issue_date_map) centralConfig.issueDateMap = data.issue_date_map;
+                    if (data.disabled_cards_map) centralConfig.disabledCardsMap = data.disabled_cards_map;
                 }
             } catch(fErr) { console.warn("Supabase config read error:", fErr); }
         }
@@ -2437,7 +2520,13 @@
         const dInput = document.getElementById('setting-director');
         if(dInput) dInput.value = centralConfig.globalDirector;
         const cdInput = document.getElementById('setting-custom-date');
-        if(cdInput) cdInput.value = centralConfig.cardCustomDate;
+        if(cdInput) cdInput.value = extractCleanDate(centralConfig.cardCustomDate);
+        const pinInput = document.getElementById('setting-digital-pin');
+        if(pinInput) pinInput.value = centralConfig.digitalCardPin || '';
+        const issueFieldInput = document.getElementById('issue-global-field-date');
+        if(issueFieldInput) {
+            issueFieldInput.value = extractCleanDate(centralConfig.template3GlobalIssueDate) || '';
+        }
 
         const prSelect = document.getElementById('setting-allow-print-mode');
         if(prSelect) prSelect.value = centralConfig.allowPrinting || 'all';
@@ -2597,6 +2686,8 @@
         if (dInput && dInput.value.trim()) centralConfig.globalDirector = dInput.value.trim();
         const cdInput = document.getElementById('setting-custom-date');
         if (cdInput) centralConfig.cardCustomDate = cdInput.value.trim();
+        const pinInput = document.getElementById('setting-digital-pin');
+        if (pinInput) centralConfig.digitalCardPin = pinInput.value.trim();
 
         const rfSelect = document.getElementById('setting-registry-format');
         if (rfSelect) centralConfig.registryFormat = rfSelect.value;
@@ -2642,7 +2733,11 @@
                     addEmployeeInstitutions: centralConfig.addEmployeeInstitutions || [],
                     directorate_theme: centralConfig.directorateTheme,
                     is_platform_open: (centralConfig.isPlatformOpen !== false),
-                    isPlatformOpen: (centralConfig.isPlatformOpen !== false)
+                    isPlatformOpen: (centralConfig.isPlatformOpen !== false),
+                    digital_card_pin: centralConfig.digitalCardPin || '',
+                    digitalCardPin: centralConfig.digitalCardPin || '',
+                    template3_issue_date: centralConfig.template3GlobalIssueDate || '',
+                    template3GlobalIssueDate: centralConfig.template3GlobalIssueDate || ''
                 });
 
                 // بث فوري لكافة التبويبات المفتوحة في المتصفح عبر حدث التخزين
@@ -2708,6 +2803,8 @@
             centralConfig.globalDirector = document.getElementById('setting-director').value.trim();
         } else if(fieldName === 'customDate') {
             centralConfig.cardCustomDate = document.getElementById('setting-custom-date').value.trim();
+        } else if(fieldName === 'digitalPin') {
+            centralConfig.digitalCardPin = document.getElementById('setting-digital-pin').value.trim();
         }
         try {
             await saveCentralConfigToServer();
@@ -2717,6 +2814,20 @@
             Swal.fire({ icon: 'error', title: 'تعذر الحفظ', text: 'حدث خطأ أثناء حفظ البيانات في قاعدة البيانات: ' + (err.message || err) });
         }
     }
+
+    function togglePinVisibility() {
+        const pinInput = document.getElementById('setting-digital-pin');
+        const icon = document.getElementById('pin-toggle-icon');
+        if (!pinInput || !icon) return;
+        if (pinInput.type === 'password') {
+            pinInput.type = 'text';
+            icon.className = 'fa-solid fa-eye-slash';
+        } else {
+            pinInput.type = 'password';
+            icon.className = 'fa-solid fa-eye';
+        }
+    }
+    window.togglePinVisibility = togglePinVisibility;
 
     // نشر النموذج المختار
     async function publishTemplate(templateId) {
@@ -3311,7 +3422,38 @@
                         const jid = String(item.employee_id || '').trim();
                         if (!jid || window.modifiedEmployeesMap[jid]) return;
                         if (item.modified_by === 'postgres') return;
-                        if (['ADMIN_EDIT', 'DIRECTOR_EDIT', 'TRANSFER_INSTITUTION', 'EMPLOYEE_CREATE'].includes(item.action_type)) {
+                        if (item.action_type === 'EMPLOYEE_CREATE') {
+                            // الموظفون الجدد: لا يتم تسجيلهم في جدول الموظفين المعدلين لمنع الخلط
+                            let empObj = empMap.get(jid);
+                            if (!empObj) {
+                                const rawInst = (newD.etablissement || newD.workplace || newD.inst || '').trim();
+                                const unifiedInst = matchToCanonicalInstitution(rawInst) || rawInst;
+                                empObj = {
+                                    jobId: jid,
+                                    matricule: jid,
+                                    name: eName,
+                                    inst: unifiedInst,
+                                    canonicalInst: unifiedInst,
+                                    originalInst: rawInst,
+                                    rank: newD.grade || newD.rank || '',
+                                    dob: cleanDateString(newD.dateNais || newD.dob || ''),
+                                    photoUrl: newD.photo_url || null,
+                                    employmentType: newD.situationAdmin || newD.employmentType || 'مرسم',
+                                    substituteDuration: newD.substituteDuration || '',
+                                    registryNo: (newD.registry_no !== undefined && newD.registry_no !== null) ? parseInt(newD.registry_no, 10) : null,
+                                    telephone: newD.telephone || '',
+                                    sexe: newD.sexe || '',
+                                    addedByDirector: true,
+                                    addedByDirectorInst: rawInst,
+                                    createdAt: item.modified_at || '',
+                                    hasMod: false,
+                                    isModActive: false,
+                                    modDoc: null
+                                };
+                                empMap.set(jid, empObj);
+                            }
+                        } else if (['ADMIN_EDIT', 'DIRECTOR_EDIT', 'TRANSFER_INSTITUTION'].includes(item.action_type)) {
+                            if (window.modifiedEmployeesMap[jid]) return;
                             const newD = item.new_data || {};
                             const prevD = item.previous_data || {};
                             let eName = newD.name || '';
@@ -3339,33 +3481,7 @@
                                 isActive: true
                             };
                             let empObj = empMap.get(jid);
-                            if (!empObj && item.action_type === 'EMPLOYEE_CREATE') {
-                                const rawInst = (newD.etablissement || newD.workplace || newD.inst || '').trim();
-                                const unifiedInst = matchToCanonicalInstitution(rawInst) || rawInst;
-                                empObj = {
-                                    jobId: jid,
-                                    matricule: jid,
-                                    name: eName,
-                                    inst: unifiedInst,
-                                    canonicalInst: unifiedInst,
-                                    originalInst: rawInst,
-                                    rank: newD.grade || newD.rank || '',
-                                    dob: cleanDateString(newD.dateNais || newD.dob || ''),
-                                    photoUrl: newD.photo_url || null,
-                                    employmentType: newD.situationAdmin || newD.employmentType || 'مرسم',
-                                    substituteDuration: newD.substituteDuration || '',
-                                    registryNo: (newD.registry_no !== undefined && newD.registry_no !== null) ? parseInt(newD.registry_no, 10) : null,
-                                    telephone: newD.telephone || '',
-                                    sexe: newD.sexe || '',
-                                    addedByDirector: true,
-                                    addedByDirectorInst: rawInst,
-                                    createdAt: item.modified_at || '',
-                                    hasMod: true,
-                                    isModActive: true,
-                                    modDoc: window.modifiedEmployeesMap[jid]
-                                };
-                                empMap.set(jid, empObj);
-                            } else if (empObj) {
+                            if (empObj) {
                                 empObj.hasMod = true;
                                 empObj.isModActive = true;
                                 empObj.modDoc = window.modifiedEmployeesMap[jid];
@@ -6218,12 +6334,20 @@
         });
 
         const totalEmps = allEmployeesData.length;
-        const defaultDate = (typeof getCardDateDisplay === 'function') ? getCardDateDisplay(centralConfig) : '2026';
+        const cleanDefaultDate = (typeof extractCleanDate === 'function') ? (extractCleanDate(centralConfig.template3GlobalIssueDate) || '') : (centralConfig.template3GlobalIssueDate || '');
 
         if (document.getElementById('issue-total-employees')) document.getElementById('issue-total-employees').textContent = totalEmps;
         if (document.getElementById('issue-assigned-count')) document.getElementById('issue-assigned-count').textContent = assignedCount;
         if (document.getElementById('issue-unassigned-count')) document.getElementById('issue-unassigned-count').textContent = unassignedCount;
-        if (document.getElementById('issue-default-date')) document.getElementById('issue-default-date').textContent = defaultDate || '---';
+        if (document.getElementById('issue-tab-total-badge')) document.getElementById('issue-tab-total-badge').textContent = totalEmps;
+        if (document.getElementById('issue-default-date')) document.getElementById('issue-default-date').textContent = cleanDefaultDate || '---';
+
+        const dateInputField = document.getElementById('issue-global-field-date');
+        if (dateInputField && !dateInputField.value) {
+            const d = new Date();
+            const todayStr = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+            dateInputField.value = cleanDefaultDate || todayStr;
+        }
 
         const unassignedBadge = document.getElementById('issue-unassigned-badge');
         if (unassignedBadge) {
@@ -6369,7 +6493,7 @@
         const emp = allEmployeesData.find(e => String(e.jobId) === String(jobId));
         if (!emp) return Swal.fire('خطأ', 'لم يتم العثور على الموظف', 'error');
 
-        const curDate = emp.issueDate || (typeof getCardDateDisplay === 'function' ? getCardDateDisplay(centralConfig) : '2026');
+        const curDate = extractCleanDate(emp.issueDate) || extractCleanDate(centralConfig.cardCustomDate) || new Date().toISOString().split('T')[0];
 
         const { value: newDate } = await Swal.fire({
             title: '<div style="font-size:18px; font-weight:900;"><i class="fa-solid fa-calendar-pen" style="color:var(--gold);"></i> تعديل تاريخ إصدار البطاقة</div>',
@@ -6393,7 +6517,7 @@
                     Swal.showValidationMessage('يرجى كتابة أو اختيار تاريخ الإصدار');
                     return false;
                 }
-                return val;
+                return extractCleanDate(val);
             }
         });
 
@@ -6419,6 +6543,133 @@
     }
     window.editEmployeeIssueDate = editEmployeeIssueDate;
 
+    // تطبيق تاريخ الإصدار مباشرة من الحقل في تبويب تواريخ الإصدار (سواء على الجدد فقط أو تعميمه على الكل)
+    async function applyIssueDateFromTab(applyToAll = false) {
+        if (!allEmployeesData || allEmployeesData.length === 0) {
+            return Swal.fire('تنبيه', 'يرجى تحميل بيانات الموظفين أولاً', 'info');
+        }
+
+        const dateInput = document.getElementById('issue-global-field-date');
+        let chosenDate = dateInput ? dateInput.value.trim() : '';
+        if (chosenDate) {
+            chosenDate = extractCleanDate(chosenDate);
+        }
+
+        if (!chosenDate) {
+            return Swal.fire({
+                icon: 'warning',
+                title: 'يرجى إدخال تاريخ الإصدار',
+                text: 'اكتب تاريخ الإصدار في الحقل أولاً ليتم تطبيقه (مثال: 2026/10/26).'
+            });
+        }
+
+        if (applyToAll) {
+            const confirm = await Swal.fire({
+                title: '<div style="font-size:18px; font-weight:900;"><i class="fa-solid fa-calendar-days" style="color:var(--gold);"></i> تأكيد تعميم تاريخ الإصدار على الكل</div>',
+                html: `سيتم تعيين تاريخ الإصدار: <strong style="color:var(--primary-green); font-size:16px;" dir="ltr">${escapeHtml(chosenDate)}</strong><br>لكافة موظفي الولاية المسجلين (<strong style="color:var(--primary-green);">${allEmployeesData.length}</strong> موظف).<br>هل تريد المتابعة وتوثيق التغيير؟`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'نعم، تعميم على الجميع',
+                cancelButtonText: 'إلغاء',
+                confirmButtonColor: 'var(--gold)'
+            });
+            if (!confirm.isConfirmed) return;
+
+            const issueMap = {};
+            allEmployeesData.forEach(e => {
+                issueMap[String(e.jobId)] = chosenDate;
+            });
+
+            Swal.fire({
+                title: 'جاري تعميم تاريخ الإصدار على كافة الموظفين...',
+                html: '<div id="bulk-issue-prog-text">جاري الحفظ في قاعدة البيانات السحابية...</div>',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            try {
+                if (typeof window.bulkUpdateIssueDates === 'function') {
+                    await window.bulkUpdateIssueDates(issueMap, 'central_admin', (completed, total) => {
+                        const el = document.getElementById('bulk-issue-prog-text');
+                        if (el) el.textContent = `تم تحديث ${completed} من ${total} موظف...`;
+                    });
+                }
+                allEmployeesData.forEach(e => { e.issueDate = chosenDate; });
+
+                // حفظ وتعميم تاريخ الإصدار العام للنموذج الثالث حصرياً دون المساس بالنموذجين 1 و 2
+                centralConfig.template3GlobalIssueDate = chosenDate;
+                if (typeof window.saveTemplate3GlobalIssueDate === 'function') {
+                    await window.saveTemplate3GlobalIssueDate(chosenDate);
+                } else if (typeof saveCentralConfigToServer === 'function') {
+                    try { await saveCentralConfigToServer(); } catch(e){}
+                }
+
+                renderIssueDateTab(false);
+                Swal.fire({
+                    icon: 'success',
+                    title: 'تم التعميم الشامل بنجاح',
+                    text: `تم تعيين تاريخ الإصدار (${chosenDate}) لكافة موظفي الولاية (${allEmployeesData.length} موظف) بنجاح.`
+                });
+            } catch(err) {
+                renderIssueDateTab(false);
+                Swal.fire('خطأ', 'حدث خطأ أثناء تعميم تواريخ الإصدار: ' + (err.message || err), 'error');
+            }
+        } else {
+            // تطبيق على الجدد فقط
+            const unassignedList = allEmployeesData.filter(e => !e.issueDate);
+            if (unassignedList.length === 0) {
+                return Swal.fire({
+                    icon: 'info',
+                    title: 'مكتمل بالكامل',
+                    text: 'كافة موظفي الولاية مسجل لهم تاريخ إصدار بالفعل! إذا أردت تعميم هذا التاريخ على الجميع، اضغط زر "تطبيق وتعميم على الكل".'
+                });
+            }
+
+            const confirm = await Swal.fire({
+                title: '<div style="font-size:18px; font-weight:900;"><i class="fa-solid fa-calendar-plus" style="color:var(--emerald);"></i> تأكيد تعيين التاريخ للموظفين الجدد</div>',
+                html: `سيتم تعيين تاريخ الإصدار: <strong style="color:var(--primary-green); font-size:16px;" dir="ltr">${escapeHtml(chosenDate)}</strong><br>للموظفين الجدد غير المحددين فقط (<strong style="color:var(--primary-red);">${unassignedList.length}</strong> موظف جديد).<br>هل تريد المتابعة؟`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: `نعم، تطبيق لـ ${unassignedList.length} موظف جديد`,
+                cancelButtonText: 'إلغاء',
+                confirmButtonColor: 'var(--emerald)'
+            });
+            if (!confirm.isConfirmed) return;
+
+            const issueMap = {};
+            unassignedList.forEach(e => {
+                issueMap[String(e.jobId)] = chosenDate;
+            });
+
+            Swal.fire({
+                title: 'جاري تعيين وحفظ تواريخ الإصدار للجدد...',
+                html: '<div id="bulk-issue-prog-text">جاري بدء الحفظ في قاعدة البيانات السحابية...</div>',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            try {
+                if (typeof window.bulkUpdateIssueDates === 'function') {
+                    await window.bulkUpdateIssueDates(issueMap, 'central_admin', (completed, total) => {
+                        const el = document.getElementById('bulk-issue-prog-text');
+                        if (el) el.textContent = `تم معالجة ${completed} من ${total} موظف...`;
+                    });
+                }
+                unassignedList.forEach(e => { e.issueDate = chosenDate; });
+                renderIssueDateTab(true);
+                Swal.fire({
+                    icon: 'success',
+                    title: 'تم التعيين بنجاح',
+                    text: `تم تعيين تاريخ الإصدار (${chosenDate}) لعدد ${unassignedList.length} موظف جديد وتوثيقه في قاعدة البيانات.`
+                });
+            } catch(err) {
+                renderIssueDateTab(false);
+                Swal.fire('خطأ', 'حدث خطأ أثناء حفظ تواريخ الإصدار: ' + (err.message || err), 'error');
+            }
+        }
+    }
+    window.applyIssueDateFromTab = applyIssueDateFromTab;
+
     // تعيين تاريخ للجدد وغير المحددين
     async function assignIssueDateToUnassigned() {
         const unassignedList = allEmployeesData.filter(e => !e.issueDate);
@@ -6430,7 +6681,9 @@
             });
         }
 
-        const defaultDate = (typeof getCardDateDisplay === 'function' ? getCardDateDisplay(centralConfig) : '') || new Date().toISOString().split('T')[0];
+        const defaultDate = (document.getElementById('issue-global-field-date')?.value?.trim())
+            || extractCleanDate(centralConfig.template3GlobalIssueDate)
+            || new Date().toISOString().split('T')[0];
 
         const { value: chosenDate } = await Swal.fire({
             title: '<div style="font-size:18px; font-weight:900;"><i class="fa-solid fa-calendar-plus" style="color:var(--emerald);"></i> تعيين تاريخ للموظفين الجدد وغير المحددين</div>',
@@ -6465,7 +6718,7 @@
             });
 
             Swal.fire({
-                title: 'جاري تعيين وحفظ تواريخ الإصدار...',
+                title: 'جاري تعيين وحفظ تواريخ الإصدار للجدد...',
                 html: '<div id="bulk-issue-prog-text">جاري بدء الحفظ في قاعدة البيانات السحابية...</div>',
                 allowOutsideClick: false,
                 didOpen: () => Swal.showLoading()
@@ -6499,16 +6752,18 @@
             return Swal.fire('تنبيه', 'يرجى تحميل بيانات الموظفين أولاً', 'info');
         }
 
-        const defaultDate = (typeof getCardDateDisplay === 'function' ? getCardDateDisplay(centralConfig) : '') || '2026';
+        const defaultDate = (document.getElementById('issue-global-field-date')?.value?.trim())
+            || extractCleanDate(centralConfig.template3GlobalIssueDate)
+            || new Date().toISOString().split('T')[0];
 
         const { value: chosenDate } = await Swal.fire({
-            title: '<div style="font-size:18px; font-weight:900;"><i class="fa-solid fa-calendar-days" style="color:var(--gold);"></i> تعيين تاريخ إصدار موحد وشامل</div>',
+            title: '<div style="font-size:18px; font-weight:900;"><i class="fa-solid fa-calendar-days" style="color:var(--gold);"></i> تعيين تاريخ إصدار موحد وشامل للنموذج الثالث</div>',
             html: `
                 <div style="text-align:right; margin-bottom:12px; font-size:13.5px;">
-                    سيتم تعيين تاريخ الإصدار لجميع موظفي الولاية المسجلين (<strong style="color:var(--primary-green); font-size:16px;">${allEmployeesData.length}</strong> موظف) وتوحيد تاريخ بطاقاتهم.
+                    سيتم تعيين وتعميم تاريخ الإصدار لجميع موظفي الولاية المسجلين (<strong style="color:var(--primary-green); font-size:16px;">${allEmployeesData.length}</strong> موظف) لبطاقات النموذج الثالث.
                 </div>
                 <div style="text-align:right;">
-                    <label style="font-weight:bold; display:block; margin-bottom:4px; font-size:13px;">تاريخ الإصدار الموحد:</label>
+                    <label style="font-weight:bold; display:block; margin-bottom:4px; font-size:13px;">تاريخ الإصدار الموحد (النموذج الثالث):</label>
                     <input type="text" id="swal-bulk-all-date" value="${defaultDate}" placeholder="YYYY-MM-DD" dir="ltr" style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-weight:800; text-align:center;">
                 </div>
             `,
@@ -6522,7 +6777,7 @@
                     Swal.showValidationMessage('يرجى تحديد تاريخ الإصدار');
                     return false;
                 }
-                return val;
+                return extractCleanDate(val);
             }
         });
 
@@ -6547,6 +6802,12 @@
                     });
                 }
                 allEmployeesData.forEach(e => { e.issueDate = chosenDate; });
+                centralConfig.template3GlobalIssueDate = chosenDate;
+                if (typeof window.saveTemplate3GlobalIssueDate === 'function') {
+                    await window.saveTemplate3GlobalIssueDate(chosenDate);
+                } else if (typeof saveCentralConfigToServer === 'function') {
+                    try { await saveCentralConfigToServer(); } catch(e){}
+                }
                 renderIssueDateTab(false);
                 Swal.fire({
                     icon: 'success',
@@ -6579,6 +6840,10 @@
                 if (typeof window.clearAllIssueDatesLive === 'function') {
                     await window.clearAllIssueDatesLive();
                 }
+                if (typeof window.saveTemplate3GlobalIssueDate === 'function') {
+                    await window.saveTemplate3GlobalIssueDate('');
+                }
+                centralConfig.template3GlobalIssueDate = '';
                 allEmployeesData.forEach(e => { e.issueDate = null; });
                 renderIssueDateTab(true);
                 Swal.fire('تم التصفير', 'تم تصفير تواريخ الإصدار بنجاح.', 'success');
@@ -8091,8 +8356,11 @@
 
         // الوجه الأمامي: النموذج 1
         if (templateId === 1) {
+            const baseRank = formatEmployeeCardRank(emp);
+            const dur = (emp.substituteDuration || emp.duration || '').trim();
+            const rankWithDuration = (dur && !baseRank.includes(dur)) ? `${baseRank} (${dur})` : baseRank;
             return `
-            <div class="card" dir="rtl" style="width: 750px !important; height: 474px !important; position: relative !important; transform: none !important; right: auto !important; top: auto !important;">
+            <div class="card theme-1-card" dir="rtl" style="width: 750px !important; height: 474px !important; position: relative !important; transform: none !important; right: auto !important; top: auto !important;">
                 <div class="top-deco-bar"><div class="bar-red"></div><div class="bar-green"></div></div>
                 <div class="watermark"></div>
                 <div class="header">
@@ -8111,9 +8379,8 @@
                         <div class="card-name-title">بطاقة التعريف المهنية</div>
                         <div class="info-row"><span class="label">الاسم واللقب:</span><span class="value">${emp.name}</span></div>
                         <div class="info-row"><span class="label">تاريخ الميلاد:</span><span class="value" dir="ltr">${printDob}</span></div>
-                        <div class="info-row"><span class="label">الرتبة:</span><span class="value">${formatEmployeeCardRank(emp)}</span></div>
+                        <div class="info-row rank-row" style="display:flex; align-items:flex-start;"><span class="label" style="min-width:115px; flex-shrink:0;">الرتبة:</span><span class="value rank-val" style="white-space:normal; word-break:break-word; line-height:1.2; flex:1;">${rankWithDuration}</span></div>
                         <div class="info-row workplace-row"><span class="label">مكان العمل:</span><span class="value workplace-val">${workplaceText}</span></div>
-                        ${formatCardValidityHTML(emp, 1)}
                         ${showDate ? formatCardDateHTML(centralConfig) : ''}
                     </div>
                     <div class="photo-section">
@@ -8125,7 +8392,7 @@
                 <div class="barcode-container">
                     <svg class="barcode-render"
                         jsbarcode-value="${emp.jobId || '0000000000'}" jsbarcode-format="CODE128"
-                        jsbarcode-displayValue="false" jsbarcode-height="32"
+                        jsbarcode-displayValue="false" jsbarcode-height="28"
                         jsbarcode-width="2.1" jsbarcode-margin="0" jsbarcode-background="transparent">
                     </svg>
                 </div>
@@ -8138,6 +8405,7 @@
             const verifyUrl = (typeof window.generateSmartCardVerificationUrl === 'function')
                 ? window.generateSmartCardVerificationUrl(emp, centralConfig)
                 : `verify.html?id=${emp.jobId}`;
+            const cleanIssueDate = getCleanIssueDateTemplate3(emp, centralConfig);
 
             return `
             <div class="card" dir="rtl" style="width: 750px !important; height: 474px !important; position: relative !important; transform: none !important; right: auto !important; top: auto !important;">
@@ -8158,12 +8426,12 @@
                     <div class="info-section">
                         <div class="card-name-title">بطاقة التعريف المهنية</div>
                         <div class="info-row"><span class="label">الاسم واللقب:</span><span class="value" style="font-size: 22px; font-weight: 900;">${emp.name}</span></div>
-                        <div class="info-row"><span class="label">تاريخ الإصدار:</span><span class="value" dir="ltr" style="font-weight: 800;">${dateText}</span></div>
-                        <div class="smart-qr-center-box" style="display: flex; flex-direction: column; align-items: center; justify-content: center; align-self: flex-start; margin-top: 8px; margin-right: 0; padding: 4px; background: transparent; border: 1.5px solid #006233; border-radius: 8px; box-shadow: none; width: fit-content;">
-                            <div class="smart-qr-target" data-verify-url="${verifyUrl}" style="width: 105px; height: 105px; display: flex; align-items: center; justify-content: center;">
-                                <canvas class="smart-qr-canvas" style="width: 105px; height: 105px; display: block;"></canvas>
+                        ${cleanIssueDate ? `<div class="info-row"><span class="label">تاريخ الإصدار:</span><span class="value" dir="ltr" style="font-weight: 800;">${cleanIssueDate}</span></div>` : ''}
+                        <div class="smart-qr-center-box" style="display: flex; flex-direction: column; align-items: center; justify-content: center; align-self: flex-start; margin-top: 6px; margin-right: 0; padding: 6px; background: #ffffff; border: 2px solid #006233; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); width: fit-content;">
+                            <div class="smart-qr-target" data-verify-url="${verifyUrl}" style="width: 120px; height: 120px; display: flex; align-items: center; justify-content: center; background: #ffffff;">
+                                <canvas class="smart-qr-canvas" style="width: 120px; height: 120px; display: block;"></canvas>
                             </div>
-                            <span style="font-size: 9px; font-weight: 800; color: #006233; margin-top: 3px; display: flex; align-items: center; gap: 4px;">
+                            <span style="font-size: 10px; font-weight: 800; color: #006233; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
                                 <i class="fa-solid fa-qrcode"></i> مسح للتحقق والبطاقة الرقمية
                             </span>
                         </div>
@@ -8174,12 +8442,13 @@
                         <div class="signature-title" style="line-height: 1.2;">مدير التربية<br><span style="font-size: 15px; font-weight: 800; color: #000;">${currentDirector}</span></div>
                     </div>
                 </div>
-                <div class="barcode-container" style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: auto; margin-bottom: 8px;">
-                    <i class="fa-solid fa-fingerprint" style="color: #006233; font-size: 26px;"></i>
+                <div class="barcode-container" style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: auto; margin-bottom: 6px; background: #ffffff; padding: 4px 16px; border-radius: 8px; border: 1.5px solid #cbd5e1; box-shadow: 0 1px 4px rgba(0,0,0,0.06); width: fit-content; margin-left: auto; margin-right: auto;">
+                    <i class="fa-solid fa-barcode" style="color: #006233; font-size: 28px;"></i>
                     <svg class="barcode-render"
                         jsbarcode-value="${emp.jobId || '0000000000'}" jsbarcode-format="CODE128"
-                        jsbarcode-displayValue="false" jsbarcode-height="32"
-                        jsbarcode-width="2.1" jsbarcode-margin="0" jsbarcode-background="transparent">
+                        jsbarcode-displayValue="false" jsbarcode-height="42"
+                        jsbarcode-width="2.3" jsbarcode-margin="8" jsbarcode-background="#ffffff"
+                        style="height: 42px; width: auto; max-width: 480px; display: block;">
                     </svg>
                 </div>
                 <div class="footer">على السلطات المدنية والعسكرية أن تسمح لحامل هذه البطاقة بالمرور في كل الحالات</div>
@@ -8284,7 +8553,11 @@
                         const bc = stage.querySelector('.barcode-render');
                         if (bc) {
                             try {
-                                JsBarcode(bc, sampleEmp.jobId || '0000000000', { format: 'CODE128', displayValue: false, height: 32, width: 2.1, margin: 0, background: 'transparent' });
+                                const bcH = (templateId === 3) ? 42 : 32;
+                                const bcW = (templateId === 3) ? 2.3 : 2.1;
+                                const bcM = (templateId === 3) ? 8 : 0;
+                                const bcBg = (templateId === 3) ? '#ffffff' : 'transparent';
+                                JsBarcode(bc, sampleEmp.jobId || '0000000000', { format: 'CODE128', displayValue: false, height: bcH, width: bcW, margin: bcM, background: bcBg });
                             } catch(e){}
                         }
                     }
@@ -8296,7 +8569,7 @@
                             new QRious({
                                 element: qrCanvas,
                                 value: url,
-                                size: 140,
+                                size: 260,
                                 level: 'M'
                             });
                         }
@@ -8495,9 +8768,13 @@
 
                 // الوجه الأمامي: النموذج 1 (الكلاسيكي الرسمي بالباركود والشريط المزدوج)
                 if(templateId === 1) {
+                    const baseRank = formatEmployeeCardRank(emp);
+                    const dur = (emp.substituteDuration || emp.duration || '').trim();
+                    const rankWithDuration = (dur && !baseRank.includes(dur)) ? `${baseRank} (${dur})` : baseRank;
+
                     pageHTML += `
                     <div class="card-wrapper-large">
-                        <div class="card" dir="rtl">
+                        <div class="card theme-1-card" dir="rtl">
                             <div class="top-deco-bar"><div class="bar-red"></div><div class="bar-green"></div></div>
                             <div class="watermark"></div>
                             <div class="header">
@@ -8516,9 +8793,8 @@
                                     <div class="card-name-title">بطاقة التعريف المهنية</div>
                                     <div class="info-row"><span class="label">الاسم واللقب:</span><span class="value">${emp.name}</span></div>
                                     <div class="info-row"><span class="label">تاريخ الميلاد:</span><span class="value" dir="ltr">${printDob}</span></div>
-                                    <div class="info-row"><span class="label">الرتبة:</span><span class="value">${formatEmployeeCardRank(emp)}</span></div>
+                                    <div class="info-row rank-row" style="display:flex; align-items:flex-start;"><span class="label" style="min-width:115px; flex-shrink:0;">الرتبة:</span><span class="value rank-val" style="white-space:normal; word-break:break-word; line-height:1.2; flex:1;">${rankWithDuration}</span></div>
                                     <div class="info-row workplace-row"><span class="label">مكان العمل:</span><span class="value workplace-val">${emp.inst || emp.workplace || ''}</span></div>
-                                    ${formatCardValidityHTML(emp, 1)}
                                     ${showDate ? formatCardDateHTML(centralConfig) : ''}
                                 </div>
                                 <div class="photo-section">
@@ -8530,7 +8806,7 @@
                             <div class="barcode-container">
                                 <svg class="barcode-render"
                                     jsbarcode-value="${emp.jobId || '0000000000'}" jsbarcode-format="CODE128"
-                                    jsbarcode-displayValue="false" jsbarcode-height="32"
+                                    jsbarcode-displayValue="false" jsbarcode-height="28"
                                     jsbarcode-width="2.1" jsbarcode-margin="0" jsbarcode-background="transparent">
                                 </svg>
                             </div>
@@ -8544,6 +8820,7 @@
                     const verifyUrl = (typeof window.generateSmartCardVerificationUrl === 'function')
                         ? window.generateSmartCardVerificationUrl(emp, centralConfig)
                         : `verify.html?id=${emp.jobId}`;
+                    const cleanIssueDate = getCleanIssueDateTemplate3(emp, centralConfig);
 
                     pageHTML += `
                     <div class="card-wrapper-large">
@@ -8565,12 +8842,12 @@
                                 <div class="info-section">
                                     <div class="card-name-title">بطاقة التعريف المهنية</div>
                                     <div class="info-row"><span class="label">الاسم واللقب:</span><span class="value" style="font-size: 22px; font-weight: 900;">${emp.name}</span></div>
-                                    <div class="info-row"><span class="label">تاريخ الإصدار:</span><span class="value" dir="ltr" style="font-weight: 800;">${dateText}</span></div>
-                                    <div class="smart-qr-center-box" style="display: flex; flex-direction: column; align-items: center; justify-content: center; align-self: flex-start; margin-top: 8px; margin-right: 0; padding: 4px; background: transparent; border: 1.5px solid #006233; border-radius: 8px; box-shadow: none; width: fit-content;">
-                                        <div class="smart-qr-target" data-verify-url="${verifyUrl}" style="width: 105px; height: 105px; display: flex; align-items: center; justify-content: center;">
-                                            <canvas class="smart-qr-canvas" style="width: 105px; height: 105px; display: block;"></canvas>
+                                    ${cleanIssueDate ? `<div class="info-row"><span class="label">تاريخ الإصدار:</span><span class="value" dir="ltr" style="font-weight: 800;">${cleanIssueDate}</span></div>` : ''}
+                                    <div class="smart-qr-center-box" style="display: flex; flex-direction: column; align-items: center; justify-content: center; align-self: flex-start; margin-top: 6px; margin-right: 0; padding: 6px; background: #ffffff; border: 2px solid #006233; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); width: fit-content;">
+                                        <div class="smart-qr-target" data-verify-url="${verifyUrl}" style="width: 120px; height: 120px; display: flex; align-items: center; justify-content: center; background: #ffffff;">
+                                            <canvas class="smart-qr-canvas" style="width: 120px; height: 120px; display: block;"></canvas>
                                         </div>
-                                        <span style="font-size: 9px; font-weight: 800; color: #006233; margin-top: 3px; display: flex; align-items: center; gap: 4px;">
+                                        <span style="font-size: 10px; font-weight: 800; color: #006233; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
                                             <i class="fa-solid fa-qrcode"></i> مسح للتحقق والبطاقة الرقمية
                                         </span>
                                     </div>
@@ -8581,12 +8858,13 @@
                                     <div class="signature-title" style="line-height: 1.2;">مدير التربية<br><span style="font-size: 15px; font-weight: 800; color: #000;">${currentDirector}</span></div>
                                 </div>
                             </div>
-                            <div class="barcode-container" style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: auto; margin-bottom: 8px;">
-                                <i class="fa-solid fa-fingerprint" style="color: #006233; font-size: 26px;"></i>
+                            <div class="barcode-container" style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: auto; margin-bottom: 6px; background: #ffffff; padding: 4px 16px; border-radius: 8px; border: 1.5px solid #cbd5e1; box-shadow: 0 1px 4px rgba(0,0,0,0.06); width: fit-content; margin-left: auto; margin-right: auto;">
+                                <i class="fa-solid fa-barcode" style="color: #006233; font-size: 28px;"></i>
                                 <svg class="barcode-render"
                                     jsbarcode-value="${emp.jobId || '0000000000'}" jsbarcode-format="CODE128"
-                                    jsbarcode-displayValue="false" jsbarcode-height="32"
-                                    jsbarcode-width="2.1" jsbarcode-margin="0" jsbarcode-background="transparent">
+                                    jsbarcode-displayValue="false" jsbarcode-height="42"
+                                    jsbarcode-width="2.3" jsbarcode-margin="8" jsbarcode-background="#ffffff"
+                                    style="height: 42px; width: auto; max-width: 480px; display: block;">
                                 </svg>
                             </div>
                             <div class="footer">على السلطات المدنية والعسكرية أن تسمح لحامل هذه البطاقة بالمرور في كل الحالات</div>
@@ -8640,7 +8918,11 @@
             container.querySelectorAll('.barcode-render').forEach(el => {
                 try {
                     const val = el.getAttribute('jsbarcode-value') || '0000000000';
-                    JsBarcode(el, val, { format: 'CODE128', displayValue: false, height: 32, width: 2.1, margin: 0, background: 'transparent' });
+                    const bcH = (templateId === 3) ? 42 : 32;
+                    const bcW = (templateId === 3) ? 2.3 : 2.1;
+                    const bcM = (templateId === 3) ? 8 : 0;
+                    const bcBg = (templateId === 3) ? '#ffffff' : 'transparent';
+                    JsBarcode(el, val, { format: 'CODE128', displayValue: false, height: bcH, width: bcW, margin: bcM, background: bcBg });
                 } catch(e){}
             });
         }
@@ -8655,7 +8937,7 @@
                         new QRious({
                             element: canvas,
                             value: url,
-                            size: 140,
+                            size: 260,
                             level: 'M'
                         });
                     }
@@ -9030,61 +9312,81 @@
                 }
 
                 // 3. تحديث الذاكرة المحلية والواجهة فوراً
-                window.modifiedEmployeesMap[jid] = modData;
-                let target = allEmployeesData.find(e => String(e.jobId) === jid);
-                if (target) {
-                    target.hasMod = true;
-                    target.isModActive = formValues.isActive;
-                    target.modDoc = modData;
-                    if (formValues.issueDate) target.issueDate = formValues.issueDate;
-                    if (regNum) target.registryNo = regNum;
-                    if (formValues.isActive) {
+                if (isEditing && empObj) {
+                    // الموظف المعدل فقط هو الذي يسجل في سجل الموظفين المعدلين
+                    window.modifiedEmployeesMap[jid] = modData;
+                    let target = allEmployeesData.find(e => String(e.jobId) === jid);
+                    if (target) {
+                        target.hasMod = true;
+                        target.isModActive = formValues.isActive;
+                        target.modDoc = modData;
+                        if (formValues.issueDate) target.issueDate = formValues.issueDate;
+                        if (regNum) target.registryNo = regNum;
+                        if (formValues.isActive) {
+                            target.name = formValues.name;
+                            target.inst = formValues.inst;
+                            target.canonicalInst = matchToCanonicalInstitution(formValues.inst) || formValues.inst;
+                            target.inst = target.canonicalInst;
+                            target.originalInst = formValues.inst;
+                            target.workplace = formValues.inst;
+                            target.place = formValues.inst;
+                            target.rank = formValues.rank;
+                            target.dob = formValues.dob;
+                            target.employmentType = formValues.employmentType;
+                            target.substituteDuration = formValues.substituteDuration;
+                        } else if (target._rawBase) {
+                            target.name = target._rawBase.name;
+                            target.inst = target._rawBase.inst;
+                            target.canonicalInst = target._rawBase.canonicalInst || matchToCanonicalInstitution(target._rawBase.inst) || target._rawBase.inst;
+                            target.inst = target.canonicalInst;
+                            target.rank = target._rawBase.rank;
+                            target.dob = target._rawBase.dob;
+                            target.employmentType = target._rawBase.employmentType || 'مرسم';
+                            target.substituteDuration = target._rawBase.substituteDuration || '';
+                            target.registryNo = target._rawBase.registryNo;
+                        }
+                    }
+                } else {
+                    // الموظف الجديد المسجل حديثاً لا يسجل في جدول الموظفين المعدلين لمنع الخلط
+                    const canonInst = matchToCanonicalInstitution(formValues.inst) || formValues.inst;
+                    let target = allEmployeesData.find(e => String(e.jobId) === jid);
+                    if (target) {
+                        target.hasMod = false;
+                        target.isModActive = false;
+                        target.modDoc = null;
+                        if (formValues.issueDate) target.issueDate = formValues.issueDate;
+                        if (regNum) target.registryNo = regNum;
                         target.name = formValues.name;
-                        target.inst = formValues.inst;
-                        target.canonicalInst = matchToCanonicalInstitution(formValues.inst) || formValues.inst;
-                        target.inst = target.canonicalInst;
-                        target.originalInst = formValues.inst;
-                        target.workplace = formValues.inst;
-                        target.place = formValues.inst;
+                        target.inst = canonInst;
+                        target.canonicalInst = canonInst;
                         target.rank = formValues.rank;
                         target.dob = formValues.dob;
                         target.employmentType = formValues.employmentType;
                         target.substituteDuration = formValues.substituteDuration;
-                    } else if (target._rawBase) {
-                        target.name = target._rawBase.name;
-                        target.inst = target._rawBase.inst;
-                        target.canonicalInst = target._rawBase.canonicalInst || matchToCanonicalInstitution(target._rawBase.inst) || target._rawBase.inst;
-                        target.inst = target.canonicalInst;
-                        target.rank = target._rawBase.rank;
-                        target.dob = target._rawBase.dob;
-                        target.employmentType = target._rawBase.employmentType || 'مرسم';
-                        target.substituteDuration = target._rawBase.substituteDuration || '';
-                        target.registryNo = target._rawBase.registryNo;
+                    } else {
+                        const newEmpObj = {
+                            jobId: jid,
+                            matricule: jid,
+                            name: formValues.name,
+                            inst: canonInst,
+                            canonicalInst: canonInst,
+                            originalInst: formValues.inst,
+                            workplace: formValues.inst,
+                            place: formValues.inst,
+                            rank: formValues.rank,
+                            dob: formValues.dob,
+                            employmentType: formValues.employmentType,
+                            substituteDuration: formValues.substituteDuration,
+                            registryNo: regNum,
+                            issueDate: formValues.issueDate || null,
+                            isCardDisabled: false,
+                            cardDisableReason: '',
+                            hasMod: false,
+                            isModActive: false,
+                            modDoc: null
+                        };
+                        allEmployeesData.unshift(newEmpObj);
                     }
-                } else {
-                    const canonInst = matchToCanonicalInstitution(formValues.inst) || formValues.inst;
-                    const newEmpObj = {
-                        jobId: jid,
-                        matricule: jid,
-                        name: formValues.name,
-                        inst: canonInst,
-                        canonicalInst: canonInst,
-                        originalInst: formValues.inst,
-                        workplace: formValues.inst,
-                        place: formValues.inst,
-                        rank: formValues.rank,
-                        dob: formValues.dob,
-                        employmentType: formValues.employmentType,
-                        substituteDuration: formValues.substituteDuration,
-                        registryNo: regNum,
-                        issueDate: formValues.issueDate || null,
-                        isCardDisabled: false,
-                        cardDisableReason: '',
-                        hasMod: true,
-                        isModActive: formValues.isActive,
-                        modDoc: modData
-                    };
-                    allEmployeesData.unshift(newEmpObj);
                 }
 
                 const liveCounts = calculateAccurateInstitutionCounts();

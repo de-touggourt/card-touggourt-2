@@ -124,9 +124,27 @@
 
             data.is_platform_open = (extra.is_platform_open !== undefined) ? !!extra.is_platform_open : true;
             data.isPlatformOpen = data.is_platform_open;
+
+            // إعدادات النموذج الثالث، الرقم السري، وتواريخ الإصدار والتعطيل
+            data.template3_issue_date = extra.template3_issue_date || '';
+            data.template3GlobalIssueDate = extra.template3_issue_date || '';
+            data.digital_card_pin = extra.digital_card_pin || '';
+            data.digitalCardPin = extra.digital_card_pin || '';
+            data.issue_date_map = extra.issue_date_map || {};
+            data.issueDateMap = extra.issue_date_map || {};
+            data.disabled_cards_map = extra.disabled_cards_map || {};
+            data.disabledCardsMap = extra.disabled_cards_map || {};
         } else if (data) {
             data.is_platform_open = true;
             data.isPlatformOpen = true;
+            data.template3_issue_date = '';
+            data.template3GlobalIssueDate = '';
+            data.digital_card_pin = '';
+            data.digitalCardPin = '';
+            data.issue_date_map = {};
+            data.issueDateMap = {};
+            data.disabled_cards_map = {};
+            data.disabledCardsMap = {};
         }
 
         console.log("✅ [Supabase Live] تم استلام إعدادات النظام بنجاح:", data);
@@ -154,7 +172,22 @@
             ? !!newSettings.is_platform_open
             : ((newSettings.isPlatformOpen !== undefined) ? !!newSettings.isPlatformOpen : true);
 
-        const existingExtra = (newSettings.extra_config && typeof newSettings.extra_config === 'object') ? newSettings.extra_config : {};
+        // جلب الإعدادات الإضافية السابقة من قاعدة البيانات لضمان عدم ضياع أي خرائط (مثل issue_date_map أو disabled_cards_map أو digital_card_pin)
+        let dbExtra = {};
+        try {
+            const { data: curRow } = await client
+                .from(SUPABASE_CONFIG.tables.settings)
+                .select('extra_config')
+                .eq('id', 'config')
+                .maybeSingle();
+            if (curRow && curRow.extra_config) {
+                dbExtra = (typeof curRow.extra_config === 'string') ? JSON.parse(curRow.extra_config || '{}') : curRow.extra_config;
+            }
+        } catch(e) {}
+
+        const incomingExtra = (newSettings.extra_config && typeof newSettings.extra_config === 'object') ? newSettings.extra_config : {};
+        const existingExtra = { ...dbExtra, ...incomingExtra };
+
         const extraConfig = {
             ...existingExtra,
             allow_employee_movement: typeof movMode === 'string' ? movMode : (movMode ? 'all' : 'none'),
@@ -169,6 +202,18 @@
             photo_upload_institutions: newSettings.photoUploadInstitutions || existingExtra.photo_upload_institutions || [],
             is_platform_open: isPlatformOpen
         };
+
+        if (newSettings.digital_card_pin !== undefined) {
+            extraConfig.digital_card_pin = String(newSettings.digital_card_pin).trim();
+        } else if (newSettings.digitalCardPin !== undefined) {
+            extraConfig.digital_card_pin = String(newSettings.digitalCardPin).trim();
+        }
+
+        if (newSettings.template3_issue_date !== undefined) {
+            extraConfig.template3_issue_date = String(newSettings.template3_issue_date).trim();
+        } else if (newSettings.template3GlobalIssueDate !== undefined) {
+            extraConfig.template3_issue_date = String(newSettings.template3GlobalIssueDate).trim();
+        }
 
         const payload = {
             published_template: newSettings.published_template !== undefined ? parseInt(newSettings.published_template, 10) : 2,
@@ -226,10 +271,15 @@
             data.printingInstitutions = extra.printing_institutions || extra.printingInstitutions || [];
             data.pdfDownloadInstitutions = extra.pdf_download_institutions || extra.pdfDownloadInstitutions || [];
             data.photoUploadInstitutions = extra.photo_upload_institutions || extra.photoUploadInstitutions || [];
+            data.template3_issue_date = extra.template3_issue_date || '';
+            data.template3GlobalIssueDate = extra.template3_issue_date || '';
+            data.digital_card_pin = extra.digital_card_pin || '';
+            data.digitalCardPin = extra.digital_card_pin || '';
+            data.issue_date_map = extra.issue_date_map || {};
+            data.disabled_cards_map = extra.disabled_cards_map || {};
         }
 
         console.log("✅ تم حفظ وتعميم إعدادات النظام بنجاح:", data);
-        return data;
     }
 
     // ========================================================================
@@ -553,13 +603,16 @@
         let regMap = null;
         let issueDateMap = null;
         let disabledCardsMap = null;
+        let template3GlobalDate = '';
         if (setRowRes && setRowRes.data) {
-            if (setRowRes.data.registry_map && typeof setRowRes.data.registry_map === 'object') {
-                regMap = setRowRes.data.registry_map;
+            if (setRowRes.data.registry_map) {
+                regMap = (typeof setRowRes.data.registry_map === 'string') ? JSON.parse(setRowRes.data.registry_map) : setRowRes.data.registry_map;
             }
-            if (setRowRes.data.extra_config && typeof setRowRes.data.extra_config === 'object') {
-                issueDateMap = setRowRes.data.extra_config.issue_date_map || null;
-                disabledCardsMap = setRowRes.data.extra_config.disabled_cards_map || null;
+            if (setRowRes.data.extra_config) {
+                const extra = (typeof setRowRes.data.extra_config === 'string') ? JSON.parse(setRowRes.data.extra_config) : setRowRes.data.extra_config;
+                issueDateMap = extra.issue_date_map || null;
+                disabledCardsMap = extra.disabled_cards_map || null;
+                template3GlobalDate = extra.template3_issue_date || '';
             }
         }
 
@@ -572,6 +625,9 @@
                 }
                 if (!emp.issueDate && issueDateMap && issueDateMap[emp.jobId]) {
                     emp.issueDate = issueDateMap[emp.jobId];
+                }
+                if (!emp.issueDate && template3GlobalDate) {
+                    emp.issueDate = template3GlobalDate;
                 }
                 if (disabledCardsMap && disabledCardsMap[emp.jobId]) {
                     emp.isCardDisabled = !!disabledCardsMap[emp.jobId].disabled;
@@ -619,6 +675,7 @@
         let regMap = null;
         let issueDateMap = null;
         let disabledCardsMap = null;
+        let template3GlobalDate = '';
         try {
             const { data: setRow } = await client
                 .from(SUPABASE_CONFIG.tables.settings)
@@ -626,12 +683,14 @@
                 .eq('id', 'config')
                 .maybeSingle();
             if (setRow) {
-                if (setRow.registry_map && typeof setRow.registry_map === 'object') {
-                    regMap = setRow.registry_map;
+                if (setRow.registry_map) {
+                    regMap = (typeof setRow.registry_map === 'string') ? JSON.parse(setRow.registry_map) : setRow.registry_map;
                 }
-                if (setRow.extra_config && typeof setRow.extra_config === 'object') {
-                    issueDateMap = setRow.extra_config.issue_date_map || null;
-                    disabledCardsMap = setRow.extra_config.disabled_cards_map || null;
+                if (setRow.extra_config) {
+                    const extra = (typeof setRow.extra_config === 'string') ? JSON.parse(setRow.extra_config) : setRow.extra_config;
+                    issueDateMap = extra.issue_date_map || null;
+                    disabledCardsMap = extra.disabled_cards_map || null;
+                    template3GlobalDate = extra.template3_issue_date || '';
                 }
             }
         } catch(e) {}
@@ -669,6 +728,9 @@
                 }
                 if (!emp.issueDate && issueDateMap && issueDateMap[emp.jobId]) {
                     emp.issueDate = issueDateMap[emp.jobId];
+                }
+                if (!emp.issueDate && template3GlobalDate) {
+                    emp.issueDate = template3GlobalDate;
                 }
                 if (disabledCardsMap && disabledCardsMap[emp.jobId]) {
                     emp.isCardDisabled = !!disabledCardsMap[emp.jobId].disabled;
@@ -1485,38 +1547,7 @@
     }
 
     function generateSmartCardVerificationUrl(emp, config = {}) {
-        const photoUrl = (emp.photoUrl || emp.photo || '').startsWith('http') ? (emp.photoUrl || emp.photo) : '';
-        let issueDateStr = '';
-        let directorStr = 'بوعزيز صالح';
-        let yearStr = '2026';
-
-        if (typeof config === 'string') {
-            issueDateStr = config;
-        } else if (config) {
-            issueDateStr = config.cardCustomDate || config.issueDate || config.globalCardDate || (config.autoDate ? new Date().toISOString().split('T')[0] : '') || '';
-            directorStr = config.globalDirector || config.director || 'بوعزيز صالح';
-            yearStr = config.globalYear || config.year || '2026';
-        }
-
-        const payload = {
-            j: emp.jobId || '',
-            n: emp.name || '',
-            d: emp.dob || '',
-            r: emp.rank || '',
-            w: emp.workplace || emp.inst || '',
-            t: emp.employmentType || emp.status || emp.type || 'مرسم',
-            u: emp.substituteDuration || '',
-            g: emp.registryNo || '',
-            p: photoUrl,
-            s: emp.stage || '',
-            b: emp.baladiya || '',
-            a: emp.daaira || '',
-            i: issueDateStr,
-            m: directorStr,
-            y: yearStr,
-            ts: Date.now()
-        };
-        const token = encryptSmartCardPayload(payload);
+        const jid = String(emp.jobId || emp.matricule || '').trim();
         let origin = '';
         if (typeof window !== 'undefined' && window.location) {
             const loc = window.location;
@@ -1525,7 +1556,57 @@
             const basePath = pathParts.join('/') + '/';
             origin = loc.origin + basePath;
         }
-        return (origin || './') + 'verify.html?token=' + encodeURIComponent(token);
+        return (origin || './') + 'verify.html?id=' + encodeURIComponent(jid);
+    }
+
+    /**
+     * حفظ وتعميم تاريخ الإصدار العام المعتمد للنموذج الثالث
+     */
+    async function saveTemplate3GlobalIssueDate(dateStr, modifiedBy = 'ADMIN') {
+        const client = getSupabaseClient();
+        if (!client) throw new Error("Supabase client is not initialized");
+        const cleanDate = String(dateStr || '').trim();
+        const { data: setRow } = await client
+            .from(SUPABASE_CONFIG.tables.settings)
+            .select('extra_config')
+            .eq('id', 'config')
+            .maybeSingle();
+        const extra = (setRow && setRow.extra_config) ? ((typeof setRow.extra_config === 'string') ? JSON.parse(setRow.extra_config) : setRow.extra_config) : {};
+        if (cleanDate) {
+            extra.template3_issue_date = cleanDate;
+        } else {
+            delete extra.template3_issue_date;
+        }
+        await client
+            .from(SUPABASE_CONFIG.tables.settings)
+            .update({ extra_config: extra, updated_at: new Date().toISOString() })
+            .eq('id', 'config');
+        return true;
+    }
+
+    /**
+     * حفظ الرقم السري للبطاقة الرقمية وقفل صفحة الاستعلام
+     */
+    async function saveDigitalCardPin(pinStr, modifiedBy = 'ADMIN') {
+        const client = getSupabaseClient();
+        if (!client) throw new Error("Supabase client is not initialized");
+        const cleanPin = String(pinStr || '').trim();
+        const { data: setRow } = await client
+            .from(SUPABASE_CONFIG.tables.settings)
+            .select('extra_config')
+            .eq('id', 'config')
+            .maybeSingle();
+        const extra = (setRow && setRow.extra_config) ? ((typeof setRow.extra_config === 'string') ? JSON.parse(setRow.extra_config) : setRow.extra_config) : {};
+        if (cleanPin) {
+            extra.digital_card_pin = cleanPin;
+        } else {
+            delete extra.digital_card_pin;
+        }
+        await client
+            .from(SUPABASE_CONFIG.tables.settings)
+            .update({ extra_config: extra, updated_at: new Date().toISOString() })
+            .eq('id', 'config');
+        return true;
     }
 
     // تصدير الكائنات والدوال للنطاق العام (window)
@@ -1562,5 +1643,7 @@
     window.encryptSmartCardPayload = encryptSmartCardPayload;
     window.decryptSmartCardPayload = decryptSmartCardPayload;
     window.generateSmartCardVerificationUrl = generateSmartCardVerificationUrl;
+    window.saveTemplate3GlobalIssueDate = saveTemplate3GlobalIssueDate;
+    window.saveDigitalCardPin = saveDigitalCardPin;
 
 })(typeof window !== 'undefined' ? window : this);

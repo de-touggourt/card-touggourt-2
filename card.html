@@ -575,6 +575,41 @@
         .photo-frame { width: 125px; height: 160px; background-color: #fafafa; border: 2px solid #fff; box-shadow: 0 4px 8px rgba(0,0,0,0.15); border-radius: 6px; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; overflow: hidden; box-sizing: border-box; }
         .signature-title { font-family: 'Cairo', sans-serif; font-weight: 700; font-size: 14px; color: #000; border-top: 1px solid #ddd; width: 85%; text-align: center; padding-top: 4px; }
 
+        /* ---------------- النموذج 1 (Theme 1): ضبط المسافات لمنع انزلاق العناصر ---------------- */
+        :is(#card-container, .preview-card-box).theme-1 .card-body,
+        .card.theme-1-card .card-body { position: relative; z-index: 2; display: flex; flex-grow: 1; padding: 2px 25px 0 25px; box-sizing: border-box; }
+        :is(#card-container, .preview-card-box).theme-1 .info-section,
+        .card.theme-1-card .info-section { flex: 1; max-width: 505px; display: flex; flex-direction: column; justify-content: flex-start; padding-top: 2px; box-sizing: border-box; padding-left: 10px; }
+        :is(#card-container, .preview-card-box).theme-1 .card-name-title,
+        .card.theme-1-card .card-name-title { font-family: 'Cairo', sans-serif; font-size: 24px; font-weight: 700; color: var(--primary-green); border-bottom: 2px solid var(--primary-red); margin-bottom: 5px; width: fit-content; }
+        :is(#card-container, .preview-card-box).theme-1 .info-row,
+        .card.theme-1-card .info-row { display: flex; align-items: baseline; margin-bottom: 4px; font-size: 19px; line-height: 1.25; }
+        :is(#card-container, .preview-card-box).theme-1 .label,
+        .card.theme-1-card .label { font-family: 'Cairo', sans-serif; font-weight: 700; color: #000; min-width: 115px; font-size: 19px; white-space: nowrap; flex-shrink: 0; }
+        :is(#card-container, .preview-card-box).theme-1 .value,
+        .card.theme-1-card .value { font-family: 'Cairo', sans-serif; font-weight: 700; color: #000; margin-right: 5px; font-size: 19px; }
+        :is(#card-container, .preview-card-box).theme-1 .info-row.rank-row,
+        .card.theme-1-card .info-row.rank-row { display: flex; align-items: flex-start; }
+        :is(#card-container, .preview-card-box).theme-1 .info-row.rank-row .rank-val,
+        .card.theme-1-card .info-row.rank-row .rank-val { white-space: normal !important; word-break: break-word; line-height: 1.2; flex: 1; display: inline-block; }
+        :is(#card-container, .preview-card-box).theme-1 .info-row.workplace-row,
+        .card.theme-1-card .info-row.workplace-row { display: flex; align-items: flex-start; }
+        :is(#card-container, .preview-card-box).theme-1 .info-row.workplace-row .workplace-val,
+        .card.theme-1-card .info-row.workplace-row .workplace-val { white-space: normal !important; word-break: break-word; line-height: 1.2; flex: 1; display: inline-block; }
+        :is(#card-container, .preview-card-box).theme-1 .photo-section,
+        .card.theme-1-card .photo-section { font-family: 'Cairo', sans-serif; flex: 0 0 160px; width: 160px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 2px; margin-left: 15px; box-sizing: border-box; }
+        :is(#card-container, .preview-card-box).theme-1 .serial-number,
+        .card.theme-1-card .serial-number { font-family: 'Cairo', sans-serif; font-weight: 700; font-size: 15px; color: var(--primary-red); background: rgba(210, 43, 43, 0.05); padding: 2px 10px; border-radius: 8px; width: 145px; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; margin-top: 0; margin-bottom: 6px; }
+        :is(#card-container, .preview-card-box).theme-1 .photo-frame,
+        .card.theme-1-card .photo-frame { width: 120px; height: 152px; background-color: #fafafa; border: 2px solid #fff; box-shadow: 0 4px 8px rgba(0,0,0,0.15); border-radius: 6px; display: flex; align-items: center; justify-content: center; margin-bottom: 6px; overflow: hidden; box-sizing: border-box; }
+        :is(#card-container, .preview-card-box).theme-1 .signature-title,
+        .card.theme-1-card .signature-title { font-family: 'Cairo', sans-serif; font-weight: 700; font-size: 13.5px; color: #000; border-top: 1px solid #ddd; width: 85%; text-align: center; padding-top: 3px; }
+        :is(#card-container, .preview-card-box).theme-1 .barcode-container,
+        .card.theme-1-card .barcode-container { width: 100%; display: flex; justify-content: center; align-items: center; margin-top: auto; margin-bottom: 5px; z-index: 5; }
+        :is(#card-container, .preview-card-box).theme-1 .barcode-container svg,
+        .card.theme-1-card .barcode-container svg { height: 28px; max-width: 440px; width: auto; }
+        :is(#card-container, .preview-card-box).theme-1 .footer,
+        .card.theme-1-card .footer { background-color: var(--primary-green); color: white; display: flex; justify-content: center; align-items: center; width: 100%; padding: 5px 0; font-family: 'Cairo', sans-serif; font-size: 14.5px; font-weight: 600; position: relative; z-index: 10; }
 
         #card-container.theme-2 .card { background-image: none; background-color: #ffffff; font-family: 'Sakkal Majalla', serif !important; }
         #card-container.theme-2 .card * { font-family: 'Sakkal Majalla', serif !important; }
@@ -1870,7 +1905,11 @@ body.dark-theme .dir-card-no-photo {
             allowEmployeeMovement: 'all',
             employeeMovementInstitutions: [],
             allowAddEmployee: 'all',
-            addEmployeeInstitutions: []
+            addEmployeeInstitutions: [],
+            template3GlobalIssueDate: '',
+            digitalCardPin: '',
+            issueDateMap: {},
+            disabledCardsMap: {}
         };
         window.centralDirectorateConfig = centralDirectorateConfig;
 
@@ -1890,6 +1929,46 @@ body.dark-theme .dir-card-no-photo {
             return 'توقرت في:';
         }
         window.getCardDateDisplay = getCardDateDisplay;
+
+        // دالة استخراج وتجريد تاريخ نقي بدون عبارة "توقرت في"
+        function extractCleanDate(raw) {
+            if (!raw) return '';
+            return String(raw).replace(/^توقرت في\s*:?\s*/, '').trim();
+        }
+        window.extractCleanDate = extractCleanDate;
+
+        // دالة استخراج تاريخ الإصدار المعتمد للبطاقة خالياً من عبارة "توقرت في" لاستخدامه في النموذج الأول والثاني
+        function getCleanIssueDateDisplay(emp, cfg) {
+            const c = cfg || (window.centralDirectorateConfig || centralDirectorateConfig);
+            if (c.showCardDate === false) return '';
+            let raw = (emp && emp.issueDate) ? emp.issueDate : '';
+            if (!raw && c.cardCustomDate && c.cardCustomDate.trim()) {
+                raw = c.cardCustomDate.trim();
+            }
+            if (!raw && c.autoDate !== false) {
+                const d = new Date();
+                raw = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+            }
+            if (!raw) return '';
+            return extractCleanDate(raw);
+        }
+        window.getCleanIssueDateDisplay = getCleanIssueDateDisplay;
+
+        // دالة استخراج تاريخ الإصدار المعتمد للنموذج الثالث حصرياً (مستقل تماماً عن إعدادات توقرت في للنموذج 1 و 2)
+        function getCleanIssueDateTemplate3(emp, cfg) {
+            const c = cfg || (window.centralDirectorateConfig || centralDirectorateConfig);
+            if (emp && emp.issueDate && String(emp.issueDate).trim()) {
+                return extractCleanDate(emp.issueDate);
+            }
+            if (emp && emp.jobId && c.issueDateMap && c.issueDateMap[emp.jobId]) {
+                return extractCleanDate(c.issueDateMap[emp.jobId]);
+            }
+            if (c.template3GlobalIssueDate && String(c.template3GlobalIssueDate).trim()) {
+                return extractCleanDate(c.template3GlobalIssueDate);
+            }
+            return '';
+        }
+        window.getCleanIssueDateTemplate3 = getCleanIssueDateTemplate3;
 
         // دالة إنشاء سطر التاريخ في البطاقة بنفس محاذاة ونقطة بداية التسميات الأخرى تماماً
         function formatCardDateHTML(cfg) {
@@ -2134,6 +2213,7 @@ body.dark-theme .dir-card-no-photo {
                         const prevShowDate = centralDirectorateConfig.showCardDate;
                         const prevShowReg = centralDirectorateConfig.showRegistryNo;
                         const prevRegFormat = centralDirectorateConfig.registryFormat;
+                        const prevTpl3Date = centralDirectorateConfig.template3GlobalIssueDate;
 
                         if (data.global_year) { globalCardYear = data.global_year; centralDirectorateConfig.globalYear = data.global_year; }
                         if (data.global_director) { globalDirectorName = data.global_director; centralDirectorateConfig.globalDirector = data.global_director; }
@@ -2159,6 +2239,12 @@ body.dark-theme .dir-card-no-photo {
                         if (data.allow_add_employee !== undefined) centralDirectorateConfig.allowAddEmployee = data.allow_add_employee;
                         if (data.employeeMovementInstitutions) centralDirectorateConfig.employeeMovementInstitutions = data.employeeMovementInstitutions;
                         if (data.addEmployeeInstitutions) centralDirectorateConfig.addEmployeeInstitutions = data.addEmployeeInstitutions;
+                        if (data.template3_issue_date !== undefined) centralDirectorateConfig.template3GlobalIssueDate = data.template3_issue_date;
+                        if (data.template3GlobalIssueDate !== undefined) centralDirectorateConfig.template3GlobalIssueDate = data.template3GlobalIssueDate;
+                        if (data.digital_card_pin !== undefined) centralDirectorateConfig.digitalCardPin = data.digital_card_pin;
+                        if (data.digitalCardPin !== undefined) centralDirectorateConfig.digitalCardPin = data.digitalCardPin;
+                        if (data.issue_date_map) centralDirectorateConfig.issueDateMap = data.issue_date_map;
+                        if (data.disabled_cards_map) centralDirectorateConfig.disabledCardsMap = data.disabled_cards_map;
 
                         // إذا تم إغلاق المنصة مركزياً وكان المدير داخل حسابه
                         if (centralDirectorateConfig.isPlatformOpen === false && typeof directorInstitution !== 'undefined' && directorInstitution) {
@@ -2188,7 +2274,8 @@ body.dark-theme .dir-card-no-photo {
                             prevAutoDate !== centralDirectorateConfig.autoDate ||
                             prevShowDate !== centralDirectorateConfig.showCardDate ||
                             prevShowReg !== centralDirectorateConfig.showRegistryNo ||
-                            prevRegFormat !== centralDirectorateConfig.registryFormat
+                            prevRegFormat !== centralDirectorateConfig.registryFormat ||
+                            prevTpl3Date !== centralDirectorateConfig.template3GlobalIssueDate
                         );
                         if (hasVisualChanges && typeof employees !== 'undefined' && employees && employees.length > 0 && typeof renderCardsUnified === 'function') {
                             renderCardsUnified(employees, centralDirectorateConfig.publishedTemplate || 2, 'front');
@@ -4314,8 +4401,11 @@ function renderTable() {
             const currentDirector = (window.centralDirectorateConfig || centralDirectorateConfig).globalDirector || globalDirectorName || 'بوعزيز صالح';
 
             if (templateId === 1) {
+                const baseRank = formatEmployeeCardRank(emp);
+                const dur = (emp.substituteDuration || emp.duration || '').trim();
+                const rankWithDuration = (dur && !baseRank.includes(dur)) ? `${baseRank} (${dur})` : baseRank;
                 return `
-                <div class="card" style="${cardPrintStyle}" dir="rtl">
+                <div class="card theme-1-card" style="${cardPrintStyle}" dir="rtl">
                     <div class="top-deco-bar"><div class="bar-red"></div><div class="bar-green"></div></div>
                     <div class="watermark"></div>
                     <div class="header">
@@ -4334,9 +4424,8 @@ function renderTable() {
                             <div class="card-name-title">بطاقة التعريف المهنية</div>
                             <div class="info-row"><span class="label">الاسم واللقب:</span><span class="value">${emp.name}</span></div>
                             <div class="info-row"><span class="label">تاريخ الميلاد:</span><span class="value" dir="ltr">${cleanDob}</span></div>
-                            <div class="info-row"><span class="label">الرتبة:</span><span class="value">${formatEmployeeCardRank(emp)}</span></div>
+                            <div class="info-row rank-row" style="display:flex; align-items:flex-start;"><span class="label" style="min-width:115px; flex-shrink:0;">الرتبة:</span><span class="value rank-val" style="white-space:normal; word-break:break-word; line-height:1.2; flex:1;">${rankWithDuration}</span></div>
                             <div class="info-row workplace-row"><span class="label">مكان العمل:</span><span class="value workplace-val">${emp.workplace || ''}</span></div>
-                            ${formatCardValidityHTML(emp, 1)}
                             ${showDate ? formatCardDateHTML(window.centralDirectorateConfig || centralDirectorateConfig) : ''}
                         </div>
                         <div class="photo-section">
@@ -4348,7 +4437,7 @@ function renderTable() {
                     <div class="barcode-container">
                         <svg class="barcode-render"
                             jsbarcode-value="${barcodeValue}" jsbarcode-format="CODE128"
-                            jsbarcode-displayValue="false" jsbarcode-height="32"
+                            jsbarcode-displayValue="false" jsbarcode-height="28"
                             jsbarcode-width="2.1" jsbarcode-margin="0" jsbarcode-background="transparent">
                         </svg>
                     </div>
@@ -4394,7 +4483,7 @@ function renderTable() {
                 const verifyUrl = (typeof window.generateSmartCardVerificationUrl === 'function')
                     ? window.generateSmartCardVerificationUrl(emp, window.centralDirectorateConfig || centralDirectorateConfig)
                     : `verify.html?id=${emp.jobId}`;
-                const cardDateText = (emp && emp.issueDate) ? emp.issueDate : getCardDateDisplay(window.centralDirectorateConfig || centralDirectorateConfig);
+                const cleanIssueDate = getCleanIssueDateTemplate3(emp, window.centralDirectorateConfig || centralDirectorateConfig);
 
                 return `
                 <div class="card" style="${cardPrintStyle}" dir="rtl">
@@ -4415,12 +4504,12 @@ function renderTable() {
                         <div class="info-section">
                             <div class="card-name-title">بطاقة التعريف المهنية</div>
                             <div class="info-row"><span class="label">الاسم واللقب:</span><span class="value" style="font-size:22px; font-weight:900;">${emp.name}</span></div>
-                            <div class="info-row"><span class="label">تاريخ الإصدار:</span><span class="value" dir="ltr" style="font-weight:800;">${cardDateText}</span></div>
-                            <div class="smart-qr-center-box" style="display:flex; flex-direction:column; align-items:center; justify-content:center; align-self:flex-start; margin-top:8px; margin-right:0; padding:4px; background:transparent; border:1.5px solid #006233; border-radius:8px; box-shadow:none; width:fit-content;">
-                                <div class="smart-qr-target" data-verify-url="${verifyUrl}" style="width:105px; height:105px; display:flex; align-items:center; justify-content:center;">
-                                    <canvas class="smart-qr-canvas" style="width:105px; height:105px; display:block;"></canvas>
+                            ${cleanIssueDate ? `<div class="info-row"><span class="label">تاريخ الإصدار:</span><span class="value" dir="ltr" style="font-weight:800;">${cleanIssueDate}</span></div>` : ''}
+                            <div class="smart-qr-center-box" style="display:flex; flex-direction:column; align-items:center; justify-content:center; align-self:flex-start; margin-top:6px; margin-right:0; padding:6px; background:#ffffff; border:2px solid #006233; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.08); width:fit-content;">
+                                <div class="smart-qr-target" data-verify-url="${verifyUrl}" style="width:120px; height:120px; display:flex; align-items:center; justify-content:center; background:#ffffff;">
+                                    <canvas class="smart-qr-canvas" style="width:120px; height:120px; display:block;"></canvas>
                                 </div>
-                                <span style="font-size:9px; font-weight:800; color:#006233; margin-top:3px; display:flex; align-items:center; gap:4px;">
+                                <span style="font-size:10px; font-weight:800; color:#006233; margin-top:4px; display:flex; align-items:center; gap:4px;">
                                     <i class="fa-solid fa-qrcode"></i> مسح للتحقق والبطاقة الرقمية
                                 </span>
                             </div>
@@ -4431,12 +4520,13 @@ function renderTable() {
                             <div class="signature-title" style="line-height: 1.2;">مدير التربية<br><span style="font-size: 15px; font-weight: 800; color: #000;">${currentDirector}</span></div>
                         </div>
                     </div>
-                    <div class="barcode-container" style="display:flex; align-items:center; justify-content:center; gap:10px; margin-top:auto; margin-bottom:8px;">
-                        <i class="fa-solid fa-fingerprint" style="color:#006233; font-size:26px;"></i>
+                    <div class="barcode-container" style="display:flex; align-items:center; justify-content:center; gap:12px; margin-top:auto; margin-bottom:6px; background:#ffffff; padding:4px 16px; border-radius:8px; border:1.5px solid #cbd5e1; box-shadow:0 1px 4px rgba(0,0,0,0.06); width:fit-content; margin-left:auto; margin-right:auto;">
+                        <i class="fa-solid fa-barcode" style="color:#006233; font-size:28px;"></i>
                         <svg class="barcode-render"
                             jsbarcode-value="${emp.jobId || '0000000000'}" jsbarcode-format="CODE128"
-                            jsbarcode-displayValue="false" jsbarcode-height="32"
-                            jsbarcode-width="2.1" jsbarcode-margin="0" jsbarcode-background="transparent">
+                            jsbarcode-displayValue="false" jsbarcode-height="42"
+                            jsbarcode-width="2.3" jsbarcode-margin="8" jsbarcode-background="#ffffff"
+                            style="height:42px; width:auto; max-width:480px; display:block;">
                         </svg>
                     </div>
                     <div class="footer">على السلطات المدنية والعسكرية أن تسمح لحامل هذه البطاقة بالمرور في كل الحالات</div>
@@ -4566,10 +4656,17 @@ function renderTable() {
                     renderContainer.innerHTML = getCardHTML(emp, templateId, isBack ? 'back' : 'front');
                     autoShrinkText(renderContainer); 
                 
-                    if (templateId === 1 && !isBack) {
+                    if ((templateId === 1 || templateId === 3) && !isBack && typeof JsBarcode === 'function') {
                         const barcodeSvg = renderContainer.querySelector(".barcode-render");
-                        if (barcodeSvg) { JsBarcode(barcodeSvg, emp.jobId || "0000000000", { format: "CODE128", displayValue: false, height: 32, width: 2.1, margin: 0, background: "transparent" }); }
-                    } else if (templateId === 3 && !isBack && typeof QRious === 'function') {
+                        if (barcodeSvg) {
+                            const bcH = (templateId === 3) ? 42 : 28;
+                            const bcW = (templateId === 3) ? 2.3 : 2.1;
+                            const bcM = (templateId === 3) ? 8 : 0;
+                            const bcBg = (templateId === 3) ? '#ffffff' : 'transparent';
+                            JsBarcode(barcodeSvg, emp.jobId || "0000000000", { format: "CODE128", displayValue: false, height: bcH, width: bcW, margin: bcM, background: bcBg });
+                        }
+                    }
+                    if (templateId === 3 && !isBack && typeof QRious === 'function') {
                         const target = renderContainer.querySelector('.smart-qr-target');
                         if (target) {
                             const qrCanvas = target.querySelector('canvas');
@@ -4578,7 +4675,7 @@ function renderTable() {
                                 new QRious({
                                     element: qrCanvas,
                                     value: url,
-                                    size: 140,
+                                    size: 260,
                                     level: 'M'
                                 });
                             }
@@ -4815,9 +4912,13 @@ window.toggleSelectAll = function(customVal) {
 
                     // الوجه الأمامي: النموذج 1 (الكلاسيكي الرسمي بالباركود والشريط المزدوج العلوي)
                     if(templateId === 1) {
+                        const baseRank = formatEmployeeCardRank(emp);
+                        const dur = (emp.substituteDuration || emp.duration || '').trim();
+                        const rankWithDuration = (dur && !baseRank.includes(dur)) ? `${baseRank} (${dur})` : baseRank;
+
                         pageHTML += `
                         <div class="${wrapperClass}">
-                            <div class="card" dir="rtl">
+                            <div class="card theme-1-card" dir="rtl">
                                 <div class="top-deco-bar"><div class="bar-red"></div><div class="bar-green"></div></div>
                                 <div class="watermark"></div>
                                 <div class="header">
@@ -4836,9 +4937,8 @@ window.toggleSelectAll = function(customVal) {
                                         <div class="card-name-title">بطاقة التعريف المهنية</div>
                                         <div class="info-row"><span class="label">الاسم واللقب:</span><span class="value">${emp.name}</span></div>
                                         <div class="info-row"><span class="label">تاريخ الميلاد:</span><span class="value" dir="ltr">${printDob}</span></div>
-                                        <div class="info-row"><span class="label">الرتبة:</span><span class="value">${formatEmployeeCardRank(emp)}</span></div>
+                                        <div class="info-row rank-row" style="display:flex; align-items:flex-start;"><span class="label" style="min-width:115px; flex-shrink:0;">الرتبة:</span><span class="value rank-val" style="white-space:normal; word-break:break-word; line-height:1.2; flex:1;">${rankWithDuration}</span></div>
                                         <div class="info-row workplace-row"><span class="label">مكان العمل:</span><span class="value workplace-val">${emp.workplace || ''}</span></div>
-                                        ${formatCardValidityHTML(emp, 1)}
                                         ${showDate ? formatCardDateHTML(window.centralDirectorateConfig || centralDirectorateConfig) : ''}
                                     </div>
                                     <div class="photo-section">
@@ -4850,7 +4950,7 @@ window.toggleSelectAll = function(customVal) {
                                 <div class="barcode-container">
                                     <svg class="barcode-render"
                                         jsbarcode-value="${emp.jobId || '0000000000'}" jsbarcode-format="CODE128"
-                                        jsbarcode-displayValue="false" jsbarcode-height="32"
+                                        jsbarcode-displayValue="false" jsbarcode-height="28"
                                         jsbarcode-width="2.1" jsbarcode-margin="0" jsbarcode-background="transparent">
                                     </svg>
                                 </div>
@@ -4864,6 +4964,7 @@ window.toggleSelectAll = function(customVal) {
                         const verifyUrl = (typeof window.generateSmartCardVerificationUrl === 'function')
                             ? window.generateSmartCardVerificationUrl(emp, window.centralDirectorateConfig || centralDirectorateConfig)
                             : `verify.html?id=${emp.jobId}`;
+                        const cleanIssueDate = getCleanIssueDateTemplate3(emp, window.centralDirectorateConfig || centralDirectorateConfig);
 
                         pageHTML += `
                         <div class="${wrapperClass}">
@@ -4885,12 +4986,12 @@ window.toggleSelectAll = function(customVal) {
                                     <div class="info-section">
                                         <div class="card-name-title">بطاقة التعريف المهنية</div>
                                         <div class="info-row"><span class="label">الاسم واللقب:</span><span class="value" style="font-size: 22px; font-weight: 900;">${emp.name}</span></div>
-                                        <div class="info-row"><span class="label">تاريخ الإصدار:</span><span class="value" dir="ltr" style="font-weight: 800;">${dateText}</span></div>
-                                        <div class="smart-qr-center-box" style="display: flex; flex-direction: column; align-items: center; justify-content: center; align-self: flex-start; margin-top: 8px; margin-right: 0; padding: 4px; background: transparent; border: 1.5px solid #006233; border-radius: 8px; box-shadow: none; width: fit-content;">
-                                            <div class="smart-qr-target" data-verify-url="${verifyUrl}" style="width: 105px; height: 105px; display: flex; align-items: center; justify-content: center;">
-                                                <canvas class="smart-qr-canvas" style="width: 105px; height: 105px; display: block;"></canvas>
+                                        ${cleanIssueDate ? `<div class="info-row"><span class="label">تاريخ الإصدار:</span><span class="value" dir="ltr" style="font-weight: 800;">${cleanIssueDate}</span></div>` : ''}
+                                        <div class="smart-qr-center-box" style="display: flex; flex-direction: column; align-items: center; justify-content: center; align-self: flex-start; margin-top: 6px; margin-right: 0; padding: 6px; background: #ffffff; border: 2px solid #006233; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); width: fit-content;">
+                                            <div class="smart-qr-target" data-verify-url="${verifyUrl}" style="width: 120px; height: 120px; display: flex; align-items: center; justify-content: center; background: #ffffff;">
+                                                <canvas class="smart-qr-canvas" style="width: 120px; height: 120px; display: block;"></canvas>
                                             </div>
-                                            <span style="font-size: 9px; font-weight: 800; color: #006233; margin-top: 3px; display: flex; align-items: center; gap: 4px;">
+                                            <span style="font-size: 10px; font-weight: 800; color: #006233; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
                                                 <i class="fa-solid fa-qrcode"></i> مسح للتحقق والبطاقة الرقمية
                                             </span>
                                         </div>
@@ -4901,12 +5002,13 @@ window.toggleSelectAll = function(customVal) {
                                         <div class="signature-title" style="line-height: 1.2;">مدير التربية<br><span style="font-size: 15px; font-weight: 800; color: #000;">${currentDirector}</span></div>
                                     </div>
                                 </div>
-                                <div class="barcode-container" style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: auto; margin-bottom: 8px;">
-                                    <i class="fa-solid fa-fingerprint" style="color: #006233; font-size: 26px;"></i>
+                                <div class="barcode-container" style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: auto; margin-bottom: 6px; background: #ffffff; padding: 4px 16px; border-radius: 8px; border: 1.5px solid #cbd5e1; box-shadow: 0 1px 4px rgba(0,0,0,0.06); width: fit-content; margin-left: auto; margin-right: auto;">
+                                    <i class="fa-solid fa-barcode" style="color: #006233; font-size: 28px;"></i>
                                     <svg class="barcode-render"
                                         jsbarcode-value="${emp.jobId || '0000000000'}" jsbarcode-format="CODE128"
-                                        jsbarcode-displayValue="false" jsbarcode-height="32"
-                                        jsbarcode-width="2.1" jsbarcode-margin="0" jsbarcode-background="transparent">
+                                        jsbarcode-displayValue="false" jsbarcode-height="42"
+                                        jsbarcode-width="2.3" jsbarcode-margin="8" jsbarcode-background="#ffffff"
+                                        style="height: 42px; width: auto; max-width: 480px; display: block;">
                                     </svg>
                                 </div>
                                 <div class="footer">على السلطات المدنية والعسكرية أن تسمح لحامل هذه البطاقة بالمرور في كل الحالات</div>
@@ -4957,10 +5059,14 @@ window.toggleSelectAll = function(customVal) {
 
             // توليد الباركود إذا كان النموذج 1 أو 3
             if ((templateId === 1 || templateId === 3) && typeof JsBarcode === 'function') {
+                const bcH = (templateId === 3) ? 42 : ((templateId === 1) ? 28 : 32);
+                const bcW = (templateId === 3) ? 2.3 : 2.1;
+                const bcM = (templateId === 3) ? 8 : 0;
+                const bcBg = (templateId === 3) ? '#ffffff' : 'transparent';
                 container.querySelectorAll('.barcode-render').forEach(el => {
                     try {
                         const val = el.getAttribute('jsbarcode-value') || '0000000000';
-                        JsBarcode(el, val, { format: 'CODE128', displayValue: false, height: 32, width: 2.1, margin: 0, background: 'transparent' });
+                        JsBarcode(el, val, { format: 'CODE128', displayValue: false, height: bcH, width: bcW, margin: bcM, background: bcBg });
                     } catch(e){}
                 });
             }
@@ -4975,7 +5081,7 @@ window.toggleSelectAll = function(customVal) {
                             new QRious({
                                 element: canvas,
                                 value: url,
-                                size: 140,
+                                size: 260,
                                 level: 'M'
                             });
                         }
