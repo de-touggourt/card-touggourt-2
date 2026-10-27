@@ -1703,5 +1703,6 @@
     window.generateSmartCardVerificationUrl = generateSmartCardVerificationUrl;
     window.saveTemplate3GlobalIssueDate = saveTemplate3GlobalIssueDate;
     window.saveDigitalCardPin = saveDigitalCardPin;
+    window.cleanDateString = cleanDateString;
 
 })(typeof window !== 'undefined' ? window : this);

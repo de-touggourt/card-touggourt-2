@@ -482,20 +482,24 @@
         .card-action-btn:hover {
             border-color: var(--primary-green);
             color: var(--primary-green);
-            transform: translateY(-1px);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
         }
 
         .card-action-btn.primary {
-            background: linear-gradient(135deg, #006233 0%, #047857 100%);
+            background: linear-gradient(135deg, #006233 0%, #047857 50%, #059669 100%);
             color: #ffffff;
-            border-color: #006233;
-            box-shadow: 0 4px 12px rgba(0, 98, 51, 0.25);
+            border: 1px solid #004d28;
+            box-shadow: 0 4px 14px rgba(0, 98, 51, 0.35);
+            font-size: 14px;
+            letter-spacing: 0.2px;
         }
 
         .card-action-btn.primary:hover {
+            background: linear-gradient(135deg, #004d28 0%, #006233 50%, #047857 100%);
             color: #ffffff;
             transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(0, 98, 51, 0.35);
+            box-shadow: 0 6px 20px rgba(0, 98, 51, 0.45);
         }
 
         /* حاوية بطاقة التعريف الرقمية المتطابقة بنسبة القياس الهندسي الدقيق 750x474 */
@@ -1097,6 +1101,41 @@
         let currentEmployee = null;
         let isCardFlipped = false;
 
+        // دالة تنظيف وتنسيق التاريخ YYYY-MM-DD
+        function cleanDateString(dateVal) {
+            if (!dateVal) return "";
+            let str = String(dateVal).trim();
+            const match = str.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
+            if (match) {
+                return `${match[1]}-${match[2].padStart(2, '0')}-${match[3].padStart(2, '0')}`;
+            }
+            const revMatch = str.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})/);
+            if (revMatch) {
+                return `${revMatch[3]}-${revMatch[2].padStart(2, '0')}-${revMatch[1].padStart(2, '0')}`;
+            }
+            return str;
+        }
+
+        // دالة تأمين النصوص البرمجية من ثغرات XSS
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        // دالة إغلاق أو الخروج من نافذة الاستعلام
+        window.handleExitPortal = function() {
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                window.close();
+            }
+        };
+
         // دالة تصحيح وضبط الطور التعليمي ليكون حصراً: ابتدائي أو متوسط أو ثانوي
         function resolveEducationalStage(emp) {
             if (!emp) return 'ابتدائي';
@@ -1219,7 +1258,7 @@
             const btn = document.getElementById('btn-save-card-img');
             const origHTML = btn ? btn.innerHTML : '';
             if (btn) {
-                btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> جاري استخراج الصورة...`;
+                btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> جاري استخراج صورة البطاقة...`;
                 btn.disabled = true;
             }
 
@@ -1229,14 +1268,30 @@
                     return;
                 }
 
+                // استنساخ عنصر البطاقة بحجمه الأصلي الكامل 750x474 لضمان دقة استخراج فائقة بدون أي تأثر بتصغير الشاشة على الهواتف
+                const clone = cardEl.cloneNode(true);
+                clone.style.transform = 'none';
+                clone.style.position = 'fixed';
+                clone.style.left = '-9999px';
+                clone.style.top = '0';
+                clone.style.width = '750px';
+                clone.style.height = '474px';
+                clone.style.zIndex = '99999';
+                clone.style.boxShadow = 'none';
+                document.body.appendChild(clone);
+
                 // التقاط البطاقة بقياسها الفعلي الكامل بدقة عالية (Retina 2x)
-                const canvas = await html2canvas(cardEl, {
+                const canvas = await html2canvas(clone, {
                     scale: 2,
                     useCORS: true,
                     allowTaint: true,
                     logging: false,
-                    backgroundColor: '#ffffff'
+                    backgroundColor: '#ffffff',
+                    width: 750,
+                    height: 474
                 });
+
+                document.body.removeChild(clone);
 
                 const imageUri = canvas.toDataURL('image/png');
                 const faceLabel = isCardFlipped ? 'الوجه_الخلفي' : 'الوجه_الأمامي';
@@ -1249,6 +1304,16 @@
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
+
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'تم حفظ صورة البطاقة بنجاح',
+                        html: `تم حفظ <strong>${isCardFlipped ? 'الوجه الخلفي' : 'الوجه الأمامي'}</strong> للبطاقة المهنية الرقمية للموظف: <strong>${escapeHtml(currentEmployee.name)}</strong> بجودة فائقة.`,
+                        timer: 2200,
+                        showConfirmButton: false
+                    });
+                }
             } catch (err) {
                 console.error('Error saving digital card image:', err);
                 alert('حدث خطأ أثناء حفظ صورة البطاقة. يرجى المحاولة مجدداً.');
@@ -1260,33 +1325,185 @@
             }
         };
 
-        // تحميل كود الاستجابة السريع للبطاقة كصورة PNG عالية الدقة
-        window.downloadVerificationQR = function() {
+        // تحميل كود الاستجابة السريع للبطاقة كبطاقة هوية رقمية رسمية باسم الموظف
+        window.downloadVerificationQR = async function() {
             if (!currentEmployee) return;
 
             const qrUrl = window.location.href;
-            const tempCanvas = document.createElement('canvas');
             if (typeof QRious === 'undefined') {
                 alert('مكتبة رمز الاستجابة السريع غير متوفرة.');
                 return;
             }
 
-            new QRious({
-                element: tempCanvas,
-                value: qrUrl,
-                size: 500,
-                level: 'H'
-            });
+            const btn = document.getElementById('btn-download-qr') || (event && event.currentTarget ? event.currentTarget : null);
+            const origHTML = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> جاري إنشاء الهوية الرقمية...`;
+                btn.disabled = true;
+            }
 
-            const cleanName = (currentEmployee.name || 'موظف').replace(/[/\\?%*:|"<>]/g, '_').replace(/\s+/g, '_');
-            const filename = `رمز_التحقق_QR_${cleanName}.png`;
+            try {
+                // توليد رمز QR عالي الدقة بحجم 400x400
+                const qrCanvas = document.createElement('canvas');
+                new QRious({
+                    element: qrCanvas,
+                    value: qrUrl,
+                    size: 400,
+                    level: 'H'
+                });
 
-            const link = document.createElement('a');
-            link.download = filename;
-            link.href = tempCanvas.toDataURL('image/png');
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+                // إنشاء لوحة الهوية الرقمية الرسمية (720x960 بكسل)
+                const canvas = document.createElement('canvas');
+                canvas.width = 720;
+                canvas.height = 960;
+                const ctx = canvas.getContext('2d');
+
+                // دالة مساعدة لرسم مستطيل بحواف مستديرة
+                function drawRoundRect(ctx, x, y, width, height, radius, fill, stroke) {
+                    ctx.beginPath();
+                    ctx.moveTo(x + radius, y);
+                    ctx.lineTo(x + width - radius, y);
+                    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+                    ctx.lineTo(x + width, y + height - radius);
+                    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+                    ctx.lineTo(x + radius, y + height);
+                    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+                    ctx.lineTo(x, y + radius);
+                    ctx.quadraticCurveTo(x, y, x + radius, y);
+                    ctx.closePath();
+                    if (fill) ctx.fill();
+                    if (stroke) ctx.stroke();
+                }
+
+                // 1. خلفية البطاقة بالكامل
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // إطار البطاقة الخارجي
+                ctx.strokeStyle = '#006233';
+                ctx.lineWidth = 4;
+                drawRoundRect(ctx, 10, 10, 700, 940, 20, false, true);
+
+                // 2. الشريط العلوي (أخضر وأحمر)
+                ctx.fillStyle = '#006233';
+                ctx.fillRect(12, 12, 696, 12);
+                ctx.fillStyle = '#dc2626';
+                ctx.fillRect(12, 24, 696, 4);
+
+                // 3. الترويسة الرسمية
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                ctx.fillStyle = '#1e293b';
+                ctx.font = 'bold 20px "Cairo", "Segoe UI", Tahoma, sans-serif';
+                ctx.fillText('الجمهورية الجزائرية الديمقراطية الشعبية', 360, 62);
+
+                ctx.fillStyle = '#006233';
+                ctx.font = 'bold 19px "Cairo", "Segoe UI", Tahoma, sans-serif';
+                ctx.fillText('وزارة التربية الوطنية', 360, 96);
+
+                ctx.fillStyle = '#047857';
+                ctx.font = 'bold 17px "Cairo", "Segoe UI", Tahoma, sans-serif';
+                ctx.fillText('مديرية التربية لولاية توقرت', 360, 126);
+
+                // خط فاصل زخرفي
+                ctx.strokeStyle = '#e2e8f0';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(60, 148);
+                ctx.lineTo(660, 148);
+                ctx.stroke();
+
+                // 4. حاوية عنوان الهوية الرقمية للموظف (كما طلب المستخدم تماماً)
+                const empName = String(currentEmployee.name || 'موظف').trim();
+                ctx.fillStyle = '#f0fdf4';
+                ctx.strokeStyle = '#86efac';
+                ctx.lineWidth = 1.5;
+                drawRoundRect(ctx, 40, 165, 640, 68, 14, true, true);
+
+                ctx.fillStyle = '#006233';
+                ctx.font = '900 22px "Cairo", "Segoe UI", Tahoma, sans-serif';
+                ctx.fillText(`الهوية الرقمية للموظف : ${empName}`, 360, 199);
+
+                // 5. بطاقة البيانات الوظيفية للموظف
+                ctx.fillStyle = '#f8fafc';
+                ctx.strokeStyle = '#cbd5e1';
+                ctx.lineWidth = 1;
+                drawRoundRect(ctx, 40, 248, 640, 110, 12, true, true);
+
+                const empRank = String(currentEmployee.rank || '---').trim();
+                const empInst = String(currentEmployee.workplace || currentEmployee.inst || '---').trim();
+                const empJobId = String(currentEmployee.matricule || currentEmployee.jobId || '---').trim();
+
+                ctx.font = 'bold 15px "Cairo", "Segoe UI", Tahoma, sans-serif';
+                ctx.fillStyle = '#0f172a';
+                ctx.fillText(`المؤسسة: ${empInst}`, 360, 276);
+
+                ctx.fillStyle = '#334155';
+                ctx.fillText(`الرتبة: ${empRank}`, 360, 303);
+
+                ctx.fillStyle = '#047857';
+                ctx.font = 'bold 15px "Cairo", monospace';
+                ctx.fillText(`رقم التعريف الوظيفي: ${empJobId}`, 360, 331);
+
+                // 6. حاوية رمز الاستجابة السريع (QR)
+                ctx.fillStyle = '#ffffff';
+                ctx.strokeStyle = '#cbd5e1';
+                ctx.lineWidth = 2;
+                drawRoundRect(ctx, 160, 375, 400, 400, 16, true, true);
+
+                // رسم رمز QR في المركز
+                ctx.drawImage(qrCanvas, 185, 400, 350, 350);
+
+                // 7. تذييل التوجيه والأمان
+                ctx.fillStyle = '#f1f5f9';
+                ctx.strokeStyle = '#e2e8f0';
+                ctx.lineWidth = 1;
+                drawRoundRect(ctx, 40, 795, 640, 95, 12, true, true);
+
+                ctx.fillStyle = '#0f172a';
+                ctx.font = 'bold 15px "Cairo", "Segoe UI", Tahoma, sans-serif';
+                ctx.fillText('امسح الرمز للتحقق الفوري والاطلاع على البطاقة المهنية الرقمية', 360, 828);
+
+                ctx.fillStyle = '#64748b';
+                ctx.font = '600 13px "Cairo", "Segoe UI", Tahoma, sans-serif';
+                ctx.fillText('منظومة التحقق والربط الرقمي المؤمن - مديرية التربية لولاية توقرت', 360, 856);
+
+                // الشريط السفلي المزدوج
+                ctx.fillStyle = '#dc2626';
+                ctx.fillRect(12, 920, 696, 4);
+                ctx.fillStyle = '#006233';
+                ctx.fillRect(12, 924, 696, 12);
+
+                // 8. تنزيل الصورة
+                const cleanName = empName.replace(/[/\\?%*:|"<>]/g, '_').replace(/\s+/g, '_');
+                const filename = `الهوية_الرقمية_${cleanName}.png`;
+
+                const link = document.createElement('a');
+                link.download = filename;
+                link.href = canvas.toDataURL('image/png');
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'تم تحميل الهوية الرقمية بنجاح',
+                        html: `تم حفظ بطاقة الهوية الرقمية للموظف: <strong>${escapeHtml(empName)}</strong> مع رمز التحقق السريع (QR).`,
+                        timer: 2500,
+                        showConfirmButton: false
+                    });
+                }
+            } catch (err) {
+                console.error('Error generating identity QR card:', err);
+                alert('حدث خطأ أثناء إنشاء بطاقة الهوية الرقمية: ' + (err.message || err));
+            } finally {
+                if (btn) {
+                    btn.innerHTML = origHTML;
+                    btn.disabled = false;
+                }
+            }
         };
  
         let activeDigitalPin = '';
@@ -1811,16 +2028,19 @@
                 <!-- 2. واجهة البطاقة الرقمية (مطابقة للنموذج الأول والوجه الخلفي Theme 4) -->
                 <section class="view-section" id="view-card">
                     <div class="digital-card-container">
-                        <!-- أزرار الإجراءات الرسمية (حذف الطباعة - حفظ البطاقة كصورة - تحميل QR) -->
+                        <!-- أزرار الإجراءات الرسمية (حفظ البطاقة كصورة - تحميل QR الهوية الرقمية - قلب البطاقة) -->
                         <div class="card-view-actions">
-                            <button type="button" class="card-action-btn" onclick="flipDigitalCard()">
-                                <i class="fa-solid fa-repeat" style="color:var(--primary-green);"></i> قلب البطاقة (معاينة الوجه الخلفي)
-                            </button>
                             <button type="button" class="card-action-btn primary" id="btn-save-card-img" onclick="saveDigitalCardImage()">
-                                <i class="fa-solid fa-image"></i> حفظ البطاقة الرقمية (صورة PNG)
+                                <i class="fa-solid fa-cloud-arrow-down" style="font-size: 15px;"></i>
+                                <span>حفظ البطاقة الرقمية (صورة PNG فائقة الجودة)</span>
                             </button>
-                            <button type="button" class="card-action-btn" onclick="downloadVerificationQR()">
-                                <i class="fa-solid fa-qrcode" style="color:var(--primary-green);"></i> تحميل رمز الاستجابة السريع (QR)
+                            <button type="button" class="card-action-btn" id="btn-download-qr" onclick="downloadVerificationQR()">
+                                <i class="fa-solid fa-id-badge" style="color:var(--primary-green); font-size: 15px;"></i>
+                                <span>تحميل الهوية الرقمية للموظف (رمز QR)</span>
+                            </button>
+                            <button type="button" class="card-action-btn" onclick="flipDigitalCard()">
+                                <i class="fa-solid fa-repeat" style="color:var(--primary-green);"></i>
+                                <span>قلب البطاقة (معاينة الوجه الآخر)</span>
                             </button>
                         </div>
 
@@ -1942,9 +2162,9 @@
                     <h3>تعذر التحقق من البطاقة المهنية</h3>
                     <p>${message}</p>
                     <div style="margin-top:20px;">
-                        <a href="index.html" style="display:inline-flex; align-items:center; gap:6px; padding:10px 20px; background:#006233; color:white; border-radius:10px; text-decoration:none; font-weight:800; font-size:13.5px;">
-                            <i class="fa-solid fa-arrow-right"></i> العودة للبوابة الرئيسية
-                        </a>
+                        <button type="button" onclick="handleExitPortal()" style="display:inline-flex; align-items:center; gap:8px; padding:11px 28px; background:#dc2626; color:white; border:none; border-radius:12px; font-weight:800; font-size:14.5px; cursor:pointer; box-shadow:0 4px 12px rgba(220,38,38,0.25); transition:all 0.2s;">
+                            <i class="fa-solid fa-arrow-right-from-bracket"></i> خروج
+                        </button>
                     </div>
                 </div>
             `;
