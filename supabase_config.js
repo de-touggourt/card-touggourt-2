@@ -833,7 +833,7 @@
             'lieuNais', 'numSecu', 'dateAffectation', 'nbEnfants', 'nbEnfantsPlus10',
             'noteAdministrative', 'nbACharge', 'dateNoteAdmin', 'statutAffectation',
             'dateEffet', 'groupeSanguin', 'conjointSecteur', 'nomJeuneFille',
-            'adresse', 'situationFam', 'echelon', 'photo_url', 'registry_no'
+            'adresse', 'situationFam', 'echelon', 'photo_url', 'registry_no', 'issue_date'
         ]);
 
         const dbFields = {};
@@ -846,6 +846,7 @@
                 if (key === 'dob' && !dbFields.dateNais) dbFields.dateNais = cleanDateString(val);
                 if (key === 'photo' || key === 'photoUrl') dbFields.photo_url = val;
                 if (key === 'registryNo' && dbFields.registry_no === undefined) dbFields.registry_no = (val !== null && val !== '') ? parseInt(val, 10) : null;
+                if ((key === 'issueDate' || key === 'issue_date') && !dbFields.issue_date) dbFields.issue_date = String(val).trim();
                 if ((key === 'employmentType' || key === 'situation_admin') && !dbFields.situationAdmin) dbFields.situationAdmin = val;
                 if ((key === 'nationalId' || key === 'national_id') && !dbFields.nin) dbFields.nin = val;
                 if ((key === 'bloodType' || key === 'blood_type') && !dbFields.groupeSanguin) dbFields.groupeSanguin = val;
@@ -873,25 +874,47 @@
             }
         }
 
-        let updateQuery = client
-            .from(SUPABASE_CONFIG.tables.employees)
-            .update(dbFields);
-
-        if (realMatricule && realMatricule.length !== 18) {
-            updateQuery = updateQuery.eq('matricule', realMatricule);
-        } else if (previousData && previousData.matricule) {
-            updateQuery = updateQuery.eq('matricule', previousData.matricule);
-        } else if (cleanId.length === 18) {
-            updateQuery = updateQuery.eq('nin', cleanId);
-        } else {
-            updateQuery = updateQuery.eq('matricule', cleanId);
+        function buildTargetQuery(fields) {
+            let q = client.from(SUPABASE_CONFIG.tables.employees).update(fields);
+            if (realMatricule && realMatricule.length !== 18) {
+                q = q.eq('matricule', realMatricule);
+            } else if (previousData && previousData.matricule) {
+                q = q.eq('matricule', previousData.matricule);
+            } else if (cleanId.length === 18) {
+                q = q.eq('nin', cleanId);
+            } else {
+                q = q.eq('matricule', cleanId);
+            }
+            return q;
         }
 
-        const { data: updatedEmployee, error: updateErr } = await updateQuery.select().maybeSingle();
+        let { data: updatedEmployee, error: updateErr } = await buildTargetQuery(dbFields).select().maybeSingle();
+
+        // في حال كان الخطأ بسبب عدم وجود عمود issue_date في جدول base-touggourt
+        if (updateErr && dbFields.issue_date && (updateErr.message || '').includes('issue_date')) {
+            const pendingIssueDate = dbFields.issue_date;
+            delete dbFields.issue_date;
+            const retryRes = await buildTargetQuery(dbFields).select().maybeSingle();
+            updatedEmployee = retryRes.data;
+            updateErr = retryRes.error;
+
+            // توثيق تاريخ الإصدار في خريطة الإعدادات المركزية لضمان عدم ضياعه
+            if (pendingIssueDate) {
+                try { await updateEmployeeIssueDate(realMatricule, pendingIssueDate, modifiedBy); } catch(e){}
+            }
+        }
 
         if (updateErr) {
             console.error("❌ خطأ أثناء تحديث بيانات الموظف في Supabase:", updateErr);
             throw updateErr;
+        }
+
+        // إذا كان هناك تاريخ إصدار، نتأكد دائماً من تسجيله في الخريطة المركزية أيضاً
+        if (newFields.issueDate || newFields.issue_date) {
+            const finalIssueDate = String(newFields.issueDate || newFields.issue_date).trim();
+            if (finalIssueDate) {
+                try { await updateEmployeeIssueDate(realMatricule, finalIssueDate, modifiedBy); } catch(e){}
+            }
         }
 
         // تسجيل التعديل في جدول سجل التعديلات modifications_history
@@ -1140,24 +1163,45 @@
             console.warn("Notice saving issue_date_map to settings:", setErr.message);
         }
 
-        // 2. تحديث سجلات الموظفين في base-touggourt بدفعات
-        const batchSize = 60;
-        let completed = 0;
-        for (let i = 0; i < entries.length; i += batchSize) {
-            const batch = entries.slice(i, i + batchSize);
-            await Promise.all(batch.map(async ([jid, dStr]) => {
-                const cleanId = String(jid).trim();
-                if (!cleanId) return;
-                try {
-                    await client
-                        .from(SUPABASE_CONFIG.tables.employees)
-                        .update({ issue_date: String(dStr).trim() })
-                        .eq('matricule', cleanId);
-                } catch(e) {}
-            }));
-            completed += batch.length;
+        // 2. فحص ما إذا كان عمود issue_date متوفراً في جدول base-touggourt لتحديثه بدفعات
+        let hasIssueDateCol = false;
+        try {
+            const probe = await client
+                .from(SUPABASE_CONFIG.tables.employees)
+                .update({ issue_date: String(entries[0][1]).trim() })
+                .eq('matricule', entries[0][0])
+                .select('id')
+                .maybeSingle();
+            if (!probe.error) {
+                hasIssueDateCol = true;
+            }
+        } catch(e) {
+            hasIssueDateCol = false;
+        }
+
+        if (hasIssueDateCol) {
+            const batchSize = 60;
+            let completed = 0;
+            for (let i = 0; i < entries.length; i += batchSize) {
+                const batch = entries.slice(i, i + batchSize);
+                await Promise.all(batch.map(async ([jid, dStr]) => {
+                    const cleanId = String(jid).trim();
+                    if (!cleanId) return;
+                    try {
+                        await client
+                            .from(SUPABASE_CONFIG.tables.employees)
+                            .update({ issue_date: String(dStr).trim() })
+                            .eq('matricule', cleanId);
+                    } catch(e) {}
+                }));
+                completed += batch.length;
+                if (typeof onProgress === 'function') {
+                    onProgress(completed, entries.length);
+                }
+            }
+        } else {
             if (typeof onProgress === 'function') {
-                onProgress(completed, entries.length);
+                onProgress(entries.length, entries.length);
             }
         }
 
@@ -1556,6 +1600,20 @@
             const basePath = pathParts.join('/') + '/';
             origin = loc.origin + basePath;
         }
+
+        try {
+            // تشفير المعرف رقمياً بشكل محكم وموجز لمنع التطفل أو التلاعب برقم الموظف
+            const token = encryptSmartCardPayload({
+                j: jid,
+                t: Math.floor(Date.now() / 1000)
+            });
+            if (token) {
+                return (origin || './') + 'verify.html?token=' + encodeURIComponent(token);
+            }
+        } catch(e) {
+            console.error('Error generating encrypted verification url:', e);
+        }
+
         return (origin || './') + 'verify.html?id=' + encodeURIComponent(jid);
     }
 

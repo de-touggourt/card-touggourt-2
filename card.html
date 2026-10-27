@@ -4505,11 +4505,11 @@ function renderTable() {
                             <div class="card-name-title">بطاقة التعريف المهنية</div>
                             <div class="info-row"><span class="label">الاسم واللقب:</span><span class="value" style="font-size:22px; font-weight:900;">${emp.name}</span></div>
                             ${cleanIssueDate ? `<div class="info-row"><span class="label">تاريخ الإصدار:</span><span class="value" dir="ltr" style="font-weight:800;">${cleanIssueDate}</span></div>` : ''}
-                            <div class="smart-qr-center-box" style="display:flex; flex-direction:column; align-items:center; justify-content:center; align-self:flex-start; margin-top:6px; margin-right:0; padding:6px; background:#ffffff; border:2px solid #006233; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.08); width:fit-content;">
-                                <div class="smart-qr-target" data-verify-url="${verifyUrl}" style="width:120px; height:120px; display:flex; align-items:center; justify-content:center; background:#ffffff;">
-                                    <canvas class="smart-qr-canvas" style="width:120px; height:120px; display:block;"></canvas>
+                            <div class="smart-qr-center-box" style="display: flex; flex-direction: column; align-items: center; justify-content: center; align-self: center; margin: 8px auto; padding: 8px 14px; background: #ffffff; border: 2.5px solid #006233; border-radius: 14px; box-shadow: 0 4px 14px rgba(0, 98, 51, 0.12); width: fit-content; text-align: center;">
+                                <div class="smart-qr-target" data-verify-url="${verifyUrl}" style="width: 120px; height: 120px; display: flex; align-items: center; justify-content: center; background: #ffffff; margin: 0 auto;">
+                                    <canvas class="smart-qr-canvas" style="width: 120px; height: 120px; display: block; margin: 0 auto;"></canvas>
                                 </div>
-                                <span style="font-size:10px; font-weight:800; color:#006233; margin-top:4px; display:flex; align-items:center; gap:4px;">
+                                <span style="font-size: 10.5px; font-weight: 800; color: #006233; margin-top: 5px; display: flex; align-items: center; justify-content: center; gap: 5px;">
                                     <i class="fa-solid fa-qrcode"></i> مسح للتحقق والبطاقة الرقمية
                                 </span>
                             </div>
@@ -4521,7 +4521,7 @@ function renderTable() {
                         </div>
                     </div>
                     <div class="barcode-container" style="display:flex; align-items:center; justify-content:center; gap:12px; margin-top:auto; margin-bottom:6px; background:#ffffff; padding:4px 16px; border-radius:8px; border:1.5px solid #cbd5e1; box-shadow:0 1px 4px rgba(0,0,0,0.06); width:fit-content; margin-left:auto; margin-right:auto;">
-                        <i class="fa-solid fa-barcode" style="color:#006233; font-size:28px;"></i>
+                        <i class="fa-solid fa-fingerprint" style="color:#006233; font-size:28px;"></i>
                         <svg class="barcode-render"
                             jsbarcode-value="${emp.jobId || '0000000000'}" jsbarcode-format="CODE128"
                             jsbarcode-displayValue="false" jsbarcode-height="42"
@@ -4987,11 +4987,11 @@ window.toggleSelectAll = function(customVal) {
                                         <div class="card-name-title">بطاقة التعريف المهنية</div>
                                         <div class="info-row"><span class="label">الاسم واللقب:</span><span class="value" style="font-size: 22px; font-weight: 900;">${emp.name}</span></div>
                                         ${cleanIssueDate ? `<div class="info-row"><span class="label">تاريخ الإصدار:</span><span class="value" dir="ltr" style="font-weight: 800;">${cleanIssueDate}</span></div>` : ''}
-                                        <div class="smart-qr-center-box" style="display: flex; flex-direction: column; align-items: center; justify-content: center; align-self: flex-start; margin-top: 6px; margin-right: 0; padding: 6px; background: #ffffff; border: 2px solid #006233; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); width: fit-content;">
-                                            <div class="smart-qr-target" data-verify-url="${verifyUrl}" style="width: 120px; height: 120px; display: flex; align-items: center; justify-content: center; background: #ffffff;">
-                                                <canvas class="smart-qr-canvas" style="width: 120px; height: 120px; display: block;"></canvas>
+                                        <div class="smart-qr-center-box" style="display: flex; flex-direction: column; align-items: center; justify-content: center; align-self: center; margin: 8px auto; padding: 8px 14px; background: #ffffff; border: 2.5px solid #006233; border-radius: 14px; box-shadow: 0 4px 14px rgba(0, 98, 51, 0.12); width: fit-content; text-align: center;">
+                                            <div class="smart-qr-target" data-verify-url="${verifyUrl}" style="width: 120px; height: 120px; display: flex; align-items: center; justify-content: center; background: #ffffff; margin: 0 auto;">
+                                                <canvas class="smart-qr-canvas" style="width: 120px; height: 120px; display: block; margin: 0 auto;"></canvas>
                                             </div>
-                                            <span style="font-size: 10px; font-weight: 800; color: #006233; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
+                                            <span style="font-size: 10.5px; font-weight: 800; color: #006233; margin-top: 5px; display: flex; align-items: center; justify-content: center; gap: 5px;">
                                                 <i class="fa-solid fa-qrcode"></i> مسح للتحقق والبطاقة الرقمية
                                             </span>
                                         </div>
@@ -5003,7 +5003,7 @@ window.toggleSelectAll = function(customVal) {
                                     </div>
                                 </div>
                                 <div class="barcode-container" style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: auto; margin-bottom: 6px; background: #ffffff; padding: 4px 16px; border-radius: 8px; border: 1.5px solid #cbd5e1; box-shadow: 0 1px 4px rgba(0,0,0,0.06); width: fit-content; margin-left: auto; margin-right: auto;">
-                                    <i class="fa-solid fa-barcode" style="color: #006233; font-size: 28px;"></i>
+                                    <i class="fa-solid fa-fingerprint" style="color: #006233; font-size: 28px;"></i>
                                     <svg class="barcode-render"
                                         jsbarcode-value="${emp.jobId || '0000000000'}" jsbarcode-format="CODE128"
                                         jsbarcode-displayValue="false" jsbarcode-height="42"

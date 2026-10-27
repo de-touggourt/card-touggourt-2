@@ -1183,10 +1183,10 @@
             }
         };
 
-        // نسخ رقم التعريف الوظيفي
+        // نسخ رقم التعريف الوظيفي أو الوطني
         window.copyJobId = function(val) {
             navigator.clipboard.writeText(val).then(() => {
-                alert('تم نسخ رقم التعريف الوظيفي: ' + val);
+                alert('تم النسخ بنجاح: ' + val);
             }).catch(() => {});
         };
 
@@ -1288,8 +1288,7 @@
             link.click();
             document.body.removeChild(link);
         };
-
-        let currentEmployee = null;
+ 
         let activeDigitalPin = '';
         let currentVerifyJobId = '';
 
@@ -1434,24 +1433,30 @@
 
         // دالة التهيئة والتحقق الشاملة
         async function initVerificationPortal() {
-            const params = new URLSearchParams(window.location.search);
-            const token = params.get('token') || '';
-            let rawJobId = params.get('id') || params.get('matricule') || params.get('jobId') || '';
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const token = params.get('token') || '';
+                let rawJobId = params.get('id') || params.get('matricule') || params.get('jobId') || '';
 
-            let decryptedData = null;
-            if (token && typeof window.decryptSmartCardPayload === 'function') {
-                decryptedData = window.decryptSmartCardPayload(token);
-                if (decryptedData && decryptedData.j) {
-                    rawJobId = rawJobId || decryptedData.j;
+                let decryptedData = null;
+                if (token && typeof window.decryptSmartCardPayload === 'function') {
+                    decryptedData = window.decryptSmartCardPayload(token);
+                    if (decryptedData && decryptedData.j) {
+                        rawJobId = rawJobId || decryptedData.j;
+                    }
                 }
-            }
 
-            const cleanJobId = String(rawJobId || '').trim();
+                const cleanJobId = String(rawJobId || '').trim();
 
-            if (!cleanJobId && !token) {
-                renderErrorState('لم يتم العثور على معرّف أو رمز التحقق للبطاقة. يرجى مسح رمز الاستجابة السريعة (QR) أو الباركود مباشرة من البطاقة المهنية.');
-                return;
-            }
+                if (!cleanJobId && !token) {
+                    renderErrorState('لم يتم العثور على معرّف أو رمز التحقق للبطاقة. يرجى مسح رمز الاستجابة السريعة (QR) أو الباركود مباشرة من البطاقة المهنية.');
+                    return;
+                }
+
+                if (!cleanJobId && token && !decryptedData) {
+                    renderErrorState('رمز التحقق الرقمي غير صالح أو تعذر فك تشفيره. يرجى إعادة مسح رمز الاستجابة السريعة (QR) بدقة من البطاقة المهنية.');
+                    return;
+                }
 
             const container = document.getElementById('portal-content-container');
             container.innerHTML = `
@@ -1613,7 +1618,11 @@
             const tabsNav = document.getElementById('tabs-navbar');
             if (tabsNav) tabsNav.style.display = 'grid';
             renderPortalViews(currentEmployee, !!dbEmp);
+        } catch(fatalErr) {
+            console.error("Fatal verification portal error:", fatalErr);
+            renderErrorState('حدث خطأ غير متوقع أثناء معالجة بيانات التحقق: ' + (fatalErr.message || fatalErr));
         }
+    }
 
         // رسم محتوى الواجهتين (بطاقة المعلومات + البطاقة الرقمية)
         function renderPortalViews(emp, isLiveVerified = false) {
