@@ -134,6 +134,9 @@
             data.issueDateMap = extra.issue_date_map || {};
             data.disabled_cards_map = extra.disabled_cards_map || {};
             data.disabledCardsMap = extra.disabled_cards_map || {};
+            data.pin_tab_visibility = extra.pin_tab_visibility || (extra.hide_digital_pin_tab === false ? 'always_visible' : 'hide_with_settings');
+            data.pinTabVisibility = data.pin_tab_visibility;
+            data.hide_digital_pin_tab = (data.pin_tab_visibility !== 'always_visible');
         } else if (data) {
             data.is_platform_open = true;
             data.isPlatformOpen = true;
@@ -145,6 +148,9 @@
             data.issueDateMap = {};
             data.disabled_cards_map = {};
             data.disabledCardsMap = {};
+            data.pin_tab_visibility = 'hide_with_settings';
+            data.pinTabVisibility = 'hide_with_settings';
+            data.hide_digital_pin_tab = true;
         }
 
         console.log("✅ [Supabase Live] تم استلام إعدادات النظام بنجاح:", data);
@@ -213,6 +219,17 @@
             extraConfig.template3_issue_date = String(newSettings.template3_issue_date).trim();
         } else if (newSettings.template3GlobalIssueDate !== undefined) {
             extraConfig.template3_issue_date = String(newSettings.template3GlobalIssueDate).trim();
+        }
+
+        if (newSettings.pin_tab_visibility !== undefined) {
+            extraConfig.pin_tab_visibility = newSettings.pin_tab_visibility;
+            extraConfig.hide_digital_pin_tab = (newSettings.pin_tab_visibility !== 'always_visible');
+        } else if (newSettings.pinTabVisibility !== undefined) {
+            extraConfig.pin_tab_visibility = newSettings.pinTabVisibility;
+            extraConfig.hide_digital_pin_tab = (newSettings.pinTabVisibility !== 'always_visible');
+        } else if (newSettings.hide_digital_pin_tab !== undefined) {
+            extraConfig.hide_digital_pin_tab = !!newSettings.hide_digital_pin_tab;
+            extraConfig.pin_tab_visibility = newSettings.hide_digital_pin_tab ? 'hide_with_settings' : 'always_visible';
         }
 
         const payload = {

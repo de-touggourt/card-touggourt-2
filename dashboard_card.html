@@ -245,6 +245,17 @@
             border-color: #334155 !important;
         }
 
+        body.dark-theme #quick-toggle-print + .slider,
+        body.dark-theme .switch-print-royal .slider {
+            background-color: #475569 !important;
+        }
+        body.dark-theme #quick-toggle-print:checked + .slider,
+        body.dark-theme .switch-print-royal input:checked + .slider {
+            background: linear-gradient(135deg, #b91c1c 0%, #881337 100%) !important;
+            box-shadow: 0 0 12px rgba(225, 29, 72, 0.45) !important;
+        }
+
+
         /* ⚠️ حماية قوالب البطاقات المعاينة والطباعة من الوضع الليلي ⚠️ */
         #card-container, #card-container *,
         .preview-card-box, .preview-card-box *,
@@ -521,16 +532,91 @@
         .header-title-box h1 { margin: 0; font-size: 25px; font-weight: 900; color: var(--dark); line-height: 1.2; }
         .header-title-box p { margin: 4px 0 0 0; color: var(--gray); font-size: 13px; font-weight: 600; }
 
-        /* شارات الحالة المباشرة */
-        .live-status-pills { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-        .status-pill {
-            padding: 7px 14px; border-radius: 20px; font-size: 12px; font-weight: 800;
-            display: inline-flex; align-items: center; gap: 7px; border: 1px solid;
-            letter-spacing: 0.3px; transition: 0.2s;
+        /* شارات الحالة المباشرة التنفيذية الموحدة والمتجاوبة */
+        .live-status-pills { 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+            flex-wrap: wrap; 
+            justify-content: flex-end;
         }
-        .pill-template { background: #fef3c7; color: #92400e; border-color: #fde68a; }
-        .pill-active { background: #d1fae5; color: #065f46; border-color: #a7f3d0; }
-        .pill-locked { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+        .status-pill {
+            padding: 6px 14px; 
+            border-radius: 20px; 
+            font-size: 12px; 
+            font-weight: 800;
+            display: inline-flex; 
+            align-items: center; 
+            gap: 7px; 
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            color: #f8fafc;
+            letter-spacing: 0.2px; 
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            white-space: nowrap;
+        }
+        .status-pill:hover {
+            background: rgba(255, 255, 255, 0.14);
+            border-color: rgba(212, 175, 55, 0.4);
+            transform: translateY(-1px);
+        }
+        .status-pill strong {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11.5px;
+            font-weight: 900;
+            line-height: 1.2;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+        }
+        /* الحالة المفعلة: أخضر موحد كما في لوحة المديرين */
+        .status-pill.pill-active strong { 
+            background: #dcfce7 !important; 
+            color: #15803d !important; 
+            border: 1px solid #86efac !important; 
+        }
+        /* الحالة المعطلة: أحمر موحد كما في لوحة المديرين */
+        .status-pill.pill-locked strong { 
+            background: #fee2e2 !important; 
+            color: #b91c1c !important; 
+            border: 1px solid #fca5a5 !important; 
+        }
+        /* النموذج المعتمد: ذهبي موحد */
+        .status-pill.pill-template strong { 
+            background: #fef3c7 !important; 
+            color: #92400e !important; 
+            border: 1px solid #fde68a !important; 
+        }
+
+        @media (max-width: 1200px) {
+            .executive-header {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 16px !important;
+            }
+            .live-status-pills {
+                justify-content: flex-start !important;
+            }
+        }
+        @media (max-width: 768px) {
+            .live-status-pills {
+                gap: 8px !important;
+                justify-content: center !important;
+            }
+            .status-pill {
+                padding: 5px 10px !important;
+                font-size: 11px !important;
+            }
+            .status-pill strong {
+                padding: 2px 7px !important;
+                font-size: 10.5px !important;
+            }
+        }
 
         /* ==========================================
            شريط التبويبات الفاخر
@@ -662,6 +748,24 @@
         }
         input:checked + .slider { background-color: var(--emerald); }
         input:checked + .slider:before { transform: translateX(20px); }
+
+        /* زر توقل الطباعة الملكي في تبويب متابعة المؤسسات: رمادي عند التعطيل وأحمر ملكي عند التفعيل */
+        #quick-toggle-print + .slider,
+        .switch-print-royal .slider {
+            background-color: #94a3b8 !important;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.12) !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        }
+        #quick-toggle-print:checked + .slider,
+        .switch-print-royal input:checked + .slider {
+            background: linear-gradient(135deg, #991b1b 0%, #821025 100%) !important;
+            box-shadow: 0 0 10px rgba(130, 16, 37, 0.5), inset 0 1px 2px rgba(255, 255, 255, 0.25) !important;
+        }
+        #quick-toggle-print:checked + .slider:before,
+        .switch-print-royal input:checked + .slider:before {
+            background-color: #ffffff !important;
+            box-shadow: 0 2px 6px rgba(74, 4, 14, 0.4) !important;
+        }
 
         /* ==========================================
            الفلاتر وجداول البيانات
@@ -1166,27 +1270,27 @@
             </div>
         </div>
         
-        <!-- شارات الحالة المباشرة -->
+        <!-- شارات الحالة المباشرة التنفيذية الموحدة -->
         <div class="live-status-pills">
-            <span class="status-pill pill-template" id="live-template-pill">
-                <i class="fa-solid fa-layer-group"></i> النموذج المعتمد: <strong id="live-template-name">النموذج 2 (الوطني)</strong>
+            <span class="status-pill pill-template" id="live-template-pill" title="النموذج المعتمد رسمياً للبطاقات">
+                <i class="fa-solid fa-layer-group"></i> <span>النموذج:</span> <strong id="live-template-name">النموذج 2 (الوطني)</strong>
             </span>
-            <span class="status-pill pill-active" id="live-platform-pill">
-                <i class="fa-solid fa-door-open"></i> منصة المديرين: <strong id="live-platform-status">مفتوحة</strong>
+            <span class="status-pill pill-active" id="live-platform-pill" title="حالة بوابة مديري المؤسسات">
+                <i class="fa-solid fa-door-open"></i> <span>بوابة المديرين:</span> <strong id="live-platform-status">مفتوحة</strong>
             </span>
-            <span class="status-pill pill-active" id="live-print-pill">
-                <i class="fa-solid fa-print"></i> خدمة الطباعة: <strong id="live-print-status">مفعلة</strong>
+            <span class="status-pill pill-active" id="live-print-pill" title="حالة خدمة الطباعة للمؤسسات">
+                <i class="fa-solid fa-print"></i> <span>الطباعة:</span> <strong id="live-print-status">مفعلة</strong>
             </span>
-            <span class="status-pill pill-active" id="live-upload-pill">
-                <i class="fa-solid fa-camera"></i> رفع الصور: <strong id="live-upload-status">مفعل</strong>
+            <span class="status-pill pill-active" id="live-upload-pill" title="حالة رفع الصور">
+                <i class="fa-solid fa-camera"></i> <span>رفع الصور:</span> <strong id="live-upload-status">مفعل</strong>
             </span>
-            <span class="status-pill pill-active" id="live-pdf-pill">
-                <i class="fa-solid fa-file-pdf"></i> تحميل PDF: <strong id="live-pdf-status">مفعل</strong>
+            <span class="status-pill pill-active" id="live-pdf-pill" title="حالة تحميل ملفات PDF">
+                <i class="fa-solid fa-file-pdf"></i> <span>تحميل PDF:</span> <strong id="live-pdf-status">مفعل</strong>
             </span>
-            <button class="status-pill theme-toggle-btn" id="theme-toggle-btn" onclick="toggleDarkMode()" style="cursor: pointer; background: rgba(212, 175, 55, 0.2); border: 1.5px solid #d4af37; color: #fef08a; font-weight: 800; display: inline-flex; align-items: center; gap: 8px; padding: 7px 16px; border-radius: 20px; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.2);" title="تبديل الوضع الليلي والنهاري">
+            <button class="status-pill theme-toggle-btn" id="theme-toggle-btn" onclick="toggleDarkMode()" style="cursor: pointer;" title="تبديل الوضع الليلي والنهاري">
                 <i class="fa-solid fa-moon"></i> <span id="theme-btn-text">الوضع الليلي</span>
             </button>
-            <button class="status-pill" onclick="adminLogout()" style="cursor: pointer; background: rgba(239, 68, 68, 0.2); border: 1.5px solid #ef4444; color: #fecaca; font-weight: 800; display: inline-flex; align-items: center; gap: 8px; padding: 7px 16px; border-radius: 20px; transition: all 0.2s;" title="تسجيل الخروج من المنظومة">
+            <button class="status-pill logout-pill-btn" onclick="adminLogout()" style="cursor: pointer;" title="تسجيل الخروج من المنظومة">
                 <i class="fa-solid fa-right-from-bracket"></i> <span>تسجيل الخروج</span>
             </button>
         </div>
@@ -1209,7 +1313,7 @@
         <button class="custom-tab-btn" onclick="switchTab(event, 'issuedate-tab')">
             <i class="fa-solid fa-calendar-check"></i> سجل تواريخ الإصدار
         </button>
-        <button class="custom-tab-btn" onclick="switchTab(event, 'digitalpin-tab')">
+        <button class="custom-tab-btn" id="tab-btn-digitalpin" onclick="switchTab(event, 'digitalpin-tab')" style="display: none;">
             <i class="fa-solid fa-key"></i> تسيير الأرقام السرية للبطاقات الرقمية
         </button>
         <button class="custom-tab-btn" id="tab-btn-settings" onclick="switchTab(event, 'settings-tab')" style="display: none;">
@@ -1288,7 +1392,7 @@
         <div class="permissions-bar">
             <div class="perm-item">
                 <span><i class="fa-solid fa-print" style="color:var(--primary);"></i> السماح بالطباعة للمديرين:</span>
-                <label class="switch">
+                <label class="switch switch-print-royal" title="تفعيل أو تعطيل الطباعة للمديرين (رمادي: معطلة | أحمر ملكي: مفعلة)">
                     <input type="checkbox" id="quick-toggle-print" checked onchange="toggleMasterPermission('allowPrinting', this.checked)">
                     <span class="slider"></span>
                 </label>
@@ -1452,13 +1556,13 @@
                 <div id="emp-quota-badge"></div>
             </div>
             <div style="display: flex; gap: 10px;">
-                <button class="filter-pill-btn active" id="view-mode-table" onclick="toggleEmpView('table')"><i class="fa-solid fa-table-list"></i> عرض الجدول (10 صفوف)</button>
-                <button class="filter-pill-btn" id="view-mode-grid" onclick="toggleEmpView('grid')"><i class="fa-solid fa-table-cells"></i> عرض البطاقات</button>
+                <button class="filter-pill-btn" id="view-mode-table" onclick="toggleEmpView('table')"><i class="fa-solid fa-table-list"></i> عرض الجدول (10 صفوف)</button>
+                <button class="filter-pill-btn active" id="view-mode-grid" onclick="toggleEmpView('grid')"><i class="fa-solid fa-table-cells"></i> عرض البطاقات</button>
             </div>
         </div>
 
-        <!-- جدول الموظفين (الافتراضي: 10 صفوف لكل صفحة) -->
-        <div class="table-container" id="employees-table-container" style="display:block; margin-top: 15px;">
+        <!-- جدول الموظفين (10 صفوف لكل صفحة) -->
+        <div class="table-container" id="employees-table-container" style="display:none; margin-top: 15px;">
             <table id="employees-table">
                 <thead>
                     <tr>
@@ -1479,8 +1583,8 @@
             </table>
         </div>
 
-        <!-- شبكة بطاقات الموظفين (بديل) -->
-        <div class="emp-grid" id="employees-grid" style="display:none;"></div>
+        <!-- شبكة بطاقات الموظفين (الافتراضي) -->
+        <div class="emp-grid" id="employees-grid" style="display:grid;"></div>
 
         <!-- شريط ترقيم صفحات الموظفين (جدول 10 صفوف) -->
         <div id="employees-pagination-container" style="display:none; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-top:16px; padding:12px 18px; background:white; border:1px solid #cbd5e1; border-radius:12px; box-shadow:0 2px 6px rgba(0,0,0,0.03);"></div>
@@ -1806,32 +1910,39 @@
 
         <!-- لوحة التحكم في تاريخ الإصدار وتعميمه على الكل أو الجدد -->
         <div style="background: white; border: 1.5px solid var(--border); border-radius: 14px; padding: 16px 20px; margin-bottom: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
-            <div style="display: flex; gap: 14px; align-items: center; flex-wrap: wrap;">
-                <div style="display: flex; flex-direction: column; gap: 4px; min-width: 260px; flex: 1;">
-                    <label style="font-weight: 800; font-size: 13.5px; color: var(--dark); display: flex; align-items: center; gap: 6px;">
-                        <i class="fa-solid fa-calendar-pen" style="color:var(--emerald);"></i>
-                        <span>تاريخ الإصدار المعتمد للبطاقات (خاص بالنموذج 3 الذكي حصرياً):</span>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+                <!-- حقل تاريخ الإصدار المعتمد -->
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <label style="font-weight: 800; font-size: 13.5px; color: var(--dark); display: flex; align-items: center; gap: 6px; white-space: nowrap;">
+                        <i class="fa-solid fa-calendar-pen" style="color:var(--emerald); font-size: 16px;"></i>
+                        <span>تاريخ الإصدار المعتمد للبطاقات:</span>
                     </label>
-                    <div style="position: relative; display: flex; align-items: center;">
-                        <input type="text" id="issue-global-field-date" placeholder="مثال: 2026/10/26 أو 2026-10-26" dir="ltr" style="padding: 10px 14px; border: 1.5px solid #cbd5e1; border-radius: 9px; font-weight: 800; font-size: 15px; color: #0f172a; width: 100%; box-sizing: border-box; background: #f8fafc;">
+                    <div style="position: relative; display: flex; align-items: center; width: 180px;">
+                        <input type="text" id="issue-global-field-date" placeholder="مثال: 2026/10/26" dir="ltr" style="padding: 9px 12px; border: 1.5px solid #cbd5e1; border-radius: 9px; font-weight: 800; font-size: 15px; color: #0f172a; width: 100%; box-sizing: border-box; background: #f8fafc; text-align: center; font-family: inherit; letter-spacing: 0.5px;">
                     </div>
-                    <span style="font-size: 11.5px; color: var(--gray);"><strong style="color: #047857;">ملاحظة هامة:</strong> هذا التاريخ خاص حصرياً بالنموذج الثالث (الرقمي الذكي). تواريخ النموذجين الأول والثاني تُضبط من تبويب "الإعدادات" في سطر "توقرت في:".</span>
                 </div>
 
-                <div style="display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; margin-top: auto;">
-                    <button class="btn btn-emerald" onclick="applyIssueDateFromTab(false)" style="padding: 10px 16px; font-weight: 800;" title="تطبيق التاريخ المكتوب على الموظفين الجدد فقط (الذين ليس لديهم تاريخ إصدار بعد)">
-                        <i class="fa-solid fa-calendar-plus"></i> تطبيق على الموظفين الجدد <span id="issue-unassigned-badge" style="display:none; background:#ef4444; color:white; padding:2px 8px; border-radius:10px; font-size:12px; font-weight:900; margin-right:6px;">0</span>
+                <!-- أزرار الإجراءات والتعميم -->
+                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                    <button class="btn btn-emerald" onclick="applyIssueDateFromTab(false)" style="padding: 9px 15px; font-weight: 800; font-size: 13px; display: inline-flex; align-items: center; gap: 6px;" title="تطبيق التاريخ المكتوب على الموظفين الجدد فقط (الذين ليس لديهم تاريخ إصدار بعد)">
+                        <i class="fa-solid fa-calendar-plus"></i> تطبيق على الموظفين الجدد <span id="issue-unassigned-badge" style="display:none; background:#ef4444; color:white; padding:2px 7px; border-radius:10px; font-size:11.5px; font-weight:900; margin-right:4px;">0</span>
                     </button>
-                    <button class="btn btn-gold" onclick="applyIssueDateFromTab(true)" style="padding: 10px 16px; font-weight: 800;" title="تطبيق وتعميم التاريخ المكتوب على جميع موظفي الولاية دفعة واحدة">
+                    <button class="btn btn-gold" onclick="applyIssueDateFromTab(true)" style="padding: 9px 15px; font-weight: 800; font-size: 13px; display: inline-flex; align-items: center; gap: 6px;" title="تطبيق وتعميم التاريخ المكتوب على جميع موظفي الولاية دفعة واحدة">
                         <i class="fa-solid fa-calendar-days"></i> تطبيق وتعميم على الكل (<span id="issue-tab-total-badge">0</span>)
                     </button>
-                    <button class="btn btn-dark" onclick="printIssueDateReport()" style="padding: 10px 14px;">
-                        <i class="fa-solid fa-print"></i> طباعة سجل تواريخ الإصدار A4
+                    <button class="btn btn-dark" onclick="printIssueDateReport()" style="padding: 9px 14px; font-weight: 700; font-size: 13px; display: inline-flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-print"></i> طباعة كشف A4
                     </button>
-                    <button class="btn btn-danger" onclick="clearAllIssueDatesUI()" style="padding: 10px 14px;">
+                    <button class="btn btn-danger" onclick="clearAllIssueDatesUI()" style="padding: 9px 14px; font-weight: 700; font-size: 13px; display: inline-flex; align-items: center; gap: 6px;">
                         <i class="fa-solid fa-trash-can"></i> تصفير تواريخ الإصدار
                     </button>
                 </div>
+            </div>
+
+            <!-- ملاحظة توضيحية أسفل الشريط -->
+            <div style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed #e2e8f0; font-size: 12px; color: var(--gray); display: flex; align-items: center; gap: 6px;">
+                <span style="color: #047857; font-weight: 800;"><i class="fa-solid fa-circle-info"></i> ملاحظة:</span>
+                <span>هذا التاريخ خاص حصرياً بالنموذج الثالث (الرقمي الذكي). تواريخ النموذجين الأول والثاني تُضبط من تبويب "الإعدادات" في سطر "توقرت في:".</span>
             </div>
         </div>
 
@@ -1962,6 +2073,7 @@
             <table>
                 <thead>
                     <tr>
+                        <th style="width: 45px; text-align: center;">#</th>
                         <th style="width: 130px; text-align: center;">الرقم السري (codep)</th>
                         <th>الرقم الوظيفي</th>
                         <th>الاسم واللقب</th>
@@ -1972,7 +2084,7 @@
                     </tr>
                 </thead>
                 <tbody id="digitalpin-table-body">
-                    <tr><td colspan="7" style="text-align: center; padding: 30px; color: var(--gray);">جاري تحميل سجل الأرقام السرية...</td></tr>
+                    <tr><td colspan="8" style="text-align: center; padding: 30px; color: var(--gray);">جاري تحميل سجل الأرقام السرية...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -2028,6 +2140,25 @@
                             <i class="fa-solid fa-eye" id="pin-toggle-icon"></i>
                         </button>
                         <button class="btn btn-emerald" style="border-radius: 10px 0 0 10px;" onclick="saveSettingField('digitalPin')">حفظ وتعميم الرمز</button>
+                    </div>
+                </div>
+
+                <!-- إعداد ظهور تبويب الأرقام السرية في الشريط العلوي وقفل التبويبين -->
+                <div style="margin-top: 18px; padding-top: 16px; border-top: 1.5px dashed #cbd5e1;">
+                    <label style="display: block; font-weight: 800; font-size: 13.5px; margin-bottom: 6px; color: #1e3a8a;">
+                        <i class="fa-solid fa-eye-slash" style="color: #2563eb; margin-left: 6px;"></i> ظهور تبويب الأرقام السرية في الشريط العلوي:
+                    </label>
+                    <div style="font-size: 11.5px; color: var(--gray); margin-bottom: 10px; line-height: 1.6;">
+                        اختر إما إخفاء تبويب الأرقام السرية ليرتبط بتبويب الإعدادات (يظهران معاً عند إدخال الكود السري ويختفيان معاً)، أو تركه ظاهراً دائماً في شريط التبويبات العلوي.
+                    </div>
+                    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                        <select id="setting-pin-tab-visibility" onchange="changePinTabVisibility(this.value)" style="padding: 10px 14px; border-radius: 9px; border: 1.5px solid #cbd5e1; font-weight: 800; font-size: 13.5px; background: white; cursor: pointer; color: #0f172a; flex: 1; min-width: 220px; font-family: inherit;">
+                            <option value="hide_with_settings">إخفاء التبويب وربطه بالكود السري (يظهران معاً)</option>
+                            <option value="always_visible">إبقاء التبويب ظاهراً دائماً في الشريط العلوي</option>
+                        </select>
+                        <button type="button" class="btn btn-danger" onclick="lockSettingsAndPinTabs()" style="padding: 10px 16px; font-size: 13px; font-weight: 800; border-radius: 9px; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px;" title="إعادة قفل وإخفاء تبويب الإعدادات وتبويب الأرقام السرية الآن">
+                            <i class="fa-solid fa-lock"></i> قفل وإخفاء التبويبين الآن
+                        </button>
                     </div>
                 </div>
             </div>
@@ -2359,7 +2490,7 @@
     let currentPage = 1;
     const rowsPerPage = 12;
     let currentKpiFilter = 'all';
-    let empViewMode = 'table'; // table (10 صفوف) or grid
+    let empViewMode = 'grid'; // cards (نظام البطاقات) as default
     let empCurrentPage = 1;
     const empRowsPerPage = 10; // جدول ذو 10 صفوف لكل صفحة
     let regCurrentPage = 1;
@@ -2426,7 +2557,8 @@
         digitalCardPin: '',
         issueDateMap: {},
         disabledCardsMap: {},
-        codepMap: {}
+        codepMap: {},
+        pinTabVisibility: 'hide_with_settings' // 'hide_with_settings' (يختفي ويظهر مع الإعدادات بالكود السري) أو 'always_visible' (ظاهر دائماً)
     };
 
     // دالة تحديد نص تاريخ البطاقة حسب إعداد التاريخ التلقائي والمخصص
@@ -2527,14 +2659,26 @@
     // التبديل بين التبويبات
     // ==========================================
     function switchTab(evt, tabId) {
+        let actualTabId = tabId;
+        if (!actualTabId && typeof evt === 'string') {
+            actualTabId = evt;
+            evt = null;
+        }
+        tabId = actualTabId;
         document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.custom-tab-btn').forEach(b => b.classList.remove('active'));
         
         const target = document.getElementById(tabId);
         if(target) target.classList.add('active');
-        if(evt && evt.currentTarget) evt.currentTarget.classList.add('active');
+        if(evt && evt.currentTarget) {
+            evt.currentTarget.classList.add('active');
+        } else if (tabId) {
+            const btn = document.querySelector(`.custom-tab-btn[onclick*="${tabId}"]`);
+            if (btn) btn.classList.add('active');
+        }
 
         if(tabId === 'employees-tab') {
+            if (typeof toggleEmpView === 'function') toggleEmpView(empViewMode || 'grid');
             if(allEmployeesData.length === 0) {
                 fetchEmployeesData(false);
             } else {
@@ -2616,6 +2760,13 @@
                     if (data.issue_date_map) centralConfig.issueDateMap = data.issue_date_map;
                     if (data.disabled_cards_map) centralConfig.disabledCardsMap = data.disabled_cards_map;
                     if (data.codep_map) centralConfig.codepMap = data.codep_map;
+                    if (data.pin_tab_visibility) {
+                        centralConfig.pinTabVisibility = data.pin_tab_visibility;
+                    } else if (data.pinTabVisibility) {
+                        centralConfig.pinTabVisibility = data.pinTabVisibility;
+                    } else if (data.hide_digital_pin_tab !== undefined) {
+                        centralConfig.pinTabVisibility = (data.hide_digital_pin_tab === false) ? 'always_visible' : 'hide_with_settings';
+                    }
                 }
             } catch(fErr) { console.warn("Supabase config read error:", fErr); }
         }
@@ -2668,6 +2819,11 @@
             const countSpan = document.getElementById('count-pdf-insts');
             if(countSpan) countSpan.textContent = (centralConfig.pdfDownloadInstitutions || []).length;
         }
+
+        const qPrint = document.getElementById('quick-toggle-print');
+        if(qPrint) qPrint.checked = (centralConfig.allowPrinting === 'all' || centralConfig.allowPrinting === true);
+        const qUpload = document.getElementById('quick-toggle-upload');
+        if(qUpload) qUpload.checked = (centralConfig.allowPhotoUpload === 'all' || centralConfig.allowPhotoUpload === true);
 
         const sToggle = document.getElementById('quick-toggle-sync');
         if(sToggle) sToggle.checked = centralConfig.syncMode;
@@ -2741,7 +2897,7 @@
                 printStatusEl.textContent = `محددة (${(centralConfig.printingInstitutions || []).length})`;
                 printPill.className = 'status-pill pill-active';
             } else {
-                printStatusEl.textContent = 'معلقة';
+                printStatusEl.textContent = 'معطلة';
                 printPill.className = 'status-pill pill-locked';
             }
         }
@@ -2756,7 +2912,7 @@
                 uploadStatusEl.textContent = `محدد (${(centralConfig.photoUploadInstitutions || []).length})`;
                 uploadPill.className = 'status-pill pill-active';
             } else {
-                uploadStatusEl.textContent = 'معلق';
+                uploadStatusEl.textContent = 'معطل';
                 uploadPill.className = 'status-pill pill-locked';
             }
         }
@@ -2771,7 +2927,7 @@
                 pdfStatusEl.textContent = `محدد (${(centralConfig.pdfDownloadInstitutions || []).length})`;
                 pdfPill.className = 'status-pill pill-active';
             } else {
-                pdfStatusEl.textContent = 'معلق';
+                pdfStatusEl.textContent = 'معطل';
                 pdfPill.className = 'status-pill pill-locked';
             }
         }
@@ -2790,6 +2946,10 @@
                 }
             }
         });
+
+        const pinTabVisSelect = document.getElementById('setting-pin-tab-visibility');
+        if (pinTabVisSelect) pinTabVisSelect.value = centralConfig.pinTabVisibility || 'hide_with_settings';
+        if (typeof updateTabsVisibility === 'function') updateTabsVisibility();
     }
 
     // مزامنة واستخراج الإعدادات النصية والقوائم فقط من عناصر الواجهة قبل الحفظ لضمان عدم ضياع التعديلات
@@ -2815,6 +2975,8 @@
         if (pdfSelect) centralConfig.allowPdfDownload = pdfSelect.value;
         const upSelect = document.getElementById('setting-allow-upload-mode');
         if (upSelect) centralConfig.allowPhotoUpload = upSelect.value;
+        const pinTabVisSelect = document.getElementById('setting-pin-tab-visibility');
+        if (pinTabVisSelect) centralConfig.pinTabVisibility = pinTabVisSelect.value;
     }
 
     // حفظ ونشر الإعدادات وتعميمها فورياً
@@ -2851,7 +3013,10 @@
                     digital_card_pin: centralConfig.digitalCardPin || '',
                     digitalCardPin: centralConfig.digitalCardPin || '',
                     template3_issue_date: centralConfig.template3GlobalIssueDate || '',
-                    template3GlobalIssueDate: centralConfig.template3GlobalIssueDate || ''
+                    template3GlobalIssueDate: centralConfig.template3GlobalIssueDate || '',
+                    pin_tab_visibility: centralConfig.pinTabVisibility || 'hide_with_settings',
+                    pinTabVisibility: centralConfig.pinTabVisibility || 'hide_with_settings',
+                    hide_digital_pin_tab: (centralConfig.pinTabVisibility !== 'always_visible')
                 });
 
                 // بث فوري لكافة التبويبات المفتوحة في المتصفح عبر حدث التخزين
@@ -2871,27 +3036,37 @@
     }
 
     async function toggleMasterPermission(key, value) {
-        centralConfig[key] = value;
-
-        // مزامنة عناصر الواجهة المقترنة فوراً لتفادي أي ارتداد
+        // مزامنة عناصر الواجهة المقترنة فوراً لتفادي أي ارتداد وتعيين القيمة بدقة
         if (key === 'allowPrinting') {
+            const mode = (value === true || value === 'all') ? 'all' : 'none';
+            centralConfig.allowPrinting = mode;
             const q = document.getElementById('quick-toggle-print');
-            const s = document.getElementById('setting-allow-print');
-            if (q) q.checked = value;
-            if (s) s.checked = value;
+            const s = document.getElementById('setting-allow-print-mode');
+            if (q) q.checked = (mode === 'all');
+            if (s) s.value = mode;
+            const prBtn = document.getElementById('btn-config-insts-print');
+            if (prBtn) prBtn.style.display = (mode === 'selected') ? 'inline-flex' : 'none';
         } else if (key === 'allowPhotoUpload') {
+            const mode = (value === true || value === 'all') ? 'all' : 'none';
+            centralConfig.allowPhotoUpload = mode;
             const q = document.getElementById('quick-toggle-upload');
-            const s = document.getElementById('setting-allow-upload');
-            if (q) q.checked = value;
-            if (s) s.checked = value;
+            const s = document.getElementById('setting-allow-upload-mode');
+            if (q) q.checked = (mode === 'all');
+            if (s) s.value = mode;
+            const upBtn = document.getElementById('btn-config-insts-upload');
+            if (upBtn) upBtn.style.display = (mode === 'selected') ? 'inline-flex' : 'none';
         } else if (key === 'syncMode') {
+            centralConfig.syncMode = value;
             const q = document.getElementById('quick-toggle-sync');
             const s = document.getElementById('setting-sync-mode');
             if (q) q.checked = value;
             if (s) s.checked = value;
         } else if (key === 'isPlatformOpen') {
+            centralConfig.isPlatformOpen = value;
             const s = document.getElementById('setting-platform-open');
             if (s) s.checked = value;
+        } else {
+            centralConfig[key] = value;
         }
 
         applyConfigToUI();
@@ -2943,6 +3118,67 @@
     }
     window.togglePinVisibility = togglePinVisibility;
 
+    // دالة تحديث حالة ظهور تبويبات الإعدادات والأرقام السرية في الشريط العلوي
+    function updateTabsVisibility() {
+        const isUnlocked = (sessionStorage.getItem('settings_tab_unlocked') === 'true');
+        const settingsTabBtn = document.getElementById('tab-btn-settings');
+        if (settingsTabBtn) {
+            settingsTabBtn.style.display = isUnlocked ? 'inline-flex' : 'none';
+        }
+
+        const pinTabBtn = document.getElementById('tab-btn-digitalpin');
+        if (pinTabBtn) {
+            const mode = centralConfig.pinTabVisibility || 'hide_with_settings';
+            if (mode === 'always_visible') {
+                pinTabBtn.style.display = 'inline-flex';
+            } else {
+                pinTabBtn.style.display = isUnlocked ? 'inline-flex' : 'none';
+            }
+        }
+    }
+    window.updateTabsVisibility = updateTabsVisibility;
+
+    // تغيير إعداد ظهور تبويب الأرقام السرية
+    async function changePinTabVisibility(value) {
+        centralConfig.pinTabVisibility = value;
+        updateTabsVisibility();
+        try {
+            await saveCentralConfigToServer();
+            Swal.fire({
+                icon: 'success',
+                title: 'تم حفظ وتعميم الإعداد',
+                text: value === 'always_visible'
+                    ? 'تم ضبط تبويب الأرقام السرية ليبقى ظاهراً دائماً في الشريط العلوي.'
+                    : 'تم ضبط تبويب الأرقام السرية ليختفي ويرتبط بتبويب الإعدادات (يظهران معاً عند إدخال الكود السري).',
+                timer: 2000,
+                showConfirmButton: false
+            });
+        } catch(err) {
+            applyConfigToUI();
+            Swal.fire({
+                icon: 'error',
+                title: 'تعذر الحفظ',
+                text: 'حدث خطأ أثناء حفظ الإعداد: ' + (err.message || err)
+            });
+        }
+    }
+    window.changePinTabVisibility = changePinTabVisibility;
+
+    // دالة قفل وإخفاء تبويب الإعدادات والأرقام السرية فوراً
+    function lockSettingsAndPinTabs() {
+        sessionStorage.removeItem('settings_tab_unlocked');
+        updateTabsVisibility();
+        switchTab('stats-tab');
+        Swal.fire({
+            icon: 'info',
+            title: 'تم قفل التبويبات',
+            text: 'تم إخفاء وقفل تبويب الإعدادات وتبويب الأرقام السرية بنجاح.',
+            timer: 1600,
+            showConfirmButton: false
+        });
+    }
+    window.lockSettingsAndPinTabs = lockSettingsAndPinTabs;
+
     // نشر النموذج المختار
     async function publishTemplate(templateId) {
         const names = { 1: 'النموذج 1 (الكلاسيكي بالباركود)', 2: 'النموذج 2 (الوطني بشريط العلم)', 3: 'النموذج 3 (الرقمي الذكي بالـ QR)' };
@@ -2989,6 +3225,15 @@
         const btnId = btnMap[key];
         const btn = document.getElementById(btnId);
         if (btn) btn.style.display = (mode === 'selected') ? 'inline-flex' : 'none';
+
+        if (key === 'allowPrinting') {
+            const q = document.getElementById('quick-toggle-print');
+            if (q) q.checked = (mode === 'all' || mode === true);
+        } else if (key === 'allowPhotoUpload') {
+            const q = document.getElementById('quick-toggle-upload');
+            if (q) q.checked = (mode === 'all' || mode === true);
+        }
+        applyConfigToUI();
         try {
             await saveCentralConfigToServer();
             Swal.fire({
@@ -3785,6 +4030,8 @@
                 populateDropdowns();
                 populateInstFilter();
                 populateRegistryInstDropdown();
+                if (typeof populatePinInstDropdown === 'function') populatePinInstDropdown();
+                if (typeof populateIssueInstDropdown === 'function') populateIssueInstDropdown();
                 renderTable();
                 renderEmployees(false);
                 renderRegistryTab(false);
@@ -4056,6 +4303,8 @@
             populateDropdowns();
             populateInstFilter();
             populateRegistryInstDropdown();
+            if (typeof populatePinInstDropdown === 'function') populatePinInstDropdown();
+            if (typeof populateIssueInstDropdown === 'function') populateIssueInstDropdown();
             renderTable();
             calculateAndRenderKpis();
             updateInstSyncStatusUI(instList.length, true);
@@ -6420,24 +6669,130 @@
     const issueRowsPerPage = 10;
     window.lastIssueFilteredCount = 0;
 
+    // ==========================================
+    // ملء قائمة المؤسسات المنظمة والمرقمة لتبويب سجل تواريخ الإصدار
+    // ==========================================
+    function populateIssueInstDropdown() {
+        const sel = document.getElementById('issue-filter-inst');
+        if (!sel) return;
+        const currentVal = sel.value;
+        const baseList = (typeof getBaseInstitutionsList === 'function') ? getBaseInstitutionsList() : [];
+        
+        // حساب دقيق لعدد الموظفين في كل مؤسسة بدون استثناء
+        const counts = (typeof calculateAccurateInstitutionCounts === 'function') ? calculateAccurateInstitutionCounts() : new Map();
+        const stageOrder = ['ابتدائي', 'متوسط', 'ثانوي', 'مديرية التربية'];
+        const stageLabels = {
+            'ابتدائي': 'الطور الابتدائي',
+            'متوسط': 'الطور المتوسط',
+            'ثانوي': 'الطور الثانوي',
+            'مديرية التربية': 'مديرية التربية'
+        };
+
+        const seenInsts = new Set();
+        let totalEmps = allEmployeesData.length;
+        let html = `<option value="">جميع المؤسسات التربوية المعتمدة (${baseList.length} مؤسسة - ${totalEmps} موظف)</option>`;
+        let issueInstSeqNumber = 1;
+
+        stageOrder.forEach(st => {
+            let group = [];
+            if (st === 'مديرية التربية') {
+                group = baseList.filter(item => {
+                    const name = (item.inst || '').trim();
+                    return name.includes('مديرية التربية') || item.stage === 'مديرية التربية' || item.stage === 'إدارة' || item.stage === 'إداري' || item.stage === 'مديرية';
+                });
+                if (group.length === 0) {
+                    group = [{ inst: 'مديرية التربية تقرت - توقرت', stage: 'مديرية التربية' }];
+                }
+            } else {
+                group = baseList.filter(item => {
+                    const name = (item.inst || '').trim();
+                    if (name.includes('مديرية التربية') || item.stage === 'مديرية التربية' || item.stage === 'إدارة' || item.stage === 'إداري' || item.stage === 'مديرية') return false;
+                    return item.stage === st;
+                });
+            }
+
+            const uniqueGroup = [];
+            group.forEach(item => {
+                const name = (item.inst || '').trim();
+                if (name && !seenInsts.has(name)) {
+                    seenInsts.add(name);
+                    uniqueGroup.push(item);
+                }
+            });
+
+            uniqueGroup.sort((a,b) => a.inst.localeCompare(b.inst, 'ar'));
+            if (uniqueGroup.length > 0) {
+                let stageTotal = 0;
+                uniqueGroup.forEach(item => { stageTotal += (counts.get(item.inst) || 0); });
+                html += `<optgroup label="${stageLabels[st]} (${uniqueGroup.length} مؤسسة - ${stageTotal} موظف)">`;
+                uniqueGroup.forEach(item => {
+                    const count = counts.get(item.inst) || 0;
+                    const badge = count > 0 ? ` [${count} موظف]` : ' [0 موظف]';
+                    const isSel = (item.inst === currentVal) ? 'selected' : '';
+                    html += `<option value="${escapeHtml(item.inst)}" ${isSel}>${issueInstSeqNumber}. ${escapeHtml(item.inst)}${badge}</option>`;
+                    issueInstSeqNumber++;
+                });
+                html += `</optgroup>`;
+            }
+        });
+
+        // المؤسسات غير المصنفة في الأطوار السابقة
+        const otherGroup = baseList.filter(item => {
+            const name = (item.inst || '').trim();
+            if (seenInsts.has(name)) return false;
+            if (name.includes('مديرية التربية') || item.stage === 'مديرية التربية' || item.stage === 'إدارة' || item.stage === 'إداري' || item.stage === 'مديرية') return false;
+            return !stageOrder.includes(item.stage);
+        }).sort((a,b) => a.inst.localeCompare(b.inst, 'ar'));
+
+        if (otherGroup.length > 0) {
+            let otherTotal = 0;
+            otherGroup.forEach(item => { 
+                seenInsts.add(item.inst.trim());
+                otherTotal += (counts.get(item.inst) || 0); 
+            });
+            html += `<optgroup label="مؤسسات أخرى (${otherGroup.length} مؤسسة - ${otherTotal} موظف)">`;
+            otherGroup.forEach(item => {
+                const count = counts.get(item.inst) || 0;
+                const badge = count > 0 ? ` [${count} موظف]` : ' [0 موظف]';
+                const isSel = (item.inst === currentVal) ? 'selected' : '';
+                html += `<option value="${escapeHtml(item.inst)}" ${isSel}>${issueInstSeqNumber}. ${escapeHtml(item.inst)}${badge}</option>`;
+                issueInstSeqNumber++;
+            });
+            html += `</optgroup>`;
+        }
+
+        // أي مؤسسات مستخرجة من قاعدة البيانات لها موظفون وليست بالقائمة الرسمية
+        const extraInsts = [];
+        for (let [instName, count] of counts.entries()) {
+            const trimmed = (instName || '').trim();
+            if (count > 0 && !seenInsts.has(trimmed)) {
+                if (trimmed.includes('مديرية التربية') || trimmed === 'مديرية' || trimmed.includes('الإدارة العامة')) continue;
+                seenInsts.add(trimmed);
+                extraInsts.push({ inst: trimmed, count });
+            }
+        }
+        if (extraInsts.length > 0) {
+            html += `<optgroup label="مؤسسات مستخرجة من قاعدة البيانات (${extraInsts.length})">`;
+            extraInsts.sort((a,b) => a.inst.localeCompare(b.inst, 'ar')).forEach(ext => {
+                const isSel = (ext.inst === currentVal) ? 'selected' : '';
+                html += `<option value="${escapeHtml(ext.inst)}" ${isSel}>${issueInstSeqNumber}. ${escapeHtml(ext.inst)} [${ext.count} موظف]</option>`;
+                issueInstSeqNumber++;
+            });
+            html += `</optgroup>`;
+        }
+
+        sel.innerHTML = html;
+        if (currentVal) sel.value = currentVal;
+    }
+    window.populateIssueInstDropdown = populateIssueInstDropdown;
+
     function renderIssueDateTab(resetPage = false) {
         if (resetPage) issueCurrentPage = 1;
 
-        // ملء قائمة المؤسسات في تصفية تواريخ الإصدار
+        // ملء قائمة المؤسسات المنظمة والمرقمة في تصفية تواريخ الإصدار
         const instSelect = document.getElementById('issue-filter-inst');
         if (instSelect && instSelect.options.length <= 1) {
-            const baseList = (typeof getBaseInstitutionsList === 'function') ? getBaseInstitutionsList() : [];
-            const seen = new Set();
-            baseList.forEach(item => {
-                const name = (item.inst || '').trim();
-                if (name && !seen.has(name)) {
-                    seen.add(name);
-                    const opt = document.createElement('option');
-                    opt.value = name;
-                    opt.textContent = name;
-                    instSelect.appendChild(opt);
-                }
-            });
+            populateIssueInstDropdown();
         }
 
         const selectedInst = (document.getElementById('issue-filter-inst') ? document.getElementById('issue-filter-inst').value : '').trim();
@@ -7034,6 +7389,122 @@
     // ==========================================
     // تسيير الأرقام السرية للبطاقات الرقمية (codep)
     // ==========================================
+    // ملء قائمة المؤسسات المنظمة والمرقمة لتبويب الأرقام السرية
+    // ==========================================
+    function populatePinInstDropdown() {
+        const sel = document.getElementById('pin-filter-inst');
+        if (!sel) return;
+        const currentVal = sel.value;
+        const baseList = (typeof getBaseInstitutionsList === 'function') ? getBaseInstitutionsList() : [];
+        
+        // حساب دقيق لعدد الموظفين في كل مؤسسة بدون استثناء
+        const counts = (typeof calculateAccurateInstitutionCounts === 'function') ? calculateAccurateInstitutionCounts() : new Map();
+        const stageOrder = ['ابتدائي', 'متوسط', 'ثانوي', 'مديرية التربية'];
+        const stageLabels = {
+            'ابتدائي': 'الطور الابتدائي',
+            'متوسط': 'الطور المتوسط',
+            'ثانوي': 'الطور الثانوي',
+            'مديرية التربية': 'مديرية التربية'
+        };
+
+        const seenInsts = new Set();
+        let totalEmps = allEmployeesData.length;
+        let html = `<option value="">جميع المؤسسات التربوية المعتمدة (${baseList.length} مؤسسة - ${totalEmps} موظف)</option>`;
+        let pinInstSeqNumber = 1;
+
+        stageOrder.forEach(st => {
+            let group = [];
+            if (st === 'مديرية التربية') {
+                group = baseList.filter(item => {
+                    const name = (item.inst || '').trim();
+                    return name.includes('مديرية التربية') || item.stage === 'مديرية التربية' || item.stage === 'إدارة' || item.stage === 'إداري' || item.stage === 'مديرية';
+                });
+                if (group.length === 0) {
+                    group = [{ inst: 'مديرية التربية تقرت - توقرت', stage: 'مديرية التربية' }];
+                }
+            } else {
+                group = baseList.filter(item => {
+                    const name = (item.inst || '').trim();
+                    if (name.includes('مديرية التربية') || item.stage === 'مديرية التربية' || item.stage === 'إدارة' || item.stage === 'إداري' || item.stage === 'مديرية') return false;
+                    return item.stage === st;
+                });
+            }
+
+            const uniqueGroup = [];
+            group.forEach(item => {
+                const name = (item.inst || '').trim();
+                if (name && !seenInsts.has(name)) {
+                    seenInsts.add(name);
+                    uniqueGroup.push(item);
+                }
+            });
+
+            uniqueGroup.sort((a,b) => a.inst.localeCompare(b.inst, 'ar'));
+            if (uniqueGroup.length > 0) {
+                let stageTotal = 0;
+                uniqueGroup.forEach(item => { stageTotal += (counts.get(item.inst) || 0); });
+                html += `<optgroup label="${stageLabels[st]} (${uniqueGroup.length} مؤسسة - ${stageTotal} موظف)">`;
+                uniqueGroup.forEach(item => {
+                    const count = counts.get(item.inst) || 0;
+                    const badge = count > 0 ? ` [${count} موظف]` : ' [0 موظف]';
+                    const isSel = (item.inst === currentVal) ? 'selected' : '';
+                    html += `<option value="${escapeHtml(item.inst)}" ${isSel}>${pinInstSeqNumber}. ${escapeHtml(item.inst)}${badge}</option>`;
+                    pinInstSeqNumber++;
+                });
+                html += `</optgroup>`;
+            }
+        });
+
+        // المؤسسات غير المصنفة في الأطوار السابقة
+        const otherGroup = baseList.filter(item => {
+            const name = (item.inst || '').trim();
+            if (seenInsts.has(name)) return false;
+            if (name.includes('مديرية التربية') || item.stage === 'مديرية التربية' || item.stage === 'إدارة' || item.stage === 'إداري' || item.stage === 'مديرية') return false;
+            return !stageOrder.includes(item.stage);
+        }).sort((a,b) => a.inst.localeCompare(b.inst, 'ar'));
+
+        if (otherGroup.length > 0) {
+            let otherTotal = 0;
+            otherGroup.forEach(item => { 
+                seenInsts.add(item.inst.trim());
+                otherTotal += (counts.get(item.inst) || 0); 
+            });
+            html += `<optgroup label="مؤسسات أخرى (${otherGroup.length} مؤسسة - ${otherTotal} موظف)">`;
+            otherGroup.forEach(item => {
+                const count = counts.get(item.inst) || 0;
+                const badge = count > 0 ? ` [${count} موظف]` : ' [0 موظف]';
+                const isSel = (item.inst === currentVal) ? 'selected' : '';
+                html += `<option value="${escapeHtml(item.inst)}" ${isSel}>${pinInstSeqNumber}. ${escapeHtml(item.inst)}${badge}</option>`;
+                pinInstSeqNumber++;
+            });
+            html += `</optgroup>`;
+        }
+
+        // أي مؤسسات مستخرجة من قاعدة البيانات لها موظفون وليست بالقائمة الرسمية
+        const extraInsts = [];
+        for (let [instName, count] of counts.entries()) {
+            const trimmed = (instName || '').trim();
+            if (count > 0 && !seenInsts.has(trimmed)) {
+                if (trimmed.includes('مديرية التربية') || trimmed === 'مديرية' || trimmed.includes('الإدارة العامة')) continue;
+                seenInsts.add(trimmed);
+                extraInsts.push({ inst: trimmed, count });
+            }
+        }
+        if (extraInsts.length > 0) {
+            html += `<optgroup label="مؤسسات مستخرجة من قاعدة البيانات (${extraInsts.length})">`;
+            extraInsts.sort((a,b) => a.inst.localeCompare(b.inst, 'ar')).forEach(ext => {
+                const isSel = (ext.inst === currentVal) ? 'selected' : '';
+                html += `<option value="${escapeHtml(ext.inst)}" ${isSel}>${pinInstSeqNumber}. ${escapeHtml(ext.inst)} [${ext.count} موظف]</option>`;
+                pinInstSeqNumber++;
+            });
+            html += `</optgroup>`;
+        }
+
+        sel.innerHTML = html;
+        if (currentVal) sel.value = currentVal;
+    }
+    window.populatePinInstDropdown = populatePinInstDropdown;
+
     let pinCurrentPage = 1;
     const pinRowsPerPage = 10;
     window.lastPinFilteredCount = 0;
@@ -7041,21 +7512,10 @@
     function renderDigitalPinTab(resetPage = false) {
         if (resetPage) pinCurrentPage = 1;
 
-        // ملء قائمة المؤسسات في تصفية الأرقام السرية
+        // ملء قائمة المؤسسات المنظمة في تصفية الأرقام السرية
         const instSelect = document.getElementById('pin-filter-inst');
         if (instSelect && instSelect.options.length <= 1) {
-            const baseList = (typeof getBaseInstitutionsList === 'function') ? getBaseInstitutionsList() : [];
-            const seen = new Set();
-            baseList.forEach(item => {
-                const name = (item.inst || '').trim();
-                if (name && !seen.has(name)) {
-                    seen.add(name);
-                    const opt = document.createElement('option');
-                    opt.value = name;
-                    opt.textContent = name;
-                    instSelect.appendChild(opt);
-                }
-            });
+            populatePinInstDropdown();
         }
 
         const selectedInst = (document.getElementById('pin-filter-inst') ? document.getElementById('pin-filter-inst').value : '').trim();
@@ -7135,19 +7595,20 @@
         if (!tbody) return;
 
         if (filtered.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:35px; color:#94a3b8; font-weight:700;"><i class="fa-solid fa-key fa-2x" style="margin-bottom:10px; display:block; color:#cbd5e1;"></i>لم يتم العثور على أي موظفين مطابقين لشروط التصفية والبحث الحالية.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:35px; color:#94a3b8; font-weight:700;"><i class="fa-solid fa-key fa-2x" style="margin-bottom:10px; display:block; color:#cbd5e1;"></i>لم يتم العثور على أي موظفين مطابقين لشروط التصفية والبحث الحالية.</td></tr>`;
             const pagContainer = document.getElementById('pin-pagination-container');
             if (pagContainer) pagContainer.style.display = 'none';
             return;
         }
 
-        tbody.innerHTML = pageItems.map(emp => {
+        tbody.innerHTML = pageItems.map((emp, idx) => {
             const currentPin = (emp.codep || (centralConfig.codepMap && centralConfig.codepMap[emp.jobId]) || '').trim();
             const hasPin = !!currentPin;
             const isCardDisabled = !!emp.isCardDisabled;
 
             return `
                 <tr>
+                    <td style="text-align:center; font-weight:800; color:#64748b; font-size:13px;">${startIdx + idx + 1}</td>
                     <td style="text-align:center;">
                         ${hasPin ? `<code style="font-family:monospace; font-size:15px; font-weight:900; background:#f0fdf4; color:#166534; padding:4px 10px; border-radius:6px; border:1px solid #bbf7d0; letter-spacing:1px;">${escapeHtml(currentPin)}</code>` : `<span style="color:#94a3b8; font-size:12px; font-weight:700;"><i class="fa-solid fa-clock"></i> في انتظار التعيين</span>`}
                     </td>
@@ -7999,6 +8460,8 @@
             populateDropdowns();
             populateInstFilter();
             populateRegistryInstDropdown();
+            if (typeof populatePinInstDropdown === 'function') populatePinInstDropdown();
+            if (typeof populateIssueInstDropdown === 'function') populateIssueInstDropdown();
             renderTable();
             renderEmployees();
             renderRegistryTab();
@@ -10107,6 +10570,8 @@
                 }
                 populateInstFilter();
                 populateRegistryInstDropdown();
+                if (typeof populatePinInstDropdown === 'function') populatePinInstDropdown();
+                if (typeof populateIssueInstDropdown === 'function') populateIssueInstDropdown();
 
                 renderEmployees();
                 renderRegistryTab();
@@ -10366,15 +10831,19 @@
 
         if (isAuthorized) {
             sessionStorage.setItem('settings_tab_unlocked', 'true');
-            const settingsTabBtn = document.getElementById('tab-btn-settings');
-            if (settingsTabBtn) {
-                settingsTabBtn.style.display = 'inline-flex';
+            if (typeof updateTabsVisibility === 'function') {
+                updateTabsVisibility();
+            } else {
+                const settingsTabBtn = document.getElementById('tab-btn-settings');
+                if (settingsTabBtn) settingsTabBtn.style.display = 'inline-flex';
+                const pinTabBtn = document.getElementById('tab-btn-digitalpin');
+                if (pinTabBtn) pinTabBtn.style.display = 'inline-flex';
             }
             switchTab('settings-tab');
             Swal.fire({
                 icon: 'success',
                 title: 'تم التحقق بنجاح',
-                text: 'تم فتح تبويب الإعدادات والصلاحيات المركزية.',
+                text: 'تم فتح تبويب الإعدادات والصلاحيات المركزية وتبويب تسيير الأرقام السرية بنجاح.',
                 timer: 1800,
                 showConfirmButton: false,
                 allowOutsideClick: false
@@ -10394,12 +10863,22 @@
     window.addEventListener('DOMContentLoaded', () => {
         initDarkMode();
 
-        // إخفاء تبويب الإعدادات دائماً عند التحديث أو الفتح وإقفاله
+        // إخفاء تبويب الإعدادات وتبويب الأرقام السرية حسب الإعداد دائماً عند التحديث أو الفتح وإقفالهما
         sessionStorage.removeItem('settings_tab_unlocked');
-        const btn = document.getElementById('tab-btn-settings');
-        if (btn) btn.style.display = 'none';
+        if (typeof updateTabsVisibility === 'function') {
+            updateTabsVisibility();
+        } else {
+            const btn = document.getElementById('tab-btn-settings');
+            if (btn) btn.style.display = 'none';
+            const pinBtn = document.getElementById('tab-btn-digitalpin');
+            if (pinBtn) pinBtn.style.display = 'none';
+        }
         const sTab = document.getElementById('settings-tab');
         if (sTab) sTab.classList.remove('active');
+        const pTab = document.getElementById('digitalpin-tab');
+        if (pTab && (centralConfig.pinTabVisibility || 'hide_with_settings') !== 'always_visible') {
+            pTab.classList.remove('active');
+        }
 
         // عند تحديث الصفحة يعود النظام طبيعياً لشاشة تسجيل الدخول كما كان سابقاً
         sessionStorage.removeItem('admin_logged_in');
