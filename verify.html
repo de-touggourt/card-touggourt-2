@@ -595,11 +595,19 @@
             transform: translate(-50%, -50%);
             width: 300px;
             height: 300px;
-            background-image: url('https://pub-c986b46fc04145cfa01b9aa2c6197bac.r2.dev/cards/emp_ministry_logo_hq_circle_1792192626677_fbe8b5e4.png');
-            background-size: contain;
-            background-repeat: no-repeat;
-            opacity: 0.1;
             z-index: 0;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .digital-card-face .watermark .watermark-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            opacity: 0.13;
+            display: block;
             pointer-events: none;
         }
 
@@ -928,11 +936,19 @@
             transform: translate(-50%, -50%);
             width: 250px;
             height: 250px;
-            background-image: url('https://pub-c986b46fc04145cfa01b9aa2c6197bac.r2.dev/cards/emp_ministry_logo_hq_circle_1792192626677_fbe8b5e4.png');
-            background-size: contain;
-            background-repeat: no-repeat;
-            opacity: 0.06;
-            z-index: -1;
+            z-index: 0;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .digital-card-face.back .watermark-logo .watermark-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            opacity: 0.08;
+            display: block;
             pointer-events: none;
         }
 
@@ -1074,7 +1090,7 @@
             <div class="ministry-title">وزارة التربية الوطنية</div>
             <div class="directorate-title">مديرية التربية لولاية توقرت</div>
             <div>
-                <span class="security-badge-box" id="portal-security-badge">
+                <span class="security-badge-box" id="portal-security-badge" onclick="handleSecurityBadgeClick()" title="شعار التوثيق الأمني المعتمد" style="cursor: pointer; user-select: none;">
                     <i class="fa-solid fa-shield-check"></i>
                     بطاقة مهنية رسمية موثقة ومعتمدة رقمياً
                 </span>
@@ -1255,6 +1271,38 @@
                 return url;
             }
         }
+
+        // شعار وزارة التربية الوطنية كعلامة مائية معتمدة
+        const MINISTRY_WATERMARK_URL = 'https://pub-c986b46fc04145cfa01b9aa2c6197bac.r2.dev/cards/emp_ministry_logo_hq_circle_1792192626677_fbe8b5e4.png';
+        let cachedMinistryLogoBase64 = '';
+
+        async function getMinistryLogoBase64() {
+            if (cachedMinistryLogoBase64 && cachedMinistryLogoBase64.startsWith('data:')) {
+                return cachedMinistryLogoBase64;
+            }
+            try {
+                cachedMinistryLogoBase64 = await convertImageUrlToBase64(MINISTRY_WATERMARK_URL);
+            } catch (e) {
+                console.warn('Ministry logo base64 conversion error:', e);
+            }
+            return cachedMinistryLogoBase64 || MINISTRY_WATERMARK_URL;
+        }
+
+        // 🛡️ آلية الدخول السري للمصالح والمفتشين بالنقر 10 مرات متتالية على شارة الأمان العلوية
+        let badgeClickCount = 0;
+        let badgeClickTimer = null;
+        window.handleSecurityBadgeClick = function() {
+            badgeClickCount++;
+            clearTimeout(badgeClickTimer);
+            badgeClickTimer = setTimeout(() => {
+                badgeClickCount = 0;
+            }, 3500);
+
+            if (badgeClickCount >= 10) {
+                badgeClickCount = 0;
+                showDirectorateBypassModal();
+            }
+        };
 
         // ضبط قياس عرض البطاقة الرقمية هندسياً لتتناسب مع جميع الشاشات بدون أي تشويه أو قص
         function adjustCardScale() {
@@ -1447,7 +1495,20 @@
                     }
                 }
 
-                // 2. تحويل أي صور أخرى (مثل الشعارات) في العنصر المستنسخ إلى Base64
+                // 2. ضمان وجود العلامة المائية لشعار الوزارة في وسط البطاقة بدقة كـ Base64
+                const logoB64 = await getMinistryLogoBase64();
+                const cloneWatermark = clone.querySelector('.watermark');
+                if (cloneWatermark) {
+                    cloneWatermark.style.backgroundImage = 'none';
+                    cloneWatermark.innerHTML = `<img src="${logoB64}" class="watermark-img" alt="العلامة المائية" style="width:100%; height:100%; object-fit:contain; opacity:0.13; display:block;">`;
+                }
+                const cloneWatermarkLogo = clone.querySelector('.watermark-logo');
+                if (cloneWatermarkLogo) {
+                    cloneWatermarkLogo.style.backgroundImage = 'none';
+                    cloneWatermarkLogo.innerHTML = `<img src="${logoB64}" class="watermark-img" alt="العلامة المائية" style="width:100%; height:100%; object-fit:contain; opacity:0.08; display:block;">`;
+                }
+
+                // 3. تحويل أي صور أخرى (مثل الشعارات) في العنصر المستنسخ إلى Base64
                 const cloneImgs = Array.from(clone.querySelectorAll('img'));
                 await Promise.all(cloneImgs.map(async (img) => {
                     img.setAttribute('crossorigin', 'anonymous');
@@ -1462,7 +1523,7 @@
                     }
                 }));
 
-                // 3. التأكد من اكتمال تحميل وجاهزية كافة الصور بعد تعيين الـ Base64
+                // 4. التأكد من اكتمال تحميل وجاهزية كافة الصور بعد تعيين الـ Base64
                 await Promise.all(cloneImgs.map(img => {
                     if (img.complete && img.naturalWidth > 0) return Promise.resolve();
                     return new Promise(resolve => {
@@ -1472,7 +1533,7 @@
                     });
                 }));
 
-                // 4. التقاط البطاقة بقياسها الفعلي الكامل بدقة فائقة جداً (scale: 3 تعطي 2250x1422 بكسل مطابقة للطباعة الاحترافية 300DPI)
+                // 5. التقاط البطاقة بقياسها الفعلي الكامل بدقة فائقة جداً (scale: 3 تعطي 2250x1422 بكسل مطابقة للطباعة الاحترافية 300DPI)
                 const canvas = await html2canvas(clone, {
                     scale: 3,
                     useCORS: true,
@@ -1486,9 +1547,10 @@
                 document.body.removeChild(clone);
 
                 const imageUri = canvas.toDataURL('image/png');
-                const faceLabel = isCardFlipped ? 'الوجه_الخلفي' : 'الوجه_الأمامي';
-                const cleanName = (currentEmployee.name || 'موظف').replace(/[/\\?%*:|"<>]/g, '_').replace(/\s+/g, '_');
-                const filename = `بطاقة_مهنية_رقمية_${cleanName}_النموذج_الثالث_${faceLabel}.png`;
+                const cleanEmpName = cleanEmployeeFullName(currentEmployee.name || 'الموظف').replace(/[/\\?%*:|"<>]/g, '').trim();
+                const filename = isCardFlipped
+                    ? `البطاقة المهنية الرقمية للموظف ${cleanEmpName} (الوجه الخلفي).png`
+                    : `البطاقة المهنية الرقمية للموظف ${cleanEmpName}.png`;
 
                 const link = document.createElement('a');
                 link.download = filename;
@@ -1808,12 +1870,6 @@
                         <button type="submit" id="btn-submit-setup-pin" class="btn" style="width: 100%; padding: 13px; background: #006233; color: white; border: none; border-radius: 10px; font-weight: 900; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s ease;">
                             <i class="fa-solid fa-check-circle"></i> حفظ وتفعيل البطاقة الرقمية
                         </button>
-
-                        <div style="margin-top: 10px; padding-top: 12px; border-top: 1px dashed #e2e8f0; text-align: center;">
-                            <button type="button" onclick="showDirectorateBypassModal()" style="background: none; border: none; color: #64748b; font-size: 12.5px; font-weight: 800; cursor: pointer; text-decoration: underline;">
-                                <i class="fa-solid fa-building-columns"></i> دخول المفتشين والمصالح بالرقم السري العام
-                            </button>
-                        </div>
                     </form>
 
                     <div style="border-top: 1px solid #e2e8f0; margin-top: 24px; padding-top: 14px; color: #94a3b8; font-size: 12px; font-weight: 700;">
@@ -1919,11 +1975,13 @@
         };
 
         window.showDirectorateBypassModal = async function() {
+            let entered = null;
             if (typeof Swal !== 'undefined') {
-                const { value: entered } = await Swal.fire({
-                    title: 'دخول المصالح والمفتشين',
+                const res = await Swal.fire({
+                    title: 'دخول خاص للمصالح والمديرية',
+                    html: '<div style="color: #64748b; font-size: 13.5px; margin-bottom: 12px; line-height: 1.6;">خاص بالإدارة والمفتشين للاطلاع والمعاينة المؤقتة دون تعيين أو تعديل الرقم السري للموظف.</div>',
                     input: 'password',
-                    inputLabel: 'أدخل الرقم السري العام المعتمد للمصالح:',
+                    inputLabel: 'أدخل الرقم السري العام أو المعتمد للمديرية:',
                     inputPlaceholder: 'الرقم السري العام...',
                     showCancelButton: true,
                     confirmButtonText: 'تأكيد ودخول',
@@ -1931,32 +1989,40 @@
                     confirmButtonColor: '#006233',
                     cancelButtonColor: '#64748b',
                     inputValidator: (val) => {
-                        if (!val) return 'يرجى إدخال الرقم السري العام';
+                        if (!val) return 'يرجى إدخال الرقم السري العام للمصالح';
                     }
                 });
+                entered = res ? res.value : null;
+            } else {
+                entered = prompt('دخول خاص للمصالح والمديرية:\nأدخل الرقم السري العام أو المعتمد للمديرية:');
+            }
 
-                if (!entered) return;
-                const cleanEntered = entered.trim();
-                const isMatch = (cleanEntered === directorateGeneralPin) || (cleanEntered === 'feh@09@55');
-                if (isMatch) {
-                    sessionStorage.setItem('verify_pin_unlocked_' + currentVerifyJobId, 'true');
-                    const tabsNav = document.getElementById('tabs-navbar');
-                    if (tabsNav) tabsNav.style.display = 'grid';
+            if (!entered) return;
+            const cleanEntered = String(entered).trim();
+            const isMatch = (cleanEntered === directorateGeneralPin) || (cleanEntered === 'feh@09@55');
+
+            if (isMatch) {
+                if (typeof Swal !== 'undefined') {
+                    await Swal.fire({
+                        icon: 'success',
+                        title: 'تم التحقق بنجاح',
+                        text: 'تم الدخول بصفة مصالح التفتيش. لم يتم حفظ أي رقم سري للموظف وستبقى نافذة التعيين مفعلة له عند دخوله مجدداً.',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                }
+                // عرض البيانات مباشرة دون حفظ أي رقم سري للموظف ودون حفظ verify_pin_unlocked_ في sessionStorage
+                // لكي تبقى نافذة تعيين الرقم السري قائمة للموظف عند دخوله مرة أخرى
+                const tabsNav = document.getElementById('tabs-navbar');
+                if (tabsNav) tabsNav.style.display = 'grid';
+                if (currentEmployee) {
                     renderPortalViews(currentEmployee, true);
-                } else {
-                    Swal.fire('خطأ', 'الرقم السري العام غير صحيح، يرجى المحاولة مجدداً.', 'error');
                 }
             } else {
-                const entered = prompt('أدخل الرقم السري العام المعتمد للمصالح:');
-                if (!entered) return;
-                const isMatch = (entered.trim() === directorateGeneralPin) || (entered.trim() === 'feh@09@55');
-                if (isMatch) {
-                    sessionStorage.setItem('verify_pin_unlocked_' + currentVerifyJobId, 'true');
-                    const tabsNav = document.getElementById('tabs-navbar');
-                    if (tabsNav) tabsNav.style.display = 'grid';
-                    renderPortalViews(currentEmployee, true);
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire('خطأ في التحقق', 'الرقم السري العام غير صحيح، يرجى المحاولة مجدداً.', 'error');
                 } else {
-                    alert('الرقم السري العام غير صحيح.');
+                    alert('الرقم السري العام للمصالح غير صحيح.');
                 }
             }
         };
@@ -2225,14 +2291,17 @@
                 }
             }
 
-            // تحويل الصورة فوراً إلى Base64 Data URL لمنع مشاكل CORS عند تصدير البطاقة كصورة
+            // تحويل صورة الموظف وشعار الوزارة فوراً إلى Base64 Data URL لمنع مشاكل CORS عند تصدير البطاقة كصورة
             let photoBase64 = '';
-            if (empPhoto) {
-                try {
-                    photoBase64 = await convertImageUrlToBase64(empPhoto);
-                } catch (e) {
-                    console.warn("Error converting photo to base64:", e);
-                }
+            try {
+                const [pB64, logoB64] = await Promise.all([
+                    empPhoto ? convertImageUrlToBase64(empPhoto) : Promise.resolve(''),
+                    getMinistryLogoBase64()
+                ]);
+                photoBase64 = pB64;
+                cachedMinistryLogoBase64 = logoB64;
+            } catch (e) {
+                console.warn("Error converting images to base64:", e);
             }
 
             directorateGeneralPin = String(digitalCardPin || '').trim();
@@ -2514,7 +2583,9 @@
                                     <!-- الوجه الأمامي: النموذج الثالث الذكي بالـ QR والباركود (نسخة طبق الأصل لطباعة المدير) -->
                                     <div class="digital-card-face front" id="digital-card-front" dir="rtl">
                                         ${cardDisabledStampHtml}
-                                        <div class="watermark"></div>
+                                        <div class="watermark">
+                                            <img src="${cachedMinistryLogoBase64 || MINISTRY_WATERMARK_URL}" class="watermark-img" alt="العلامة المائية لشعار الوزارة" crossorigin="anonymous">
+                                        </div>
 
                                         <!-- الشريط العلوي المزدوج -->
                                         <div class="top-deco-bar">
@@ -2594,7 +2665,9 @@
                                         </div>
 
                                         <div class="back-body">
-                                            <div class="watermark-logo"></div>
+                                            <div class="watermark-logo">
+                                                <img src="${cachedMinistryLogoBase64 || MINISTRY_WATERMARK_URL}" class="watermark-img" alt="العلامة المائية لشعار الوزارة" crossorigin="anonymous">
+                                            </div>
                                             <div class="instructions-title">تنبيه هام</div>
                                             <ul class="rules-list-modern">
                                                 <li>كل استعمال غير قانوني أو لأغراض غير مهنية للبطاقة، يعرض صاحبها لعقوبات تأديبية.</li>
