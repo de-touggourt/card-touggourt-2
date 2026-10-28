@@ -519,6 +519,7 @@
             daaira: String(d.daaira || '').trim(),
             telephone: d.telephone || '',
             sexe: d.sexe || '',
+            matiere: String(d.matiere || d.matiereEnseignee || d.matiere_ar || '').trim(),
             raw: d
         };
     }

@@ -350,6 +350,7 @@
         .emp-type-badge.perm { background: rgba(16, 185, 129, 0.35); color: #ecfdf5; border: 1px solid #34d399; }
         .emp-type-badge.contract { background: rgba(59, 130, 246, 0.35); color: #eff6ff; border: 1px solid #60a5fa; }
         .emp-type-badge.sub { background: rgba(168, 85, 247, 0.35); color: #faf5ff; border: 1px solid #c084fc; }
+        .emp-type-badge.probation { background: rgba(245, 158, 11, 0.35); color: #fffbeb; border: 1px solid #fcd34d; }
 
         .info-card-body {
             padding: 20px;
@@ -1194,6 +1195,67 @@
             return token;
         }
 
+        // تحويل أي رابط صورة إلى Base64 Data URL لتفادي مشاكل قيود CORS تماماً في html2canvas
+        async function convertImageUrlToBase64(url) {
+            if (!url || typeof url !== 'string') return '';
+            if (url.startsWith('data:')) return url;
+
+            // 1. محاولة الجلب المباشر عبر fetch مع تحويلها إلى Blob ثم DataURL
+            try {
+                const response = await fetch(url, { mode: 'cors' });
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const base64 = await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result);
+                        reader.onerror = reject;
+                        reader.readAsDataURL(blob);
+                    });
+                    if (base64 && typeof base64 === 'string' && base64.startsWith('data:')) return base64;
+                }
+            } catch (fetchErr) {}
+
+            // 2. محاولة fetch ثانية مع كسر الكاش لمنع استرجاع الترويسة المخبأة بدون CORS
+            try {
+                const bustUrl = url + (url.includes('?') ? '&' : '?') + 'nocache=' + Date.now();
+                const response = await fetch(bustUrl, { mode: 'cors' });
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const base64 = await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result);
+                        reader.onerror = reject;
+                        reader.readAsDataURL(blob);
+                    });
+                    if (base64 && typeof base64 === 'string' && base64.startsWith('data:')) return base64;
+                }
+            } catch (e2) {}
+
+            // 3. طريقة Canvas عبر عنصر Image مع crossOrigin
+            try {
+                return await new Promise((resolve) => {
+                    const img = new Image();
+                    img.crossOrigin = 'anonymous';
+                    img.onload = function () {
+                        try {
+                            const canvas = document.createElement('canvas');
+                            canvas.width = img.naturalWidth || img.width || 300;
+                            canvas.height = img.naturalHeight || img.height || 400;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0);
+                            resolve(canvas.toDataURL('image/jpeg', 0.95));
+                        } catch (canvasErr) {
+                            resolve(url);
+                        }
+                    };
+                    img.onerror = () => resolve(url);
+                    img.src = url + (url.includes('?') ? '&' : '?') + 't=' + Date.now();
+                });
+            } catch (e3) {
+                return url;
+            }
+        }
+
         // ضبط قياس عرض البطاقة الرقمية هندسياً لتتناسب مع جميع الشاشات بدون أي تشويه أو قص
         function adjustCardScale() {
             const outer = document.getElementById('card-scaler-outer');
@@ -1370,21 +1432,51 @@
                     } catch(e) {}
                 }
 
-                // التأكد من اكتمال تحميل كافة الصور (الشعارات والصورة الشخصية)
-                const imgs = Array.from(clone.querySelectorAll('img'));
-                await Promise.all(imgs.map(img => {
-                    if (img.complete) return Promise.resolve();
+                // 1. استبدال الصورة الشخصية داخل إطار الصورة برابط Base64 محلي لضمان ظهورها 100% في html2canvas
+                const clonePhotoFrame = clone.querySelector('.photo-frame');
+                if (clonePhotoFrame && currentEmployee) {
+                    let validPhoto = currentEmployee.photoBase64;
+                    if (!validPhoto || !validPhoto.startsWith('data:')) {
+                        if (currentEmployee.photoUrl) {
+                            validPhoto = await convertImageUrlToBase64(currentEmployee.photoUrl);
+                            currentEmployee.photoBase64 = validPhoto;
+                        }
+                    }
+                    if (validPhoto && validPhoto.startsWith('data:')) {
+                        clonePhotoFrame.innerHTML = `<img src="${validPhoto}" alt="${currentEmployee.name}" style="width:100%; height:100%; object-fit:cover; display:block;">`;
+                    }
+                }
+
+                // 2. تحويل أي صور أخرى (مثل الشعارات) في العنصر المستنسخ إلى Base64
+                const cloneImgs = Array.from(clone.querySelectorAll('img'));
+                await Promise.all(cloneImgs.map(async (img) => {
+                    img.setAttribute('crossorigin', 'anonymous');
+                    const src = img.getAttribute('src');
+                    if (src && !src.startsWith('data:')) {
+                        try {
+                            const b64 = await convertImageUrlToBase64(src);
+                            if (b64 && b64.startsWith('data:')) {
+                                img.src = b64;
+                            }
+                        } catch(e) {}
+                    }
+                }));
+
+                // 3. التأكد من اكتمال تحميل وجاهزية كافة الصور بعد تعيين الـ Base64
+                await Promise.all(cloneImgs.map(img => {
+                    if (img.complete && img.naturalWidth > 0) return Promise.resolve();
                     return new Promise(resolve => {
                         img.onload = resolve;
                         img.onerror = resolve;
+                        setTimeout(resolve, 600);
                     });
                 }));
 
-                // التقاط البطاقة بقياسها الفعلي الكامل بدقة فائقة جداً (scale: 3 تعطي 2250x1422 بكسل مطابقة للطباعة الاحترافية 300DPI)
+                // 4. التقاط البطاقة بقياسها الفعلي الكامل بدقة فائقة جداً (scale: 3 تعطي 2250x1422 بكسل مطابقة للطباعة الاحترافية 300DPI)
                 const canvas = await html2canvas(clone, {
                     scale: 3,
                     useCORS: true,
-                    allowTaint: true,
+                    allowTaint: false,
                     logging: false,
                     backgroundColor: '#ffffff',
                     width: 750,
@@ -2105,18 +2197,42 @@
             const empDob = cleanDateString(dbEmp ? (dbEmp.dateNais || dbEmp.dob) : (decryptedData && decryptedData.d)) || '---';
             const empRank = (dbEmp && (dbEmp.grade || dbEmp.rank)) || (decryptedData && decryptedData.r) || '---';
             const empWorkplace = (dbEmp && (dbEmp.etablissement || dbEmp.workplace || dbEmp.rawEtab)) || (decryptedData && decryptedData.w) || '---';
-            const empType = (dbEmp && (dbEmp.situationAdmin || dbEmp.natureContrat)) || (decryptedData && decryptedData.t) || 'مرسم';
+            
+            // جلب الصفة بدقة تامة من عمود situationAdmin في قاعدة البيانات الأساسية
+            const empSituationAdmin = (dbEmp && dbEmp.situationAdmin !== undefined && dbEmp.situationAdmin !== null && String(dbEmp.situationAdmin).trim() !== '')
+                ? String(dbEmp.situationAdmin).trim()
+                : ((decryptedData && decryptedData.t) ? String(decryptedData.t).trim() : 'مرسم');
+
+            // جلب مادة التدريس الخاصة بالأساتذة إن توفرت
+            const empMatiere = (dbEmp && dbEmp.matiere !== undefined && dbEmp.matiere !== null)
+                ? String(dbEmp.matiere).trim()
+                : ((decryptedData && decryptedData.sub) ? String(decryptedData.sub).trim() : '');
+
             const empDuration = (dbEmp && dbEmp.substitute_duration) || (decryptedData && decryptedData.u) || '';
             const empRegNo = (dbEmp && dbEmp.registry_no) || (decryptedData && decryptedData.g) || '---';
             const empNin = (dbEmp && (dbEmp.nin || dbEmp.national_id)) || (decryptedData && decryptedData.nin) || '';
-            let empPhoto = (dbEmp && dbEmp.photo_url) || (decryptedData && decryptedData.p) || '';
+            let empPhoto = (dbEmp && (dbEmp.photo_url || dbEmp.photo)) || (decryptedData && decryptedData.p) || '';
             const empStage = (dbEmp && (dbEmp.typeEtab || dbEmp.stage)) || (decryptedData && decryptedData.s) || '';
             const empBaladiya = (dbEmp && (dbEmp.communeEtab || dbEmp.baladiya)) || (decryptedData && decryptedData.b) || '';
             const empDaaira = (dbEmp && dbEmp.daaira) || (decryptedData && decryptedData.a) || '';
             const empIssueDate = (issueDateMap && issueDateMap[cleanJobId]) || template3GlobalDate || (dbEmp && dbEmp.issue_date) || (decryptedData && decryptedData.i) || '2026';
 
-            if (!empPhoto && window.CF_PHOTOS_MAP && cleanJobId && window.CF_PHOTOS_MAP[cleanJobId]) {
-                empPhoto = window.CF_PHOTOS_MAP[cleanJobId].cfUrl;
+            if (!empPhoto && window.CF_PHOTOS_MAP && cleanJobId) {
+                if (window.CF_PHOTOS_MAP[cleanJobId]) {
+                    empPhoto = window.CF_PHOTOS_MAP[cleanJobId].cfUrl;
+                } else if (window.CF_PHOTOS_MAP[String(cleanJobId).trim()]) {
+                    empPhoto = window.CF_PHOTOS_MAP[String(cleanJobId).trim()].cfUrl;
+                }
+            }
+
+            // تحويل الصورة فوراً إلى Base64 Data URL لمنع مشاكل CORS عند تصدير البطاقة كصورة
+            let photoBase64 = '';
+            if (empPhoto) {
+                try {
+                    photoBase64 = await convertImageUrlToBase64(empPhoto);
+                } catch (e) {
+                    console.warn("Error converting photo to base64:", e);
+                }
             }
 
             directorateGeneralPin = String(digitalCardPin || '').trim();
@@ -2128,13 +2244,16 @@
                 codep: activeEmployeePin,
                 dob: empDob,
                 rank: empRank,
+                matiere: empMatiere,
                 workplace: empWorkplace,
-                employmentType: empType,
+                employmentType: empSituationAdmin,
+                situationAdmin: empSituationAdmin,
                 substituteDuration: empDuration,
                 registryNo: empRegNo,
                 nin: empNin,
                 nationalId: empNin,
                 photoUrl: empPhoto,
+                photoBase64: photoBase64 || empPhoto,
                 stage: empStage,
                 baladiya: empBaladiya,
                 daaira: empDaaira,
@@ -2172,7 +2291,8 @@
         function renderPortalViews(emp, isLiveVerified = false) {
             const container = document.getElementById('portal-content-container');
             const defaultAvatar = `<svg viewBox="0 0 24 24" fill="#94a3b8" style="width: 100%; height: 100%;"><path d="M12 12c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm0 2c-3.33 0-10 1.67-10 5v3h20v-3c0-3.33-6.67-5-10-5z"/></svg>`;
-            const photoSrc = emp.photoUrl ? `<img src="${emp.photoUrl}" alt="${emp.name}">` : defaultAvatar;
+            const activePhoto = emp.photoBase64 || emp.photoUrl;
+            const photoSrc = activePhoto ? `<img src="${activePhoto}" alt="${emp.name}" crossorigin="anonymous" style="width:100%; height:100%; object-fit:cover; display:block;">` : defaultAvatar;
 
             // تحديث شارة رأس الصفحة حسب حالة التعطيل
             const headerBadge = document.getElementById('portal-security-badge');
@@ -2186,14 +2306,17 @@
                 }
             }
 
+            // ضبط الصفة المستخرجة مباشرة من situationAdmin
+            const rawType = (emp.situationAdmin || emp.employmentType || 'مرسم').trim();
             let typeBadgeClass = 'perm';
-            let typeLabel = 'مرسم';
-            if (emp.employmentType === 'مستخلف') {
+            let typeLabel = rawType;
+
+            if (rawType.includes('مستخلف')) {
                 typeBadgeClass = 'sub';
-                typeLabel = 'مستخلف';
-            } else if (emp.employmentType === 'متعاقد') {
+            } else if (rawType.includes('متعاقد')) {
                 typeBadgeClass = 'contract';
-                typeLabel = 'متعاقد';
+            } else if (rawType.includes('متربص')) {
+                typeBadgeClass = 'probation';
             }
 
             // شريط التنبيه في بطاقة المعلومات
@@ -2289,9 +2412,21 @@
                                     <span class="info-item-val">${emp.rank}</span>
                                 </div>
 
+                                ${emp.matiere ? `
+                                <div class="info-item full-width" style="background: rgba(3, 105, 161, 0.05); border: 1.5px solid rgba(3, 105, 161, 0.25); border-radius: 10px; padding: 10px 14px;">
+                                    <span class="info-item-label" style="color: #0369a1; font-weight: 800; font-size: 13.5px;"><i class="fa-solid fa-book-open"></i> مادة التدريس:</span>
+                                    <span class="info-item-val" style="font-weight: 900; color: #0284c7; font-size: 16px;">${emp.matiere}</span>
+                                </div>
+                                ` : ''}
+
                                 <div class="info-item full-width">
                                     <span class="info-item-label"><i class="fa-solid fa-school"></i> مكان العمل (المؤسسة):</span>
                                     <span class="info-item-val">${emp.workplace}</span>
+                                </div>
+
+                                <div class="info-item">
+                                    <span class="info-item-label"><i class="fa-solid fa-user-tag"></i> الصفة (الوضعية الإدارية):</span>
+                                    <span class="info-item-val" style="font-weight: 900; color: var(--primary-green);">${typeLabel}</span>
                                 </div>
 
                                 <div class="info-item">
