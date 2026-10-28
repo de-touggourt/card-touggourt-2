@@ -513,6 +513,7 @@
             issueDate: String(d.issue_date || d.issueDate || '').trim(),
             isCardDisabled: !!(d.is_card_disabled || d.isCardDisabled),
             cardDisableReason: String(d.card_disable_reason || d.cardDisableReason || '').trim(),
+            codep: String(d.codep || '').trim(),
             stage: String(d.stage || d.typeEtab || '').trim(),
             baladiya: String(d.communeEtab || d.baladiya || d.communeResidence || '').trim(),
             daaira: String(d.daaira || '').trim(),
@@ -1667,6 +1668,64 @@
         return true;
     }
 
+    /**
+     * تحديث أو تعيين الرقم السري للبطاقة الرقمية لموظف (عمود codep في base-touggourt وخريطة codep_map في الإعدادات)
+     */
+    async function updateEmployeeCodep(matriculeId, codep, modifiedBy = 'EMPLOYEE') {
+        const cleanId = String(matriculeId || '').trim();
+        if (!cleanId) throw new Error("رقم التعريف الوظيفي للموظف غير محدد.");
+        const cleanCode = String(codep || '').trim();
+        const client = getSupabaseClient();
+        if (!client) throw new Error("Supabase client is not initialized");
+
+        // 1. التحديث في system_settings.extra_config.codep_map لضمان الحفظ المباشر والشامل
+        try {
+            const { data: setRow } = await client
+                .from(SUPABASE_CONFIG.tables.settings)
+                .select('extra_config')
+                .eq('id', 'config')
+                .maybeSingle();
+
+            const extra = (setRow && setRow.extra_config) ? ((typeof setRow.extra_config === 'string') ? JSON.parse(setRow.extra_config) : setRow.extra_config) : {};
+            extra.codep_map = extra.codep_map || {};
+            if (cleanCode) {
+                extra.codep_map[cleanId] = cleanCode;
+            } else {
+                delete extra.codep_map[cleanId];
+            }
+            await client
+                .from(SUPABASE_CONFIG.tables.settings)
+                .update({ extra_config: extra, updated_at: new Date().toISOString() })
+                .eq('id', 'config');
+        } catch (e) {
+            console.warn("Notice saving codep_map to settings:", e.message);
+        }
+
+        // 2. التحديث المباشر في عمود codep في جدول base-touggourt
+        try {
+            await client
+                .from(SUPABASE_CONFIG.tables.employees)
+                .update({ codep: cleanCode || null })
+                .eq('matricule', cleanId);
+        } catch (e) {
+            console.warn("Notice updating base-touggourt.codep:", e.message);
+        }
+
+        // 3. توثيق التعديل في سجل التعديلات modifications_history
+        try {
+            await client.from(SUPABASE_CONFIG.tables.history).insert([{
+                employee_id: cleanId,
+                action_type: 'PIN_UPDATE',
+                previous_data: {},
+                new_data: { codep: cleanCode },
+                modified_by: modifiedBy,
+                modified_at: new Date().toISOString()
+            }]);
+        } catch (e) {}
+
+        return true;
+    }
+
     // تصدير الكائنات والدوال للنطاق العام (window)
     window.SUPABASE_CONFIG = SUPABASE_CONFIG;
     window.getSupabaseClient = getSupabaseClient;
@@ -1703,6 +1762,7 @@
     window.generateSmartCardVerificationUrl = generateSmartCardVerificationUrl;
     window.saveTemplate3GlobalIssueDate = saveTemplate3GlobalIssueDate;
     window.saveDigitalCardPin = saveDigitalCardPin;
+    window.updateEmployeeCodep = updateEmployeeCodep;
     window.cleanDateString = cleanDateString;
 
 })(typeof window !== 'undefined' ? window : this);

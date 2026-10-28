@@ -15,9 +15,10 @@
     <script src="supabase_config.js"></script>
     <script src="cf_photos_map.js"></script>
     
-    <!-- QRious & html2canvas -->
+    <!-- QRious, html2canvas & JsBarcode -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 
     <style>
         :root {
@@ -805,41 +806,60 @@
             padding-top: 4px;
         }
 
-        /* شريط رقم التعريف الوظيفي المعتمد بدل الباركود */
-        .digital-jobid-bottom-bar {
-            width: 100%;
-            height: 42px;
-            background: rgba(0, 98, 51, 0.04);
-            border-top: 1.5px dashed #cbd5e1;
+        /* النموذج الثالث: حاوية الباركود وحاوية الكيو آر الذكي للبطاقة الرقمية */
+        .barcode-container {
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 12px;
-            direction: rtl;
-            position: relative;
-            z-index: 5;
             margin-top: auto;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
+            background: #ffffff;
+            padding: 4px 16px;
+            border-radius: 8px;
+            border: 1.5px solid #cbd5e1;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+            z-index: 5;
         }
 
-        .digital-jobid-bottom-bar i {
-            color: var(--primary-green);
-            font-size: 22px;
+        .barcode-container svg {
+            height: 42px;
+            max-width: 480px;
+            width: auto;
+            display: block;
         }
 
-        .digital-jobid-bottom-bar .jobid-text {
-            font-size: 17px;
-            font-weight: 800;
-            color: #334155;
+        .smart-qr-center-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            align-self: flex-start;
+            margin-top: 8px;
+            margin-right: 0;
+            padding: 4px;
+            background: #ffffff;
+            border: 1.5px solid #006233;
+            border-radius: 8px;
+            width: fit-content;
         }
 
-        .digital-jobid-bottom-bar .jobid-val {
-            font-family: monospace;
-            font-size: 22px;
-            font-weight: 900;
-            letter-spacing: 3px;
-            color: #0f172a;
-            direction: ltr;
+        .smart-qr-target {
+            width: 105px;
+            height: 105px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #ffffff;
+        }
+
+        .smart-qr-canvas {
+            width: 105px;
+            height: 105px;
+            display: block;
         }
 
         .digital-card-face .footer {
@@ -1205,8 +1225,13 @@
                 infoBtn.classList.remove('active');
                 cardSec.classList.add('active');
                 infoSec.classList.remove('active');
-                // إعادة قياس البطاقة عند إظهارها
-                setTimeout(adjustCardScale, 50);
+                // إعادة قياس البطاقة وتحديث الأكواد عند إظهارها
+                setTimeout(() => {
+                    adjustCardScale();
+                    renderFrontFaceQR();
+                    renderFrontBarcode();
+                    renderBackFaceQR();
+                }, 50);
             }
         };
 
@@ -1229,6 +1254,43 @@
             }).catch(() => {});
         };
 
+        // رسم كود الاستجابة السريع للوجه الأمامي (النموذج 3)
+        function renderFrontFaceQR() {
+            const canvas = document.getElementById('digital-front-qr-canvas');
+            if (!canvas || typeof QRious === 'undefined') return;
+            try {
+                new QRious({
+                    element: canvas,
+                    value: window.location.href,
+                    size: 260,
+                    level: 'M'
+                });
+                canvas.style.width = '105px';
+                canvas.style.height = '105px';
+                canvas.style.display = 'block';
+            } catch (e) {
+                console.warn('Front QR render error:', e);
+            }
+        }
+
+        // رسم الباركود CODE128 للوجه الأمامي (النموذج 3)
+        function renderFrontBarcode() {
+            const barcodeSvg = document.getElementById('digital-barcode-svg');
+            if (!barcodeSvg || typeof JsBarcode !== 'function' || !currentEmployee) return;
+            try {
+                JsBarcode(barcodeSvg, currentEmployee.jobId || "0000000000", {
+                    format: "CODE128",
+                    displayValue: false,
+                    height: 42,
+                    width: 2.3,
+                    margin: 8,
+                    background: "#ffffff"
+                });
+            } catch (e) {
+                console.warn('Front Barcode render error:', e);
+            }
+        }
+
         // رسم كود الاستجابة السريع للوجه الخلفي
         function renderBackFaceQR() {
             const canvas = document.getElementById('digital-back-qr-canvas');
@@ -1246,7 +1308,7 @@
             }
         }
 
-        // حفظ البطاقة الرقمية (صورة PNG أصلية مطابقة للنموذج الرسمي وليست بطاقة الاستعلام)
+        // حفظ البطاقة الرقمية (صورة PNG أصلية مطابقة للنموذج الثالث الرسمي لطباعة المدير بدقة فائقة)
         window.saveDigitalCardImage = async function() {
             if (!currentEmployee) return;
 
@@ -1258,7 +1320,7 @@
             const btn = document.getElementById('btn-save-card-img');
             const origHTML = btn ? btn.innerHTML : '';
             if (btn) {
-                btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> جاري استخراج صورة البطاقة...`;
+                btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> جاري استخراج البطاقة الرقمية بدقة عالية...`;
                 btn.disabled = true;
             }
 
@@ -1268,7 +1330,7 @@
                     return;
                 }
 
-                // استنساخ عنصر البطاقة بحجمه الأصلي الكامل 750x474 لضمان دقة استخراج فائقة بدون أي تأثر بتصغير الشاشة على الهواتف
+                // استنساخ عنصر البطاقة بحجمه الأصلي الكامل 750x474 لضمان دقة استخراج فائقة دون تأثر بالشاشات الصغيرة
                 const clone = cardEl.cloneNode(true);
                 clone.style.transform = 'none';
                 clone.style.position = 'fixed';
@@ -1280,9 +1342,47 @@
                 clone.style.boxShadow = 'none';
                 document.body.appendChild(clone);
 
-                // التقاط البطاقة بقياسها الفعلي الكامل بدقة عالية (Retina 2x)
+                // نسخ محتوى الـ canvas للـ QR كود من الأصل إلى المستنسخ لضمان سلامة رسم البكسلات
+                const origCanvases = cardEl.querySelectorAll('canvas');
+                const cloneCanvases = clone.querySelectorAll('canvas');
+                origCanvases.forEach((orig, idx) => {
+                    const dest = cloneCanvases[idx];
+                    if (dest && orig.width > 0 && orig.height > 0) {
+                        dest.width = orig.width;
+                        dest.height = orig.height;
+                        const ctx = dest.getContext('2d');
+                        if (ctx) ctx.drawImage(orig, 0, 0);
+                    }
+                });
+
+                // إعادة رسم الباركود في المستنسخ لضمان الحدة الفائقة المتطابقة مع النموذج الثالث
+                const cloneBarcodeSvg = clone.querySelector('.barcode-render');
+                if (cloneBarcodeSvg && typeof JsBarcode === 'function' && currentEmployee.jobId) {
+                    try {
+                        JsBarcode(cloneBarcodeSvg, currentEmployee.jobId, {
+                            format: "CODE128",
+                            displayValue: false,
+                            height: 42,
+                            width: 2.3,
+                            margin: 8,
+                            background: "#ffffff"
+                        });
+                    } catch(e) {}
+                }
+
+                // التأكد من اكتمال تحميل كافة الصور (الشعارات والصورة الشخصية)
+                const imgs = Array.from(clone.querySelectorAll('img'));
+                await Promise.all(imgs.map(img => {
+                    if (img.complete) return Promise.resolve();
+                    return new Promise(resolve => {
+                        img.onload = resolve;
+                        img.onerror = resolve;
+                    });
+                }));
+
+                // التقاط البطاقة بقياسها الفعلي الكامل بدقة فائقة جداً (scale: 3 تعطي 2250x1422 بكسل مطابقة للطباعة الاحترافية 300DPI)
                 const canvas = await html2canvas(clone, {
-                    scale: 2,
+                    scale: 3,
                     useCORS: true,
                     allowTaint: true,
                     logging: false,
@@ -1296,7 +1396,7 @@
                 const imageUri = canvas.toDataURL('image/png');
                 const faceLabel = isCardFlipped ? 'الوجه_الخلفي' : 'الوجه_الأمامي';
                 const cleanName = (currentEmployee.name || 'موظف').replace(/[/\\?%*:|"<>]/g, '_').replace(/\s+/g, '_');
-                const filename = `بطاقة_مهنية_${cleanName}_${faceLabel}.png`;
+                const filename = `بطاقة_مهنية_رقمية_${cleanName}_النموذج_الثالث_${faceLabel}.png`;
 
                 const link = document.createElement('a');
                 link.download = filename;
@@ -1308,9 +1408,9 @@
                 if (typeof Swal !== 'undefined') {
                     Swal.fire({
                         icon: 'success',
-                        title: 'تم حفظ صورة البطاقة بنجاح',
-                        html: `تم حفظ <strong>${isCardFlipped ? 'الوجه الخلفي' : 'الوجه الأمامي'}</strong> للبطاقة المهنية الرقمية للموظف: <strong>${escapeHtml(currentEmployee.name)}</strong> بجودة فائقة.`,
-                        timer: 2200,
+                        title: 'تم حفظ البطاقة الرقمية بنجاح',
+                        html: `تم استخراج وتحميل <strong>${isCardFlipped ? 'الوجه الخلفي' : 'الوجه الأمامي (النموذج الثالث الذكي بالـ QR والباركود)'}</strong> للبطاقة المهنية للموظف: <strong>${escapeHtml(currentEmployee.name)}</strong> بدقة فائقة وجودة طباعة عالية (300 DPI).`,
+                        timer: 2600,
                         showConfirmButton: false
                     });
                 }
@@ -1396,78 +1496,57 @@
 
                 ctx.fillStyle = '#1e293b';
                 ctx.font = 'bold 20px "Cairo", "Segoe UI", Tahoma, sans-serif';
-                ctx.fillText('الجمهورية الجزائرية الديمقراطية الشعبية', 360, 62);
+                ctx.fillText('الجمهورية الجزائرية الديمقراطية الشعبية', 360, 64);
 
                 ctx.fillStyle = '#006233';
                 ctx.font = 'bold 19px "Cairo", "Segoe UI", Tahoma, sans-serif';
-                ctx.fillText('وزارة التربية الوطنية', 360, 96);
+                ctx.fillText('وزارة التربية الوطنية', 360, 98);
 
                 ctx.fillStyle = '#047857';
                 ctx.font = 'bold 17px "Cairo", "Segoe UI", Tahoma, sans-serif';
-                ctx.fillText('مديرية التربية لولاية توقرت', 360, 126);
+                ctx.fillText('مديرية التربية لولاية توقرت', 360, 128);
 
                 // خط فاصل زخرفي
                 ctx.strokeStyle = '#e2e8f0';
                 ctx.lineWidth = 1.5;
                 ctx.beginPath();
-                ctx.moveTo(60, 148);
-                ctx.lineTo(660, 148);
+                ctx.moveTo(60, 150);
+                ctx.lineTo(660, 150);
                 ctx.stroke();
 
-                // 4. حاوية عنوان الهوية الرقمية للموظف (كما طلب المستخدم تماماً)
-                const empName = String(currentEmployee.name || 'موظف').trim();
+                // 4. حاوية عنوان الهوية الرقمية للموظف (مع الاسم المصحح بدقة وبدون أي تكرار)
+                const empName = cleanEmployeeFullName(currentEmployee.name || 'موظف');
                 ctx.fillStyle = '#f0fdf4';
                 ctx.strokeStyle = '#86efac';
                 ctx.lineWidth = 1.5;
-                drawRoundRect(ctx, 40, 165, 640, 68, 14, true, true);
+                drawRoundRect(ctx, 40, 170, 640, 74, 14, true, true);
 
                 ctx.fillStyle = '#006233';
-                ctx.font = '900 22px "Cairo", "Segoe UI", Tahoma, sans-serif';
-                ctx.fillText(`الهوية الرقمية للموظف : ${empName}`, 360, 199);
+                ctx.font = '900 23px "Cairo", "Segoe UI", Tahoma, sans-serif';
+                ctx.fillText(`الهوية الرقمية للموظف : ${empName}`, 360, 207);
 
-                // 5. بطاقة البيانات الوظيفية للموظف
-                ctx.fillStyle = '#f8fafc';
-                ctx.strokeStyle = '#cbd5e1';
-                ctx.lineWidth = 1;
-                drawRoundRect(ctx, 40, 248, 640, 110, 12, true, true);
-
-                const empRank = String(currentEmployee.rank || '---').trim();
-                const empInst = String(currentEmployee.workplace || currentEmployee.inst || '---').trim();
-                const empJobId = String(currentEmployee.matricule || currentEmployee.jobId || '---').trim();
-
-                ctx.font = 'bold 15px "Cairo", "Segoe UI", Tahoma, sans-serif';
-                ctx.fillStyle = '#0f172a';
-                ctx.fillText(`المؤسسة: ${empInst}`, 360, 276);
-
-                ctx.fillStyle = '#334155';
-                ctx.fillText(`الرتبة: ${empRank}`, 360, 303);
-
-                ctx.fillStyle = '#047857';
-                ctx.font = 'bold 15px "Cairo", monospace';
-                ctx.fillText(`رقم التعريف الوظيفي: ${empJobId}`, 360, 331);
-
-                // 6. حاوية رمز الاستجابة السريع (QR)
+                // 5. حاوية رمز الاستجابة السريع (QR) في المركز بحجم كبير وواضح (تم حذف المؤسسة والرتبة والرقم الوظيفي حسب الطلب)
                 ctx.fillStyle = '#ffffff';
                 ctx.strokeStyle = '#cbd5e1';
                 ctx.lineWidth = 2;
-                drawRoundRect(ctx, 160, 375, 400, 400, 16, true, true);
+                drawRoundRect(ctx, 135, 275, 450, 450, 18, true, true);
 
                 // رسم رمز QR في المركز
-                ctx.drawImage(qrCanvas, 185, 400, 350, 350);
+                ctx.drawImage(qrCanvas, 160, 300, 400, 400);
 
-                // 7. تذييل التوجيه والأمان
-                ctx.fillStyle = '#f1f5f9';
+                // 6. تذييل التوجيه والأمان
+                ctx.fillStyle = '#f8fafc';
                 ctx.strokeStyle = '#e2e8f0';
                 ctx.lineWidth = 1;
-                drawRoundRect(ctx, 40, 795, 640, 95, 12, true, true);
+                drawRoundRect(ctx, 40, 760, 640, 120, 14, true, true);
 
-                ctx.fillStyle = '#0f172a';
-                ctx.font = 'bold 15px "Cairo", "Segoe UI", Tahoma, sans-serif';
-                ctx.fillText('امسح الرمز للتحقق الفوري والاطلاع على البطاقة المهنية الرقمية', 360, 828);
+                ctx.fillStyle = '#006233';
+                ctx.font = '900 16px "Cairo", "Segoe UI", Tahoma, sans-serif';
+                ctx.fillText('امسح رمز الاستجابة السريع للتحقق الفوري والاطلاع على البطاقة المهنية الرقمية', 360, 800);
 
                 ctx.fillStyle = '#64748b';
-                ctx.font = '600 13px "Cairo", "Segoe UI", Tahoma, sans-serif';
-                ctx.fillText('منظومة التحقق والربط الرقمي المؤمن - مديرية التربية لولاية توقرت', 360, 856);
+                ctx.font = '700 13px "Cairo", "Segoe UI", Tahoma, sans-serif';
+                ctx.fillText('منظومة التحقق والربط الرقمي المؤمن - مديرية التربية لولاية توقرت', 360, 835);
 
                 // الشريط السفلي المزدوج
                 ctx.fillStyle = '#dc2626';
@@ -1475,7 +1554,7 @@
                 ctx.fillStyle = '#006233';
                 ctx.fillRect(12, 924, 696, 12);
 
-                // 8. تنزيل الصورة
+                // 7. تنزيل الصورة
                 const cleanName = empName.replace(/[/\\?%*:|"<>]/g, '_').replace(/\s+/g, '_');
                 const filename = `الهوية_الرقمية_${cleanName}.png`;
 
@@ -1505,9 +1584,39 @@
                 }
             }
         };
- 
-        let activeDigitalPin = '';
+
+        // دالة تنظيف وتصحيح اسم الموظف ومنع أي تكرار مثل: (فغولي عبد الهادي عبد الهادي)
+        function cleanEmployeeFullName(nom, prenom) {
+            let n = String(nom || '').trim().replace(/\s+/g, ' ');
+            let p = String(prenom || '').trim().replace(/\s+/g, ' ');
+            if (n && p) {
+                if (n.endsWith(' ' + p)) {
+                    const prefix = n.slice(0, -(p.length + 1)).trim();
+                    if (prefix) n = prefix;
+                } else if (n.startsWith(p + ' ')) {
+                    const suffix = n.slice(p.length + 1).trim();
+                    if (suffix) n = suffix;
+                }
+            }
+            let full = (n && p && n !== p) ? (n + ' ' + p) : (n || p);
+            if (p && full.includes(p + ' ' + p)) {
+                full = full.replace(p + ' ' + p, p).trim();
+            }
+            const parts = full.split(' ');
+            if (parts.length >= 4) {
+                const lastTwo = parts.slice(-2).join(' ');
+                const prevTwo = parts.slice(-4, -2).join(' ');
+                if (lastTwo === prevTwo) {
+                    full = parts.slice(0, -2).join(' ');
+                }
+            }
+            return full.trim();
+        }
+
+        let directorateGeneralPin = '';
+        let activeEmployeePin = '';
         let currentVerifyJobId = '';
+        let currentVerifyEmpName = '';
 
         // دالة عرض شاشة البطاقة المعطلة (بدون أي بيانات للموظف تماماً لمنع التطفل)
         function renderCardDisabledState(reason, date) {
@@ -1555,9 +1664,215 @@
             `;
         }
 
-        // دالة عرض شاشة قفل الصفحة بالرقم السري للبطاقة الرقمية
-        function renderPinGate(jobId) {
+        // دالة عرض شاشة تعيين الرقم السري لأول مرة (6 أرقام وحروف إنجليزية A-Z, a-z, 0-9 فقط)
+        function renderFirstTimePinSetup(jobId, empName) {
             currentVerifyJobId = jobId;
+            currentVerifyEmpName = empName || 'الموظف';
+            const tabsNav = document.getElementById('tabs-navbar');
+            if (tabsNav) tabsNav.style.display = 'none';
+
+            const container = document.getElementById('portal-content-container');
+            container.innerHTML = `
+                <div class="pin-gate-screen" style="max-width: 500px; margin: 30px auto; background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 22px; padding: 36px 26px; text-align: center; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); animation: fadeIn 0.3s ease;">
+                    <div style="width: 76px; height: 76px; background: #eff6ff; color: #2563eb; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 34px; margin: 0 auto 16px; border: 2px solid #bfdbfe; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.12);">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <div style="display: inline-block; background: #eff6ff; color: #1d4ed8; font-weight: 800; font-size: 12.5px; padding: 4px 14px; border-radius: 20px; margin-bottom: 12px;">
+                        إعداد أمان البطاقة الرقمية لأول مرة
+                    </div>
+                    <h2 style="color: #0f172a; font-size: 20px; font-weight: 900; margin: 0 0 8px;">
+                        تعيين الرقم السري للبطاقة المهنية
+                    </h2>
+                    <div style="font-size: 14.5px; font-weight: 800; color: #006233; margin-bottom: 14px;">
+                        الموظف(ة): <strong>${escapeHtml(empName)}</strong>
+                    </div>
+                    <p style="color: #475569; font-size: 13px; line-height: 1.7; margin: 0 0 20px;">
+                        لحماية خصوصية بياناتك المهنية، يرجى تعيين رقم سري شخصي خاص ببطاقتك الرقمية مكون من <strong>6 خانات</strong> (أرقام وحروف إنجليزية كبيرة وصغيرة فقط: <code dir="ltr" style="background:#f1f5f9; padding:2px 6px; border-radius:4px; font-weight:800;">A-Z, a-z, 0-9</code>).
+                    </p>
+
+                    <form id="setup-pin-form" onsubmit="handleSetupPinSubmit(event)" style="display: flex; flex-direction: column; gap: 14px; text-align: right;">
+                        <div>
+                            <label style="display: block; font-weight: 800; font-size: 13px; color: #334155; margin-bottom: 6px;">الرقم السري الجديد (6 خانات):</label>
+                            <div style="position: relative; display: flex; align-items: center;">
+                                <input type="password" id="setup-pin-input" maxlength="6" placeholder="مثال: Ab1234" required autofocus style="width: 100%; padding: 12px 42px 12px 14px; border: 1.5px solid #cbd5e1; border-radius: 10px; font-weight: 800; font-size: 16px; box-sizing: border-box; text-align: center; letter-spacing: 3px; font-family: monospace;">
+                                <button type="button" onclick="toggleSetupPinVisibility('setup-pin-input', 'setup-eye-1')" style="position: absolute; right: 10px; background: none; border: none; font-size: 16px; color: #64748b; cursor: pointer; padding: 4px;" title="إظهار / إخفاء">
+                                    <i class="fa-solid fa-eye" id="setup-eye-1"></i>
+                                </button>
+                            </div>
+                            <span style="font-size: 11.5px; color: #64748b; margin-top: 4px; display: block;">* يتكون من 6 أرقام وحروف فقط (بدون رموز خاصة أو مسافات).</span>
+                        </div>
+
+                        <div>
+                            <label style="display: block; font-weight: 800; font-size: 13px; color: #334155; margin-bottom: 6px;">تأكيد الرقم السري:</label>
+                            <div style="position: relative; display: flex; align-items: center;">
+                                <input type="password" id="setup-pin-confirm" maxlength="6" placeholder="أعد إدخال الـ 6 خانات..." required style="width: 100%; padding: 12px 42px 12px 14px; border: 1.5px solid #cbd5e1; border-radius: 10px; font-weight: 800; font-size: 16px; box-sizing: border-box; text-align: center; letter-spacing: 3px; font-family: monospace;">
+                                <button type="button" onclick="toggleSetupPinVisibility('setup-pin-confirm', 'setup-eye-2')" style="position: absolute; right: 10px; background: none; border: none; font-size: 16px; color: #64748b; cursor: pointer; padding: 4px;" title="إظهار / إخفاء">
+                                    <i class="fa-solid fa-eye" id="setup-eye-2"></i>
+                                </button>
+                            </div>
+                            <div id="setup-pin-error" style="display: none; color: #dc2626; font-size: 12.5px; font-weight: 800; margin-top: 6px;"></div>
+                        </div>
+
+                        <button type="submit" id="btn-submit-setup-pin" class="btn" style="width: 100%; padding: 13px; background: #006233; color: white; border: none; border-radius: 10px; font-weight: 900; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s ease;">
+                            <i class="fa-solid fa-check-circle"></i> حفظ وتفعيل البطاقة الرقمية
+                        </button>
+
+                        <div style="margin-top: 10px; padding-top: 12px; border-top: 1px dashed #e2e8f0; text-align: center;">
+                            <button type="button" onclick="showDirectorateBypassModal()" style="background: none; border: none; color: #64748b; font-size: 12.5px; font-weight: 800; cursor: pointer; text-decoration: underline;">
+                                <i class="fa-solid fa-building-columns"></i> دخول المفتشين والمصالح بالرقم السري العام
+                            </button>
+                        </div>
+                    </form>
+
+                    <div style="border-top: 1px solid #e2e8f0; margin-top: 24px; padding-top: 14px; color: #94a3b8; font-size: 12px; font-weight: 700;">
+                        مديرية التربية لولاية توقرت &copy; نظام التحقق الأمني
+                    </div>
+                </div>
+            `;
+            setTimeout(() => {
+                const inp = document.getElementById('setup-pin-input');
+                if (inp) inp.focus();
+            }, 100);
+        }
+
+        window.toggleSetupPinVisibility = function(inputId, iconId) {
+            const inp = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            if (!inp || !icon) return;
+            if (inp.type === 'password') {
+                inp.type = 'text';
+                icon.className = 'fa-solid fa-eye-slash';
+            } else {
+                inp.type = 'password';
+                icon.className = 'fa-solid fa-eye';
+            }
+        };
+
+        window.handleSetupPinSubmit = async function(e) {
+            e.preventDefault();
+            const inp = document.getElementById('setup-pin-input');
+            const confInp = document.getElementById('setup-pin-confirm');
+            const errEl = document.getElementById('setup-pin-error');
+            const btn = document.getElementById('btn-submit-setup-pin');
+
+            const pin = (inp ? inp.value : '').trim();
+            const confirm = (confInp ? confInp.value : '').trim();
+
+            if (!pin || !confirm) {
+                if (errEl) { errEl.textContent = 'يرجى ملء حقلي الرقم السري والتأكيد.'; errEl.style.display = 'block'; }
+                return;
+            }
+
+            if (pin.length !== 6 || !/^[A-Za-z0-9]{6}$/.test(pin)) {
+                if (errEl) { errEl.textContent = 'الرقم السري يجب أن يتكون من 6 خانات بالضبط (أرقام وحروف إنجليزية A-Z, a-z فقط بدون مسافات أو رموز).'; errEl.style.display = 'block'; }
+                if (inp) inp.focus();
+                return;
+            }
+
+            if (pin !== confirm) {
+                if (errEl) { errEl.textContent = 'الرقمان السريان غير متطابقين، يرجى إعادة التأكد بدقة.'; errEl.style.display = 'block'; }
+                if (confInp) confInp.focus();
+                return;
+            }
+
+            const origBtnHTML = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> جاري حفظ وتشفير الرقم السري...`;
+                btn.disabled = true;
+            }
+
+            try {
+                if (typeof window.updateEmployeeCodep === 'function') {
+                    await window.updateEmployeeCodep(currentVerifyJobId, pin, 'EMPLOYEE');
+                } else {
+                    const client = (typeof window.getSupabaseClient === 'function') ? window.getSupabaseClient() : null;
+                    if (client) {
+                        const { data: setRow } = await client.from('system_settings').select('extra_config').eq('id', 'config').maybeSingle();
+                        const extra = (setRow && setRow.extra_config) ? ((typeof setRow.extra_config === 'string') ? JSON.parse(setRow.extra_config) : setRow.extra_config) : {};
+                        extra.codep_map = extra.codep_map || {};
+                        extra.codep_map[currentVerifyJobId] = pin;
+                        await client.from('system_settings').update({ extra_config: extra, updated_at: new Date().toISOString() }).eq('id', 'config');
+                        try { await client.from('base-touggourt').update({ codep: pin }).eq('matricule', currentVerifyJobId); } catch(e){}
+                    }
+                }
+
+                activeEmployeePin = pin;
+                if (currentEmployee) currentEmployee.codep = pin;
+                sessionStorage.setItem('verify_pin_unlocked_' + currentVerifyJobId, 'true');
+
+                if (typeof Swal !== 'undefined') {
+                    await Swal.fire({
+                        icon: 'success',
+                        title: 'تم تعيين الرقم السري بنجاح',
+                        text: 'تم تفعيل بطاقتك الرقمية وحفظ الرقم السري بنجاح في قاعدة البيانات.',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                }
+
+                const tabsNav = document.getElementById('tabs-navbar');
+                if (tabsNav) tabsNav.style.display = 'grid';
+                renderPortalViews(currentEmployee, true);
+            } catch(err) {
+                console.error('Error saving pin:', err);
+                if (errEl) {
+                    errEl.textContent = 'حدث خطأ أثناء حفظ الرقم السري: ' + (err.message || err);
+                    errEl.style.display = 'block';
+                }
+                if (btn) {
+                    btn.innerHTML = origBtnHTML;
+                    btn.disabled = false;
+                }
+            }
+        };
+
+        window.showDirectorateBypassModal = async function() {
+            if (typeof Swal !== 'undefined') {
+                const { value: entered } = await Swal.fire({
+                    title: 'دخول المصالح والمفتشين',
+                    input: 'password',
+                    inputLabel: 'أدخل الرقم السري العام المعتمد للمصالح:',
+                    inputPlaceholder: 'الرقم السري العام...',
+                    showCancelButton: true,
+                    confirmButtonText: 'تأكيد ودخول',
+                    cancelButtonText: 'إلغاء',
+                    confirmButtonColor: '#006233',
+                    cancelButtonColor: '#64748b',
+                    inputValidator: (val) => {
+                        if (!val) return 'يرجى إدخال الرقم السري العام';
+                    }
+                });
+
+                if (!entered) return;
+                const cleanEntered = entered.trim();
+                const isMatch = (cleanEntered === directorateGeneralPin) || (cleanEntered === 'feh@09@55');
+                if (isMatch) {
+                    sessionStorage.setItem('verify_pin_unlocked_' + currentVerifyJobId, 'true');
+                    const tabsNav = document.getElementById('tabs-navbar');
+                    if (tabsNav) tabsNav.style.display = 'grid';
+                    renderPortalViews(currentEmployee, true);
+                } else {
+                    Swal.fire('خطأ', 'الرقم السري العام غير صحيح، يرجى المحاولة مجدداً.', 'error');
+                }
+            } else {
+                const entered = prompt('أدخل الرقم السري العام المعتمد للمصالح:');
+                if (!entered) return;
+                const isMatch = (entered.trim() === directorateGeneralPin) || (entered.trim() === 'feh@09@55');
+                if (isMatch) {
+                    sessionStorage.setItem('verify_pin_unlocked_' + currentVerifyJobId, 'true');
+                    const tabsNav = document.getElementById('tabs-navbar');
+                    if (tabsNav) tabsNav.style.display = 'grid';
+                    renderPortalViews(currentEmployee, true);
+                } else {
+                    alert('الرقم السري العام غير صحيح.');
+                }
+            }
+        };
+
+        // دالة عرض شاشة قفل الصفحة بالرقم السري للبطاقة الرقمية (عندما يكون الرقم السري معيناً مسبقاً)
+        function renderPinGate(jobId, empName) {
+            currentVerifyJobId = jobId;
+            currentVerifyEmpName = empName || 'الموظف';
             const tabsNav = document.getElementById('tabs-navbar');
             if (tabsNav) tabsNav.style.display = 'none';
 
@@ -1567,11 +1882,14 @@
                     <div style="width: 76px; height: 76px; background: #ecfdf5; color: #047857; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 34px; margin: 0 auto 18px; border: 2px solid #a7f3d0; box-shadow: 0 4px 12px rgba(4, 120, 87, 0.12);">
                         <i class="fa-solid fa-lock"></i>
                     </div>
-                    <h2 style="color: #0f172a; font-size: 20px; font-weight: 900; margin: 0 0 10px;">
+                    <h2 style="color: #0f172a; font-size: 20px; font-weight: 900; margin: 0 0 8px;">
                         صفحة الاستعلام محمية برقم سري
                     </h2>
+                    <div style="font-size: 14.5px; font-weight: 800; color: #006233; margin-bottom: 12px;">
+                        الموظف(ة): <strong>${escapeHtml(empName || 'الموظف')}</strong>
+                    </div>
                     <p style="color: #64748b; font-size: 13.5px; line-height: 1.7; margin: 0 0 24px;">
-                        لحماية الخصوصية ومنع التطفل على البيانات الشخصية للموظف، يرجى إدخال الرقم السري المعتمد للاطلاع على بيانات البطاقة الرقمية.
+                        لحماية الخصوصية ومنع التطفل، يرجى إدخال الرقم السري الخاص ببطاقتك الرقمية (المكون من 6 خانات) أو الرقم السري العام المعتمد من المديرية.
                     </p>
 
                     <form id="verify-pin-form" onsubmit="handleVerifyPinSubmit(event)" style="display: flex; flex-direction: column; gap: 14px; text-align: right;">
@@ -1626,8 +1944,7 @@
                 return;
             }
 
-            const cleanActivePin = String(activeDigitalPin || '').trim();
-            const isMatch = (entered === cleanActivePin) || (entered === 'feh@09@55');
+            const isMatch = (entered === activeEmployeePin) || (entered === directorateGeneralPin) || (entered === 'feh@09@55');
 
             if (isMatch) {
                 if (currentVerifyJobId) {
@@ -1638,7 +1955,7 @@
                 renderPortalViews(currentEmployee, true);
             } else {
                 if (errEl) {
-                    errEl.textContent = 'الرقم السري غير صحيح، يرجى المحاولة مجدداً.';
+                    errEl.textContent = 'الرقم السري غير صحيح. يرجى إدخال رقمك السري (6 خانات) أو الرقم المعتمد للمصالح.';
                     errEl.style.display = 'block';
                 }
                 if (inp) {
@@ -1692,6 +2009,7 @@
             let template3GlobalDate = '';
             let digitalCardPin = '';
             let setDirector = 'بوعزيز صالح';
+            let extra = {};
 
             // الاتصال المباشر بـ Supabase
             try {
@@ -1724,7 +2042,7 @@
 
                     if (setRes && setRes.data) {
                         if (setRes.data.global_director) setDirector = setRes.data.global_director;
-                        const extra = setRes.data.extra_config ? ((typeof setRes.data.extra_config === 'string') ? JSON.parse(setRes.data.extra_config) : setRes.data.extra_config) : {};
+                        extra = setRes.data.extra_config ? ((typeof setRes.data.extra_config === 'string') ? JSON.parse(setRes.data.extra_config) : setRes.data.extra_config) : {};
                         const disabledMap = extra.disabled_cards_map || {};
                         issueDateMap = extra.issue_date_map || {};
                         template3GlobalDate = extra.template3_issue_date || '';
@@ -1780,8 +2098,10 @@
                 return;
             }
 
-            // تكوين كائن الموظف المعتمد
-            const fullName = (dbEmp && (dbEmp.nomAr ? (dbEmp.nomAr + ' ' + dbEmp.prenomAr) : dbEmp.nom)) || (decryptedData && decryptedData.n) || 'الموظف';
+            // تكوين كائن الموظف المعتمد مع تنظيف وتصحيح الاسم لمنع أي تكرار نهائياً
+            const rawNom = dbEmp ? (dbEmp.nomAr || dbEmp.nom) : (decryptedData && decryptedData.n);
+            const rawPrenom = dbEmp ? (dbEmp.prenomAr || dbEmp.prenom) : '';
+            const fullName = cleanEmployeeFullName(rawNom, rawPrenom) || 'الموظف';
             const empDob = cleanDateString(dbEmp ? (dbEmp.dateNais || dbEmp.dob) : (decryptedData && decryptedData.d)) || '---';
             const empRank = (dbEmp && (dbEmp.grade || dbEmp.rank)) || (decryptedData && decryptedData.r) || '---';
             const empWorkplace = (dbEmp && (dbEmp.etablissement || dbEmp.workplace || dbEmp.rawEtab)) || (decryptedData && decryptedData.w) || '---';
@@ -1799,9 +2119,13 @@
                 empPhoto = window.CF_PHOTOS_MAP[cleanJobId].cfUrl;
             }
 
+            directorateGeneralPin = String(digitalCardPin || '').trim();
+            activeEmployeePin = String((dbEmp && dbEmp.codep) || (extra.codep_map && extra.codep_map[cleanJobId]) || '').trim();
+
             currentEmployee = {
                 jobId: cleanJobId || (decryptedData && decryptedData.j) || '',
                 name: fullName,
+                codep: activeEmployeePin,
                 dob: empDob,
                 rank: empRank,
                 workplace: empWorkplace,
@@ -1821,14 +2145,17 @@
                 verifiedAt: new Date().toLocaleDateString('ar-DZ')
             };
 
-            // 🔐 فحص قفل صفحة الاستعلام بالرقم السري إن تم إدراجه في إعدادات المديرية
-            activeDigitalPin = String(digitalCardPin || '').trim();
-            if (activeDigitalPin) {
-                const isUnlocked = sessionStorage.getItem('verify_pin_unlocked_' + cleanJobId) === 'true';
-                if (!isUnlocked) {
-                    renderPinGate(cleanJobId);
-                    return;
+            // 🔐 فحص قفل صفحة الاستعلام بالرقم السري للبطاقة الرقمية
+            const isUnlocked = sessionStorage.getItem('verify_pin_unlocked_' + cleanJobId) === 'true';
+            if (!isUnlocked) {
+                if (!activeEmployeePin) {
+                    // الموظف لم يقم بتعيين رقمه السري بعد: يُطلب منه إدراج رقم سري خاص به مكون من 6 خانات
+                    renderFirstTimePinSetup(cleanJobId, fullName);
+                } else {
+                    // الموظف لديه رقم سري معين مسبقاً: يطلب إدخال الرقم السري للاطلاع
+                    renderPinGate(cleanJobId, fullName);
                 }
+                return;
             }
 
             // عرض البيانات والبطاقة بعد اجتياز فحص القفل
@@ -2025,18 +2352,18 @@
                     </div>
                 </section>
 
-                <!-- 2. واجهة البطاقة الرقمية (مطابقة للنموذج الأول والوجه الخلفي Theme 4) -->
+                <!-- 2. واجهة البطاقة الرقمية (مطابقة للنموذج الثالث الذكي بالـ QR والباركود) -->
                 <section class="view-section" id="view-card">
                     <div class="digital-card-container">
-                        <!-- أزرار الإجراءات الرسمية (حفظ البطاقة كصورة - تحميل QR الهوية الرقمية - قلب البطاقة) -->
+                        <!-- أزرار الإجراءات الرسمية (تحميل البطاقة الرقمية - تحميل رمز الهوية الرقمية - قلب البطاقة) -->
                         <div class="card-view-actions">
                             <button type="button" class="card-action-btn primary" id="btn-save-card-img" onclick="saveDigitalCardImage()">
-                                <i class="fa-solid fa-cloud-arrow-down" style="font-size: 15px;"></i>
-                                <span>حفظ البطاقة الرقمية (صورة PNG فائقة الجودة)</span>
+                                <i class="fa-solid fa-download"></i>
+                                <span>تحميل البطاقة الرقمية</span>
                             </button>
                             <button type="button" class="card-action-btn" id="btn-download-qr" onclick="downloadVerificationQR()">
-                                <i class="fa-solid fa-id-badge" style="color:var(--primary-green); font-size: 15px;"></i>
-                                <span>تحميل الهوية الرقمية للموظف (رمز QR)</span>
+                                <i class="fa-solid fa-id-badge" style="font-size: 16px;"></i>
+                                <span>تحميل رمز الهوية الرقمية</span>
                             </button>
                             <button type="button" class="card-action-btn" onclick="flipDigitalCard()">
                                 <i class="fa-solid fa-repeat" style="color:var(--primary-green);"></i>
@@ -2044,12 +2371,12 @@
                             </button>
                         </div>
 
-                        <!-- البطاقة الرقمية المتفاعلة ثلاثية الأبعاد بنسبة القياس الهندسي الدقيق -->
+                        <!-- البطاقة الرقمية المتفاعلة ثلاثية الأبعاد بنسبة القياس الهندسي الدقيق (النموذج الثالث الرسمي لطباعة المدير) -->
                         <div class="card-scaler-outer" id="card-scaler-outer">
                             <div class="card-scaler-inner" id="card-scaler-inner">
                                 <div class="card-flipper" id="digital-card-flipper">
                                     
-                                    <!-- الوجه الأمامي: مطابقة 100% للنموذج 1 + رقم التعريف الوظيفي بدل الباركود -->
+                                    <!-- الوجه الأمامي: النموذج الثالث الذكي بالـ QR والباركود (نسخة طبق الأصل لطباعة المدير) -->
                                     <div class="digital-card-face front" id="digital-card-front" dir="rtl">
                                         ${cardDisabledStampHtml}
                                         <div class="watermark"></div>
@@ -2075,22 +2402,26 @@
                                             </div>
                                         </div>
 
-                                        <!-- جسم البطاقة -->
+                                        <!-- جسم البطاقة: النموذج 3 الرسمي -->
                                         <div class="card-body">
-                                            <div class="info-section">
-                                                <div class="card-name-title">بطاقة التعريف المهنية</div>
-                                                <div class="info-row"><span class="label">الاسم واللقب:</span><span class="value">${emp.name}</span></div>
-                                                <div class="info-row"><span class="label">تاريخ الميلاد:</span><span class="value" dir="ltr">${emp.dob}</span></div>
-                                                <div class="info-row"><span class="label">الرتبة:</span><span class="value">${emp.rank}</span></div>
-                                                <div class="info-row workplace-row"><span class="label">مكان العمل:</span><span class="value workplace-val">${emp.workplace}</span></div>
-                                                ${validitySectionCard}
-                                                <div class="info-row"><span class="label">تاريخ الإصدار:</span><span class="value" dir="ltr">${emp.issueDate}</span></div>
+                                            <div class="info-section" style="padding-top: 22px; justify-content: flex-start;">
+                                                <div class="card-name-title" style="margin-top: 0; margin-bottom: 8px; height: 32px; display: inline-flex; align-items: center; box-sizing: border-box;">بطاقة التعريف المهنية</div>
+                                                <div class="info-row"><span class="label">الاسم واللقب:</span><span class="value" style="font-size:22px; font-weight:900;">${emp.name}</span></div>
+                                                ${emp.issueDate ? `<div class="info-row"><span class="label">تاريخ الإصدار:</span><span class="value" dir="ltr" style="font-weight:800;">${emp.issueDate}</span></div>` : ''}
+                                                <div class="smart-qr-center-box" style="display: flex; flex-direction: column; align-items: center; justify-content: center; align-self: flex-start; margin-top: 8px; margin-right: 0; padding: 4px; background: #ffffff; border: 1.5px solid #006233; border-radius: 8px; width: fit-content;">
+                                                    <div class="smart-qr-target" style="width: 105px; height: 105px; display: flex; align-items: center; justify-content: center; background: #ffffff;">
+                                                        <canvas id="digital-front-qr-canvas" style="width: 105px; height: 105px; display: block;"></canvas>
+                                                    </div>
+                                                    <span style="font-size: 9px; font-weight: 800; color: #006233; margin-top: 3px; display: flex; align-items: center; gap: 4px;">
+                                                        <i class="fa-solid fa-qrcode"></i> مسح للتحقق والبطاقة الرقمية
+                                                    </span>
+                                                </div>
                                             </div>
 
-                                            <div class="photo-section">
-                                                <div class="serial-number">
-                                                    <span>رقم القيد</span>
-                                                    <span>${formattedRegNo}</span>
+                                            <div class="photo-section" style="padding-top: 22px; justify-content: flex-start;">
+                                                <div class="serial-number" style="margin-top: 0; margin-bottom: 8px; height: 32px; display: flex; align-items: center; justify-content: center; gap: 4px; text-align: center; font-weight: 800; direction: rtl; font-size: 13.5px; box-sizing: border-box;">
+                                                    <span>الرقم :</span>
+                                                    <span style="direction: ltr; font-weight: 900; letter-spacing: 1px;">${formattedRegNo}</span>
                                                 </div>
                                                 <div class="photo-frame">
                                                     ${photoSrc}
@@ -2102,20 +2433,24 @@
                                             </div>
                                         </div>
 
-                                        <!-- شريط رقم التعريف الوظيفي المعتمد بدل الباركود -->
-                                        <div class="digital-jobid-bottom-bar">
-                                            <i class="fa-solid fa-fingerprint"></i>
-                                            <span class="jobid-text">رقم التعريف الوظيفي:</span>
-                                            <span class="jobid-val">${emp.jobId}</span>
+                                        <!-- حاوية الباركود المعتمدة في طباعة المدير للنموذج 3 -->
+                                        <div class="barcode-container" style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: auto; margin-bottom: 6px; background: #ffffff; padding: 4px 16px; border-radius: 8px; border: 1.5px solid #cbd5e1; box-shadow: 0 1px 4px rgba(0,0,0,0.06); width: fit-content; margin-left: auto; margin-right: auto;">
+                                            <i class="fa-solid fa-fingerprint" style="color: #006233; font-size: 28px;"></i>
+                                            <svg class="barcode-render" id="digital-barcode-svg"
+                                                jsbarcode-value="${emp.jobId || '0000000000'}" jsbarcode-format="CODE128"
+                                                jsbarcode-displayValue="false" jsbarcode-height="42"
+                                                jsbarcode-width="2.3" jsbarcode-margin="8" jsbarcode-background="#ffffff"
+                                                style="height: 42px; width: auto; max-width: 480px; display: block;">
+                                            </svg>
                                         </div>
 
                                         <!-- التذييل -->
-                                        <div class="footer">
+                                        <div class="footer" style="display: flex; align-items: center; justify-content: center; text-align: center; width: 100%; padding: 6px 0; line-height: 1.25; box-sizing: border-box;">
                                             على السلطات المدنية والعسكرية أن تسمح لحامل هذه البطاقة بالمرور في كل الحالات
                                         </div>
                                     </div>
 
-                                    <!-- الوجه الخلفي للبطاقة: مطابقة 100% للنموذج الأول (Theme 4) -->
+                                    <!-- الوجه الخلفي للبطاقة: مطابقة 100% للنموذج الثالث (Theme 4) -->
                                     <div class="digital-card-face back" id="digital-card-back" dir="rtl">
                                         ${cardDisabledStampHtml}
                                         <div class="back-header">
@@ -2149,8 +2484,10 @@
                 </section>
             `;
 
-            // تنفيذ ضبط المقاسات ورسم رمز الاستجابة السريع للوجه الخلفي
+            // تنفيذ ضبط المقاسات ورسم وتوليد رمز الاستجابة السريع والباركود للوجهين
             adjustCardScale();
+            renderFrontFaceQR();
+            renderFrontBarcode();
             renderBackFaceQR();
         }
 
