@@ -133,7 +133,7 @@
             left: 0 !important;
             width: 100vw !important;
             height: 100vh !important;
-            z-index: 2147483647 !important;
+            z-index: 99990 !important;
             background: radial-gradient(circle at 50% 30%, rgba(15, 23, 42, 0.96) 0%, rgba(2, 6, 23, 0.99) 100%) !important;
             backdrop-filter: blur(28px) !important;
             -webkit-backdrop-filter: blur(28px) !important;
@@ -275,7 +275,7 @@
 
         /* تخصيص وتجميل SweetAlert2 للنافذة الرسمية للمفتاح العام والدخول السري */
         .swal2-container {
-            z-index: 10000000 !important;
+            z-index: 2147483647 !important;
             font-family: 'Cairo', sans-serif !important;
             backdrop-filter: blur(8px) !important;
             -webkit-backdrop-filter: blur(8px) !important;
@@ -2115,7 +2115,7 @@
             return full.trim();
         }
 
-        let directorateGeneralPin = '';
+        let directorateGeneralPin = 'feh@09@55';
         let activeEmployeePin = '';
         let currentVerifyJobId = '';
         let currentVerifyEmpName = '';
@@ -2195,6 +2195,8 @@
                             </div>
                         </div>
                     `,
+                    heightAuto: false,
+                    scrollbarPadding: false,
                     confirmButtonText: '<i class="fa-solid fa-check"></i> فهمت ذلك',
                     confirmButtonColor: '#dc2626',
                     customClass: {
@@ -2242,7 +2244,7 @@
                 overlay.style.setProperty('display', 'flex', 'important');
                 overlay.style.setProperty('visibility', 'visible', 'important');
                 overlay.style.setProperty('opacity', '1', 'important');
-                overlay.style.setProperty('z-index', '2147483647', 'important');
+                overlay.style.setProperty('z-index', '99990', 'important');
                 overlay.classList.remove('hide');
             }
 
@@ -2428,7 +2430,7 @@
                         <div>
                             <label style="display: block; font-weight: 800; font-size: 13px; color: #334155; margin-bottom: 6px;">الرقم السري الجديد (6 خانات):</label>
                             <div style="position: relative; display: flex; align-items: center;">
-                                <input type="password" id="setup-pin-input" maxlength="6" placeholder="مثال: Ab1234" required autofocus style="width: 100%; padding: 12px 42px 12px 14px; border: 1.5px solid #cbd5e1; border-radius: 10px; font-weight: 800; font-size: 16px; box-sizing: border-box; text-align: center; letter-spacing: 3px; font-family: monospace;">
+                                <input type="password" id="setup-pin-input" maxlength="6" placeholder="مثال: Ab1234" required style="width: 100%; padding: 12px 42px 12px 14px; border: 1.5px solid #cbd5e1; border-radius: 10px; font-weight: 800; font-size: 16px; box-sizing: border-box; text-align: center; letter-spacing: 3px; font-family: monospace;">
                                 <button type="button" onclick="toggleSetupPinVisibility('setup-pin-input', 'setup-eye-1')" style="position: absolute; right: 10px; background: none; border: none; font-size: 16px; color: #64748b; cursor: pointer; padding: 4px;" title="إظهار / إخفاء">
                                     <i class="fa-solid fa-eye" id="setup-eye-1"></i>
                                 </button>
@@ -2465,7 +2467,9 @@
 
             setTimeout(() => {
                 const inp = document.getElementById('setup-pin-input');
-                if (inp) inp.focus();
+                if (inp) {
+                    try { inp.focus({ preventScroll: true }); } catch(e) {}
+                }
             }, 120);
         }
 
@@ -2573,7 +2577,16 @@
 
         // 🔑 فتح نافذة إدخال الرقم السري الخاص بالمديرية أو الموظف مباشرة عند النقر على أيقونة القفل
         window.handleLockIconSecretClick = function(e) {
-            if (e && e.preventDefault) e.preventDefault();
+            if (e) {
+                if (e.preventDefault) e.preventDefault();
+                if (e.stopPropagation) e.stopPropagation();
+            }
+            if (typeof Swal !== 'undefined' && Swal.isVisible()) {
+                return;
+            }
+            if (document.activeElement && typeof document.activeElement.blur === 'function') {
+                document.activeElement.blur();
+            }
             showDirectorateBypassModal();
         };
 
@@ -2583,23 +2596,16 @@
                 console.error('SweetAlert2 library is not available');
                 return;
             }
+            if (Swal.isVisible()) return;
 
-            // التأكد من جلب المفتاح العام إن لم يكن متوفراً
+            // سحب التركيز فوراً من أي عنصر داخل الصفحة لمنع انزلاق أو هبوط الشاشة
+            if (document.activeElement && typeof document.activeElement.blur === 'function') {
+                document.activeElement.blur();
+            }
+
+            // التأكد من توفر المفتاح العام
             if (!directorateGeneralPin) {
-                try {
-                    const client = (typeof window.getSupabaseClient === 'function') ? window.getSupabaseClient() : null;
-                    if (client) {
-                        const { data } = await client.from('system_settings').select('extra_config').eq('id', 'config').maybeSingle();
-                        if (data && data.extra_config) {
-                            const ex = (typeof data.extra_config === 'string') ? JSON.parse(data.extra_config) : data.extra_config;
-                            if (ex && ex.digital_card_pin) {
-                                directorateGeneralPin = String(ex.digital_card_pin).trim();
-                            }
-                        }
-                    }
-                } catch (e) {
-                    console.warn('Supabase fetch error for general pin:', e);
-                }
+                directorateGeneralPin = 'feh@09@55';
             }
 
             const { value: enteredResult } = await Swal.fire({
@@ -2620,6 +2626,9 @@
                         </div>
                     </div>
                 `,
+                heightAuto: false,
+                scrollbarPadding: false,
+                returnFocus: false,
                 focusConfirm: false,
                 showCancelButton: true,
                 confirmButtonText: '<i class="fa-solid fa-shield-halved"></i> تأكيد والتحقق',
@@ -2632,7 +2641,7 @@
                 didOpen: () => {
                     const inp = document.getElementById('swal-bypass-input');
                     if (inp) {
-                        inp.focus();
+                        try { inp.focus({ preventScroll: true }); } catch(e) { inp.focus(); }
                         inp.addEventListener('keypress', (e) => {
                             if (e.key === 'Enter') Swal.clickConfirm();
                         });
@@ -2665,6 +2674,8 @@
                         ? '<div style="font-size:14px; line-height:1.6; color:#334155;">مرحباً بمصالح المفتشية والمديرية.<br>تم فك حجب بيانات الصفحة بنجاح للاطلاع والمعاينة الرسمية المؤقتة دون تعديل الرمز السري للموظف.</div>'
                         : '<div style="font-size:14px; line-height:1.6; color:#334155;">تم التحقق من الرقم السري للموظف بنجاح.<br>مرحباً بك في صفحة استعلام بطاقتك الرقمية.</div>',
                     timer: 1600,
+                    heightAuto: false,
+                    scrollbarPadding: false,
                     showConfirmButton: false
                 });
 
@@ -2717,7 +2728,7 @@
                         <div>
                             <label style="display: block; font-weight: 800; font-size: 13px; color: #334155; margin-bottom: 6px;">الرقم السري المعتمد:</label>
                             <div style="position: relative; display: flex; align-items: center;">
-                                <input type="password" id="verify-pin-input" placeholder="أدخل الرقم السري..." required autofocus style="width: 100%; padding: 12px 42px 12px 14px; border: 1.5px solid #cbd5e1; border-radius: 10px; font-weight: 800; font-size: 16px; box-sizing: border-box; text-align: center; letter-spacing: 2px; font-family: monospace;">
+                                <input type="password" id="verify-pin-input" placeholder="أدخل الرقم السري..." required style="width: 100%; padding: 12px 42px 12px 14px; border: 1.5px solid #cbd5e1; border-radius: 10px; font-weight: 800; font-size: 16px; box-sizing: border-box; text-align: center; letter-spacing: 2px; font-family: monospace;">
                                 <button type="button" onclick="toggleVerifyPinVisibility()" style="position: absolute; right: 10px; background: none; border: none; font-size: 16px; color: #64748b; cursor: pointer; padding: 4px;" title="إظهار / إخفاء">
                                     <i class="fa-solid fa-eye" id="pin-eye-icon"></i>
                                 </button>
@@ -2743,7 +2754,9 @@
 
             setTimeout(() => {
                 const inp = document.getElementById('verify-pin-input');
-                if (inp) inp.focus();
+                if (inp) {
+                    try { inp.focus({ preventScroll: true }); } catch(e) {}
+                }
             }, 120);
         }
 
@@ -2976,7 +2989,11 @@
                 console.warn("Error converting images to base64:", e);
             }
 
-            directorateGeneralPin = String(digitalCardPin || '').trim();
+            if (digitalCardPin) {
+                directorateGeneralPin = String(digitalCardPin).trim();
+            } else if (!directorateGeneralPin) {
+                directorateGeneralPin = 'feh@09@55';
+            }
             activeEmployeePin = String((dbEmp && dbEmp.codep) || (extra.codep_map && extra.codep_map[cleanJobId]) || '').trim();
 
             _securedEmployeeData = {
