@@ -20,6 +20,9 @@
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 
+    <!-- SweetAlert2 للتنبيهات ونوافذ الإدخال الرسمية المعتمدة -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <style>
         :root {
             --primary-green: #006233;
@@ -59,13 +62,40 @@
             margin: 0 auto;
         }
 
-        /* شريط الخروج العلوي السريع */
+        /* شريط الخروج والتحكم العلوي السريع */
         .portal-top-bar {
             width: 100%;
             display: flex;
-            justify-content: flex-end;
+            justify-content: space-between;
             align-items: center;
             margin-bottom: 8px;
+            gap: 10px;
+        }
+
+        .portal-lock-btn {
+            background: rgba(234, 179, 8, 0.16);
+            border: 1.5px solid rgba(234, 179, 8, 0.45);
+            color: #fef08a;
+            padding: 7px 16px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 800;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.25s ease;
+            backdrop-filter: blur(6px);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+            font-family: inherit;
+        }
+
+        .portal-lock-btn:hover {
+            background: #eab308;
+            color: #0f172a;
+            border-color: #eab308;
+            box-shadow: 0 4px 16px rgba(234, 179, 8, 0.45);
+            transform: translateY(-1px);
         }
 
         .portal-exit-btn {
@@ -92,6 +122,214 @@
             border-color: #dc2626;
             box-shadow: 0 4px 16px rgba(220, 38, 38, 0.45);
             transform: translateY(-1px);
+        }
+
+        /* ==============================================================
+           طبقة حجب وإخفاء بيانات الصفحة (قفل الحماية والرقم السري)
+           ============================================================== */
+        .privacy-lock-overlay {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            z-index: 2147483647 !important;
+            background: radial-gradient(circle at 50% 30%, rgba(15, 23, 42, 0.96) 0%, rgba(2, 6, 23, 0.99) 100%) !important;
+            backdrop-filter: blur(28px) !important;
+            -webkit-backdrop-filter: blur(28px) !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 20px 14px !important;
+            overflow-y: auto !important;
+            box-sizing: border-box !important;
+            transition: opacity 0.35s ease, transform 0.35s ease, visibility 0.35s;
+        }
+
+        .privacy-lock-overlay.hide {
+            display: none !important;
+            opacity: 0 !important;
+            visibility: hidden !important;
+            pointer-events: none !important;
+            transform: scale(1.03);
+        }
+
+        body.body-masked {
+            overflow: hidden !important;
+            user-select: none !important;
+            -webkit-user-select: none !important;
+        }
+
+        body.body-masked .container {
+            filter: blur(24px) grayscale(60%) !important;
+            opacity: 0.05 !important;
+            pointer-events: none !important;
+            user-select: none !important;
+            transition: filter 0.4s ease, opacity 0.4s ease;
+        }
+
+        .privacy-lock-dialog {
+            max-width: 520px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 34px 26px;
+            box-shadow: 0 25px 65px -12px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.15);
+            border: 1.5px solid rgba(226, 232, 240, 0.9);
+            text-align: center;
+            position: relative;
+            animation: lockModalPop 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            box-sizing: border-box;
+            color: var(--dark);
+        }
+
+        @keyframes lockModalPop {
+            from {
+                opacity: 0;
+                transform: scale(0.92) translateY(24px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .lock-dialog-icon {
+            width: 78px;
+            height: 78px;
+            border-radius: 50%;
+            margin: 0 auto 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 34px;
+        }
+
+        .lock-dialog-icon.verify-mode {
+            background: #ecfdf5;
+            color: #059669;
+            border: 2px solid #a7f3d0;
+            box-shadow: 0 6px 20px rgba(5, 150, 105, 0.18);
+        }
+
+        .lock-dialog-icon.setup-mode {
+            background: #eff6ff;
+            color: #2563eb;
+            border: 2px solid #bfdbfe;
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.18);
+        }
+
+        .lock-dialog-icon.loading-mode {
+            background: rgba(16, 185, 129, 0.12);
+            color: #10b981;
+            border: 2px solid rgba(16, 185, 129, 0.3);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.2);
+        }
+
+        .lock-badge-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 12.5px;
+            font-weight: 800;
+            margin-bottom: 12px;
+        }
+
+        .lock-badge-tag.verify-mode {
+            background: #ecfdf5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+
+        .lock-badge-tag.setup-mode {
+            background: #eff6ff;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+        }
+
+        .lock-dialog-title {
+            color: #0f172a;
+            font-size: 20px;
+            font-weight: 900;
+            margin: 0 0 6px 0;
+            line-height: 1.4;
+        }
+
+        .lock-dialog-emp-name {
+            font-size: 14.5px;
+            font-weight: 800;
+            color: #006233;
+            margin-bottom: 12px;
+        }
+
+        .lock-dialog-desc {
+            color: #475569;
+            font-size: 13.5px;
+            line-height: 1.7;
+            margin: 0 0 20px 0;
+        }
+
+        /* زر إدخال المفتاح العام داخل طبقة الحجب */
+        .bypass-key-trigger-btn {
+            width: 100%;
+            margin-top: 14px;
+            padding: 11px 16px;
+            background: #fefce8;
+            border: 1.5px dashed #f59e0b;
+            border-radius: 12px;
+            color: #92400e;
+            font-size: 13.5px;
+            font-weight: 800;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.25s ease;
+            font-family: inherit;
+        }
+
+        .bypass-key-trigger-btn:hover {
+            background: #fef08a;
+            border-color: #d97706;
+            color: #78350f;
+            box-shadow: 0 4px 14px rgba(245, 158, 11, 0.22);
+            transform: translateY(-1px);
+        }
+
+        /* تخصيص وتجميل SweetAlert2 للنافذة الرسمية للمفتاح العام */
+        .swal2-container {
+            z-index: 10000000 !important;
+            font-family: 'Cairo', sans-serif !important;
+        }
+
+        .swal-bypass-popup {
+            border-radius: 24px !important;
+            padding: 28px 22px !important;
+            font-family: 'Cairo', sans-serif !important;
+            box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.45) !important;
+            border: 1.5px solid #cbd5e1 !important;
+        }
+
+        .swal-bypass-confirm {
+            border-radius: 12px !important;
+            font-weight: 900 !important;
+            font-size: 14.5px !important;
+            padding: 12px 26px !important;
+            font-family: 'Cairo', sans-serif !important;
+            background: #006233 !important;
+            box-shadow: 0 4px 14px rgba(0, 98, 51, 0.3) !important;
+        }
+
+        .swal-bypass-cancel {
+            border-radius: 12px !important;
+            font-weight: 800 !important;
+            font-size: 14px !important;
+            padding: 12px 22px !important;
+            font-family: 'Cairo', sans-serif !important;
+            background: #64748b !important;
         }
 
         /* رأس الصفحة الرسمي */
@@ -1113,11 +1351,31 @@
         }
     </style>
 </head>
-<body>
+<body class="body-masked">
+
+    <!-- طبقة حجب وإخفاء بيانات الصفحة (قفل الحماية والرقم السري) -->
+    <div id="privacy-lock-overlay" class="privacy-lock-overlay">
+        <div id="privacy-lock-dialog" class="privacy-lock-dialog">
+            <div class="lock-dialog-icon loading-mode">
+                <i class="fa-solid fa-shield-halved fa-beat" style="color:#10b981;"></i>
+            </div>
+            <div class="lock-badge-tag verify-mode">
+                <i class="fa-solid fa-lock"></i> نظام الأمان وحجب البيانات
+            </div>
+            <h2 class="lock-dialog-title">جاري فحص وتأمين بيانات الصفحة...</h2>
+            <div style="font-size:13.5px; color:#64748b; font-weight:700; margin-top:8px; line-height:1.6;">
+                يرجى الانتظار لحظات لمطابقة السجل الأمني المعتمد وتفعيل الحماية.
+            </div>
+        </div>
+    </div>
 
     <div class="container">
-        <!-- شريط الخروج العلوي السريع -->
+        <!-- شريط الخروج والتحكم العلوي السريع -->
         <div class="portal-top-bar">
+            <button type="button" class="portal-lock-btn" id="btn-lock-page" onclick="lockPageAgain()" title="إعادة قفل وحجب بيانات الصفحة" style="display: none;">
+                <i class="fa-solid fa-lock"></i>
+                <span>قفل وحجب الصفحة</span>
+            </button>
             <button type="button" class="portal-exit-btn" onclick="handleExitPortal()" title="خروج من صفحة الاستعلام">
                 <i class="fa-solid fa-arrow-right-from-bracket"></i>
                 <span>خروج</span>
@@ -1429,7 +1687,15 @@
         // نسخ رقم التعريف الوظيفي أو الوطني
         window.copyJobId = function(val) {
             navigator.clipboard.writeText(val).then(() => {
-                alert('تم النسخ بنجاح: ' + val);
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'تم النسخ بنجاح',
+                        text: val,
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                }
             }).catch(() => {});
         };
 
@@ -1505,7 +1771,9 @@
 
             try {
                 if (typeof html2canvas === 'undefined') {
-                    alert('مكتبة تصدير الصور غير متوفرة حالياً.');
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({ icon: 'error', title: 'خطأ', text: 'مكتبة تصدير الصور غير متوفرة حالياً.' });
+                    }
                     return;
                 }
 
@@ -1639,7 +1907,9 @@
                 }
             } catch (err) {
                 console.error('Error saving digital card image:', err);
-                alert('حدث خطأ أثناء حفظ صورة البطاقة. يرجى المحاولة مجدداً.');
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({ icon: 'error', title: 'خطأ', text: 'حدث خطأ أثناء حفظ صورة البطاقة. يرجى المحاولة مجدداً.' });
+                }
             } finally {
                 if (btn) {
                     btn.innerHTML = origHTML;
@@ -1654,7 +1924,9 @@
 
             const qrUrl = window.location.href;
             if (typeof QRious === 'undefined') {
-                alert('مكتبة رمز الاستجابة السريع غير متوفرة.');
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({ icon: 'error', title: 'خطأ', text: 'مكتبة رمز الاستجابة السريع غير متوفرة.' });
+                }
                 return;
             }
 
@@ -1799,7 +2071,9 @@
                 }
             } catch (err) {
                 console.error('Error generating identity QR card:', err);
-                alert('حدث خطأ أثناء إنشاء بطاقة الهوية الرقمية: ' + (err.message || err));
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({ icon: 'error', title: 'خطأ', text: 'حدث خطأ أثناء إنشاء بطاقة الهوية الرقمية: ' + (err.message || err) });
+                }
             } finally {
                 if (btn) {
                     btn.innerHTML = origHTML;
@@ -1843,6 +2117,11 @@
 
         // دالة عرض شاشة البطاقة المعطلة (بدون أي بيانات للموظف تماماً لمنع التطفل)
         function renderCardDisabledState(reason, date) {
+            isPageUnlocked = true;
+            const overlay = document.getElementById('privacy-lock-overlay');
+            if (overlay) overlay.style.display = 'none';
+            document.body.classList.remove('body-masked');
+
             const tabsNav = document.getElementById('tabs-navbar');
             if (tabsNav) tabsNav.style.display = 'none';
 
@@ -1893,30 +2172,223 @@
             `;
         }
 
-        // دالة عرض شاشة تعيين الرقم السري لأول مرة (6 أرقام وحروف إنجليزية A-Z, a-z, 0-9 فقط)
+        // ==============================================================
+        // 🛡️ منظومة مكافحة التلاعب وحماية الصفحة من أدوات الفحص (Anti-Tamper Shield)
+        // ==============================================================
+        let isPageUnlocked = false;
+        let _securedEmployeeData = null;
+        let lastKnownLockMode = 'loading'; // 'setup' | 'gate' | 'loading'
+
+        // دالة إعادة بناء وتثبيت طبقة الحجب فوراً عند رصد أي محاولة حذف أو إخفاء من أداة الفحص (Inspect)
+        function rebuildLockOverlayIfNeeded() {
+            if (isPageUnlocked) return;
+
+            let overlay = document.getElementById('privacy-lock-overlay');
+            if (!overlay || !document.body.contains(overlay)) {
+                console.warn('⚠️ [أمن المنظومة] تم رصد محاولة حذف طبقة الحجب من أداة الفحص - جاري إعادة بنائها وتثبيتها فوراً!');
+                overlay = document.createElement('div');
+                overlay.id = 'privacy-lock-overlay';
+                overlay.className = 'privacy-lock-overlay';
+                document.body.prepend(overlay);
+
+                if (lastKnownLockMode === 'setup') {
+                    renderFirstTimePinSetup(currentVerifyJobId, currentVerifyEmpName);
+                } else if (lastKnownLockMode === 'gate') {
+                    renderPinGate(currentVerifyJobId, currentVerifyEmpName);
+                }
+            }
+
+            // فرض التعتيم وحجب الصفحة بالقوة
+            if (!document.body.classList.contains('body-masked')) {
+                document.body.classList.add('body-masked');
+            }
+
+            // فحص الخصائص المظهرية للتأكد من عدم التلاعب بـ CSS من أداة الفحص
+            const style = window.getComputedStyle(overlay);
+            if (style.display === 'none' || style.visibility === 'hidden' || parseFloat(style.opacity) < 0.5) {
+                overlay.style.setProperty('display', 'flex', 'important');
+                overlay.style.setProperty('visibility', 'visible', 'important');
+                overlay.style.setProperty('opacity', '1', 'important');
+                overlay.style.setProperty('z-index', '2147483647', 'important');
+                overlay.classList.remove('hide');
+            }
+
+            // ضمان عدم تسرب أي بيانات في الـ DOM قبل فك الحجب
+            if (!isPageUnlocked) {
+                const tabsNav = document.getElementById('tabs-navbar');
+                if (tabsNav) tabsNav.style.display = 'none';
+            }
+        }
+
+        // مراقب التلاعب الحي بالـ DOM (MutationObserver)
+        const antiTamperObserver = new MutationObserver((mutations) => {
+            if (isPageUnlocked) return;
+            rebuildLockOverlayIfNeeded();
+        });
+
+        // تشغيل المراقبة الصارمة على مستوى عناصر الصفحة
+        try {
+            antiTamperObserver.observe(document.documentElement, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: ['style', 'class', 'hidden']
+            });
+        } catch(e) {}
+
+        // مؤقت الحراسة الدوري الصارم (كل 120 مللي ثانية)
+        setInterval(() => {
+            if (!isPageUnlocked) {
+                rebuildLockOverlayIfNeeded();
+            }
+        }, 120);
+
+        // تعطيل النقر بالزر الأيمن (Context Menu) لمنع فتح "فحص العنصر"
+        document.addEventListener('contextmenu', (e) => {
+            if (!isPageUnlocked) {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
+        }, true);
+
+        // تعطيل اختصارات لوحة المفاتيح الخاصة بأدوات المطورين (F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C, Ctrl+U, Ctrl+S)
+        document.addEventListener('keydown', (e) => {
+            if (isPageUnlocked) return;
+
+            // F12
+            if (e.key === 'F12' || e.keyCode === 123) {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
+            // Ctrl+Shift+I, J, C
+            if (e.ctrlKey && e.shiftKey && ['I', 'i', 'J', 'j', 'C', 'c'].includes(e.key)) {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
+            // Ctrl+U (عرض المصدر)
+            if (e.ctrlKey && (e.key === 'U' || e.key === 'u')) {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
+            // Ctrl+S (حفظ الصفحة)
+            if (e.ctrlKey && (e.key === 'S' || e.key === 's')) {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
+        }, true);
+
+        // دالة فك حجب الصفحة وعرض بيانات الموظف والبطاقة الرقمية
+        window.unlockPageAndShowViews = function(saveSession = true) {
+            isPageUnlocked = true;
+
+            if (saveSession && currentVerifyJobId) {
+                sessionStorage.setItem('verify_pin_unlocked_' + currentVerifyJobId, 'true');
+            }
+
+            // فك حماية البيانات وتعيينها في الذاكرة للرسم
+            if (_securedEmployeeData) {
+                currentEmployee = _securedEmployeeData;
+            }
+
+            // إخفاء طبقة الحجب بانتقال سلس
+            const overlay = document.getElementById('privacy-lock-overlay');
+            if (overlay) {
+                overlay.classList.add('hide');
+                setTimeout(() => {
+                    overlay.style.display = 'none';
+                }, 360);
+            }
+
+            // إزالة تعتيم الصفحة
+            document.body.classList.remove('body-masked');
+
+            // إظهار شريط التنقل وزر القفل
+            const tabsNav = document.getElementById('tabs-navbar');
+            if (tabsNav) tabsNav.style.display = 'grid';
+
+            const lockBtn = document.getElementById('btn-lock-page');
+            if (lockBtn) lockBtn.style.display = 'inline-flex';
+
+            // رسم بيانات الموظف والبطاقة الرقمية
+            if (currentEmployee) {
+                renderPortalViews(currentEmployee, true);
+            }
+        };
+
+        // دالة إعادة قفل وحجب الصفحة
+        window.lockPageAgain = function() {
+            isPageUnlocked = false;
+            currentEmployee = null; // مسح بيانات الموظف فوراً من الذاكرة
+
+            // مسح أي محتوى تم رسمه في الـ DOM فوراً لمنع التلصص
+            const container = document.getElementById('portal-content-container');
+            if (container) {
+                container.innerHTML = `
+                    <div style="text-align:center; padding:50px 20px; color:#ffffff;">
+                        <i class="fa-solid fa-lock fa-3x" style="color:#10b981;"></i>
+                        <div style="margin-top:16px; font-weight:800; font-size:16px;">تم حجب بيانات الصفحة بنجاح.</div>
+                    </div>
+                `;
+            }
+
+            if (currentVerifyJobId) {
+                sessionStorage.removeItem('verify_pin_unlocked_' + currentVerifyJobId);
+            }
+
+            const lockBtn = document.getElementById('btn-lock-page');
+            if (lockBtn) lockBtn.style.display = 'none';
+
+            // إعادة تفعيل طبقة الحجب
+            if (!activeEmployeePin) {
+                renderFirstTimePinSetup(currentVerifyJobId, currentVerifyEmpName);
+            } else {
+                renderPinGate(currentVerifyJobId, currentVerifyEmpName);
+            }
+        };
+
+        // دالة عرض شاشة تعيين الرقم السري لأول مرة داخل طبقة الحجب (6 أرقام وحروف A-Z, a-z, 0-9 فقط)
         function renderFirstTimePinSetup(jobId, empName) {
+            isPageUnlocked = false;
+            lastKnownLockMode = 'setup';
             currentVerifyJobId = jobId;
             currentVerifyEmpName = empName || 'الموظف';
+
+            document.body.classList.add('body-masked');
             const tabsNav = document.getElementById('tabs-navbar');
             if (tabsNav) tabsNav.style.display = 'none';
 
-            const container = document.getElementById('portal-content-container');
-            container.innerHTML = `
-                <div class="pin-gate-screen" style="max-width: 500px; margin: 30px auto; background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 22px; padding: 36px 26px; text-align: center; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); animation: fadeIn 0.3s ease;">
-                    <div style="width: 76px; height: 76px; background: #eff6ff; color: #2563eb; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 34px; margin: 0 auto 16px; border: 2px solid #bfdbfe; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.12);">
+            let overlay = document.getElementById('privacy-lock-overlay');
+            if (!overlay || !document.body.contains(overlay)) {
+                overlay = document.createElement('div');
+                overlay.id = 'privacy-lock-overlay';
+                overlay.className = 'privacy-lock-overlay';
+                document.body.prepend(overlay);
+            }
+
+            overlay.style.setProperty('display', 'flex', 'important');
+            overlay.classList.remove('hide');
+
+            overlay.innerHTML = `
+                <div class="privacy-lock-dialog">
+                    <div class="lock-dialog-icon setup-mode">
                         <i class="fa-solid fa-shield-halved"></i>
                     </div>
-                    <div style="display: inline-block; background: #eff6ff; color: #1d4ed8; font-weight: 800; font-size: 12.5px; padding: 4px 14px; border-radius: 20px; margin-bottom: 12px;">
-                        إعداد أمان البطاقة الرقمية لأول مرة
+                    <div class="lock-badge-tag setup-mode">
+                        <i class="fa-solid fa-key"></i> إعداد أمان البطاقة الرقمية لأول مرة
                     </div>
-                    <h2 style="color: #0f172a; font-size: 20px; font-weight: 900; margin: 0 0 8px;">
+                    <h2 class="lock-dialog-title">
                         تعيين الرقم السري للبطاقة المهنية
                     </h2>
-                    <div style="font-size: 14.5px; font-weight: 800; color: #006233; margin-bottom: 14px;">
+                    <div class="lock-dialog-emp-name">
                         الموظف(ة): <strong>${escapeHtml(empName)}</strong>
                     </div>
-                    <p style="color: #475569; font-size: 13px; line-height: 1.7; margin: 0 0 20px;">
-                        لحماية خصوصية بياناتك المهنية، يرجى تعيين رقم سري شخصي خاص ببطاقتك الرقمية مكون من <strong>6 خانات</strong> (أرقام وحروف إنجليزية كبيرة وصغيرة فقط: <code dir="ltr" style="background:#f1f5f9; padding:2px 6px; border-radius:4px; font-weight:800;">A-Z, a-z, 0-9</code>).
+                    <p class="lock-dialog-desc">
+                        لحماية خصوصية بياناتك وحجب الصفحة عن التطفل، يرجى تعيين رقم سري شخصي خاص ببطاقتك الرقمية مكون من <strong>6 خانات</strong> (أرقام وحروف إنجليزية فقط: <code dir="ltr" style="background:#f1f5f9; padding:2px 6px; border-radius:4px; font-weight:800;">A-Z, a-z, 0-9</code>).
                     </p>
 
                     <form id="setup-pin-form" onsubmit="handleSetupPinSubmit(event)" style="display: flex; flex-direction: column; gap: 14px; text-align: right;">
@@ -1943,24 +2415,29 @@
                         </div>
 
                         <div style="display: flex; gap: 10px; margin-top: 6px;">
-                            <button type="submit" id="btn-submit-setup-pin" class="btn" style="flex: 2; padding: 13px; background: #006233; color: white; border: none; border-radius: 10px; font-weight: 900; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s ease;">
+                            <button type="submit" id="btn-submit-setup-pin" style="flex: 2; padding: 13px; background: #006233; color: white; border: none; border-radius: 10px; font-weight: 900; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s ease;">
                                 <i class="fa-solid fa-check-circle"></i> حفظ وتفعيل البطاقة
                             </button>
-                            <button type="button" onclick="handleExitPortal()" class="btn" style="flex: 1; padding: 13px; background: #fee2e2; color: #dc2626; border: 1.5px solid #fca5a5; border-radius: 10px; font-weight: 800; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                            <button type="button" onclick="handleExitPortal()" style="flex: 1; padding: 13px; background: #fee2e2; color: #dc2626; border: 1.5px solid #fca5a5; border-radius: 10px; font-weight: 800; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
                                 <i class="fa-solid fa-arrow-right-from-bracket"></i> خروج
                             </button>
                         </div>
                     </form>
 
-                    <div style="border-top: 1px solid #e2e8f0; margin-top: 24px; padding-top: 14px; color: #94a3b8; font-size: 12px; font-weight: 700;">
-                        مديرية التربية لولاية توقرت &copy; نظام التحقق الأمني
+                    <button type="button" onclick="showDirectorateBypassModal()" class="bypass-key-trigger-btn">
+                        <i class="fa-solid fa-key" style="color: #f59e0b;"></i> دخول خاص بالمصالح والمديرية (المفتاح العام)
+                    </button>
+
+                    <div style="border-top: 1px solid #e2e8f0; margin-top: 22px; padding-top: 14px; color: #94a3b8; font-size: 12px; font-weight: 700;">
+                        مديرية التربية لولاية توقرت &copy; نظام حجب البيانات والأمان
                     </div>
                 </div>
             `;
+
             setTimeout(() => {
                 const inp = document.getElementById('setup-pin-input');
                 if (inp) inp.focus();
-            }, 100);
+            }, 120);
         }
 
         window.toggleSetupPinVisibility = function(inputId, iconId) {
@@ -2026,7 +2503,6 @@
 
                 activeEmployeePin = pin;
                 if (currentEmployee) currentEmployee.codep = pin;
-                sessionStorage.setItem('verify_pin_unlocked_' + currentVerifyJobId, 'true');
 
                 if (typeof Swal !== 'undefined') {
                     await Swal.fire({
@@ -2038,9 +2514,7 @@
                     });
                 }
 
-                const tabsNav = document.getElementById('tabs-navbar');
-                if (tabsNav) tabsNav.style.display = 'grid';
-                renderPortalViews(currentEmployee, true);
+                unlockPageAndShowViews(true);
             } catch(err) {
                 console.error('Error saving pin:', err);
                 if (errEl) {
@@ -2054,87 +2528,158 @@
             }
         };
 
-        window.showDirectorateBypassModal = async function() {
-            let entered = null;
-            if (typeof Swal !== 'undefined') {
-                const res = await Swal.fire({
-                    title: 'دخول خاص للمصالح والمديرية',
-                    html: '<div style="color: #64748b; font-size: 13.5px; margin-bottom: 12px; line-height: 1.6;">خاص بالإدارة والمفتشين للاطلاع والمعاينة المؤقتة دون تعيين أو تعديل الرقم السري للموظف.</div>',
-                    input: 'password',
-                    inputLabel: 'أدخل الرقم السري العام أو المعتمد للمديرية:',
-                    inputPlaceholder: 'الرقم السري العام...',
-                    showCancelButton: true,
-                    confirmButtonText: 'تأكيد ودخول',
-                    cancelButtonText: 'إلغاء',
-                    confirmButtonColor: '#006233',
-                    cancelButtonColor: '#64748b',
-                    inputValidator: (val) => {
-                        if (!val) return 'يرجى إدخال الرقم السري العام للمصالح';
-                    }
-                });
-                entered = res ? res.value : null;
+        // دالة تبديل رؤية المفتاح العام في SweetAlert2
+        window.toggleBypassEye = function() {
+            const inp = document.getElementById('swal-bypass-input');
+            const icon = document.getElementById('swal-eye-icon');
+            if (!inp || !icon) return;
+            if (inp.type === 'password') {
+                inp.type = 'text';
+                icon.className = 'fa-solid fa-eye-slash';
             } else {
-                entered = prompt('دخول خاص للمصالح والمديرية:\nأدخل الرقم السري العام أو المعتمد للمديرية:');
-            }
-
-            if (!entered) return;
-            const cleanEntered = String(entered).trim();
-            const isMatch = (cleanEntered === directorateGeneralPin) || (cleanEntered === 'feh@09@55');
-
-            if (isMatch) {
-                if (typeof Swal !== 'undefined') {
-                    await Swal.fire({
-                        icon: 'success',
-                        title: 'تم التحقق بنجاح',
-                        text: 'تم الدخول بصفة مصالح التفتيش. لم يتم حفظ أي رقم سري للموظف وستبقى نافذة التعيين مفعلة له عند دخوله مجدداً.',
-                        timer: 2000,
-                        showConfirmButton: false
-                    });
-                }
-                // عرض البيانات مباشرة دون حفظ أي رقم سري للموظف ودون حفظ verify_pin_unlocked_ في sessionStorage
-                // لكي تبقى نافذة تعيين الرقم السري قائمة للموظف عند دخوله مرة أخرى
-                const tabsNav = document.getElementById('tabs-navbar');
-                if (tabsNav) tabsNav.style.display = 'grid';
-                if (currentEmployee) {
-                    renderPortalViews(currentEmployee, true);
-                }
-            } else {
-                if (typeof Swal !== 'undefined') {
-                    Swal.fire('خطأ في التحقق', 'الرقم السري العام غير صحيح، يرجى المحاولة مجدداً.', 'error');
-                } else {
-                    alert('الرقم السري العام للمصالح غير صحيح.');
-                }
+                inp.type = 'password';
+                icon.className = 'fa-solid fa-eye';
             }
         };
 
-        // دالة عرض شاشة قفل الصفحة بالرقم السري للبطاقة الرقمية (عندما يكون الرقم السري معيناً مسبقاً)
+        // 🔑 نافذة إدخال المفتاح العام المعتمدة حصرياً عبر SweetAlert2
+        window.showDirectorateBypassModal = async function() {
+            if (typeof Swal === 'undefined') {
+                console.error('SweetAlert2 library is not available');
+                return;
+            }
+
+            // التأكد من جلب المفتاح العام إن لم يكن متوفراً
+            if (!directorateGeneralPin) {
+                try {
+                    const client = (typeof window.getSupabaseClient === 'function') ? window.getSupabaseClient() : null;
+                    if (client) {
+                        const { data } = await client.from('system_settings').select('extra_config').eq('id', 'config').maybeSingle();
+                        if (data && data.extra_config) {
+                            const ex = (typeof data.extra_config === 'string') ? JSON.parse(data.extra_config) : data.extra_config;
+                            if (ex && ex.digital_card_pin) {
+                                directorateGeneralPin = String(ex.digital_card_pin).trim();
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Supabase fetch error for general pin:', e);
+                }
+            }
+
+            const { value: enteredKey } = await Swal.fire({
+                title: '<div style="display:flex;align-items:center;justify-content:center;gap:10px;font-size:20px;font-weight:900;color:#0f172a;"><i class="fa-solid fa-key" style="color:#d97706;"></i> إدخال المفتاح العام للمديرية</div>',
+                html: `
+                    <div style="text-align:right; margin-top:10px;">
+                        <p style="color:#475569; font-size:13.5px; line-height:1.65; margin:0 0 16px;">
+                            نافذة دخول رسمية معتمدة لمفتشي التربية والمصالح المركزية للاطلاع والمعاينة وفك حجب الصفحة دون تعيين أو تعديل الرقم السري للموظف.
+                        </p>
+                        <label style="display:block; font-weight:800; font-size:13px; color:#1e293b; margin-bottom:6px;">
+                            المفتاح العام للمديرية:
+                        </label>
+                        <div style="position:relative; display:flex; align-items:center;">
+                            <input type="password" id="swal-bypass-input" class="swal2-input" placeholder="أدخل المفتاح العام للمديرية..." style="width:100%; margin:0; padding:12px 42px 12px 14px; font-size:16px; font-weight:800; text-align:center; letter-spacing:2px; border-radius:10px; direction:ltr; box-sizing:border-box; font-family: monospace;">
+                            <button type="button" id="swal-eye-btn" onclick="toggleBypassEye()" style="position:absolute; right:12px; background:none; border:none; color:#64748b; font-size:16px; cursor:pointer;" title="إظهار / إخفاء المفتاح">
+                                <i class="fa-solid fa-eye" id="swal-eye-icon"></i>
+                            </button>
+                        </div>
+                    </div>
+                `,
+                focusConfirm: false,
+                showCancelButton: true,
+                confirmButtonText: '<i class="fa-solid fa-shield-halved"></i> تأكيد والتحقق',
+                cancelButtonText: '<i class="fa-solid fa-xmark"></i> إلغاء',
+                customClass: {
+                    popup: 'swal-bypass-popup',
+                    confirmButton: 'swal-bypass-confirm',
+                    cancelButton: 'swal-bypass-cancel'
+                },
+                didOpen: () => {
+                    const inp = document.getElementById('swal-bypass-input');
+                    if (inp) {
+                        inp.focus();
+                        inp.addEventListener('keypress', (e) => {
+                            if (e.key === 'Enter') Swal.clickConfirm();
+                        });
+                    }
+                },
+                preConfirm: () => {
+                    const inp = document.getElementById('swal-bypass-input');
+                    const val = (inp ? inp.value : '').trim();
+                    if (!val) {
+                        Swal.showValidationMessage('يرجى إدخال المفتاح العام للمديرية.');
+                        return false;
+                    }
+
+                    const isMatch = (val === directorateGeneralPin) || (val === 'feh@09@55');
+                    if (!isMatch) {
+                        Swal.showValidationMessage('❌ المفتاح العام غير صحيح، يرجى التأكد وإعادة المحاولة.');
+                        return false;
+                    }
+                    return val;
+                }
+            });
+
+            if (enteredKey) {
+                await Swal.fire({
+                    icon: 'success',
+                    title: 'تم التحقق بنجاح',
+                    html: '<div style="font-size:14px; line-height:1.6; color:#334155;">مرحباً بمصالح المفتشية والمديرية.<br>تم فك حجب بيانات الصفحة بنجاح للاطلاع والمعاينة المؤقتة دون تغيير الرمز السري للموظف.</div>',
+                    timer: 1800,
+                    showConfirmButton: false
+                });
+
+                // فك حجب بيانات الصفحة دون حفظ verify_pin_unlocked_ في sessionStorage
+                // لكي تبقى نافذة تعيين/طلب الرقم السري قائمة للموظف عند دخوله مجدداً
+                unlockPageAndShowViews(false);
+            }
+        };
+
+        // دالة عرض شاشة قفل الصفحة بالرقم السري داخل طبقة الحجب (عندما يكون الرقم السري معيناً مسبقاً)
         function renderPinGate(jobId, empName) {
+            isPageUnlocked = false;
+            lastKnownLockMode = 'gate';
             currentVerifyJobId = jobId;
             currentVerifyEmpName = empName || 'الموظف';
+
+            document.body.classList.add('body-masked');
             const tabsNav = document.getElementById('tabs-navbar');
             if (tabsNav) tabsNav.style.display = 'none';
 
-            const container = document.getElementById('portal-content-container');
-            container.innerHTML = `
-                <div class="pin-gate-screen" style="max-width: 480px; margin: 35px auto; background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 22px; padding: 36px 26px; text-align: center; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); animation: fadeIn 0.3s ease;">
-                    <div style="width: 76px; height: 76px; background: #ecfdf5; color: #047857; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 34px; margin: 0 auto 18px; border: 2px solid #a7f3d0; box-shadow: 0 4px 12px rgba(4, 120, 87, 0.12);">
+            let overlay = document.getElementById('privacy-lock-overlay');
+            if (!overlay || !document.body.contains(overlay)) {
+                overlay = document.createElement('div');
+                overlay.id = 'privacy-lock-overlay';
+                overlay.className = 'privacy-lock-overlay';
+                document.body.prepend(overlay);
+            }
+
+            overlay.style.setProperty('display', 'flex', 'important');
+            overlay.classList.remove('hide');
+
+            overlay.innerHTML = `
+                <div class="privacy-lock-dialog">
+                    <div class="lock-dialog-icon verify-mode">
                         <i class="fa-solid fa-lock"></i>
                     </div>
-                    <h2 style="color: #0f172a; font-size: 20px; font-weight: 900; margin: 0 0 8px;">
+                    <div class="lock-badge-tag verify-mode">
+                        <i class="fa-solid fa-shield-halved"></i> بيانات الصفحة محجوبة برقم سري
+                    </div>
+                    <h2 class="lock-dialog-title">
                         صفحة الاستعلام محمية برقم سري
                     </h2>
-                    <div style="font-size: 14.5px; font-weight: 800; color: #006233; margin-bottom: 12px;">
+                    <div class="lock-dialog-emp-name">
                         الموظف(ة): <strong>${escapeHtml(empName || 'الموظف')}</strong>
                     </div>
-                    <p style="color: #64748b; font-size: 13.5px; line-height: 1.7; margin: 0 0 24px;">
-                        لحماية الخصوصية ومنع التطفل، يرجى إدخال الرقم السري الخاص ببطاقتك الرقمية (المكون من 6 خانات) أو الرقم السري العام المعتمد من المديرية.
+                    <p class="lock-dialog-desc">
+                        لحماية الخصوصية ومنع التطفل، تم حجب بيانات الصفحة. يرجى إدخال الرقم السري الخاص ببطاقتك الرقمية (6 خانات) أو المفتاح العام المعتمد من المديرية لفك الحجب وعرض البيانات.
                     </p>
 
                     <form id="verify-pin-form" onsubmit="handleVerifyPinSubmit(event)" style="display: flex; flex-direction: column; gap: 14px; text-align: right;">
                         <div>
                             <label style="display: block; font-weight: 800; font-size: 13px; color: #334155; margin-bottom: 6px;">الرقم السري المعتمد:</label>
                             <div style="position: relative; display: flex; align-items: center;">
-                                <input type="password" id="verify-pin-input" placeholder="أدخل الرقم السري..." required autofocus style="width: 100%; padding: 12px 42px 12px 14px; border: 1.5px solid #cbd5e1; border-radius: 10px; font-weight: 800; font-size: 16px; box-sizing: border-box; text-align: center; letter-spacing: 2px; font-family: inherit;">
+                                <input type="password" id="verify-pin-input" placeholder="أدخل الرقم السري..." required autofocus style="width: 100%; padding: 12px 42px 12px 14px; border: 1.5px solid #cbd5e1; border-radius: 10px; font-weight: 800; font-size: 16px; box-sizing: border-box; text-align: center; letter-spacing: 2px; font-family: monospace;">
                                 <button type="button" onclick="toggleVerifyPinVisibility()" style="position: absolute; right: 10px; background: none; border: none; font-size: 16px; color: #64748b; cursor: pointer; padding: 4px;" title="إظهار / إخفاء">
                                     <i class="fa-solid fa-eye" id="pin-eye-icon"></i>
                                 </button>
@@ -2143,24 +2688,29 @@
                         </div>
 
                         <div style="display: flex; gap: 10px; margin-top: 6px;">
-                            <button type="submit" class="btn" style="flex: 2; padding: 12px; background: #006233; color: white; border: none; border-radius: 10px; font-weight: 900; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s ease;">
-                                <i class="fa-solid fa-key"></i> تأكيد الدخول وعرض البيانات
+                            <button type="submit" style="flex: 2; padding: 12px; background: #006233; color: white; border: none; border-radius: 10px; font-weight: 900; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s ease;">
+                                <i class="fa-solid fa-key"></i> فك الحجب وعرض البيانات
                             </button>
-                            <button type="button" onclick="handleExitPortal()" class="btn" style="flex: 1; padding: 12px; background: #fee2e2; color: #dc2626; border: 1.5px solid #fca5a5; border-radius: 10px; font-weight: 800; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                            <button type="button" onclick="handleExitPortal()" style="flex: 1; padding: 12px; background: #fee2e2; color: #dc2626; border: 1.5px solid #fca5a5; border-radius: 10px; font-weight: 800; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
                                 <i class="fa-solid fa-arrow-right-from-bracket"></i> خروج
                             </button>
                         </div>
                     </form>
 
-                    <div style="border-top: 1px solid #e2e8f0; margin-top: 24px; padding-top: 14px; color: #94a3b8; font-size: 12px; font-weight: 700;">
-                        مديرية التربية لولاية توقرت &copy; نظام التحقق الأمني
+                    <button type="button" onclick="showDirectorateBypassModal()" class="bypass-key-trigger-btn">
+                        <i class="fa-solid fa-key" style="color: #f59e0b;"></i> دخول خاص بالمصالح والمديرية (المفتاح العام)
+                    </button>
+
+                    <div style="border-top: 1px solid #e2e8f0; margin-top: 22px; padding-top: 14px; color: #94a3b8; font-size: 12px; font-weight: 700;">
+                        مديرية التربية لولاية توقرت &copy; نظام حجب البيانات والأمان
                     </div>
                 </div>
             `;
+
             setTimeout(() => {
                 const inp = document.getElementById('verify-pin-input');
                 if (inp) inp.focus();
-            }, 100);
+            }, 120);
         }
 
         window.toggleVerifyPinVisibility = function() {
@@ -2190,15 +2740,11 @@
             const isMatch = (entered === activeEmployeePin) || (entered === directorateGeneralPin) || (entered === 'feh@09@55');
 
             if (isMatch) {
-                if (currentVerifyJobId) {
-                    sessionStorage.setItem('verify_pin_unlocked_' + currentVerifyJobId, 'true');
-                }
-                const tabsNav = document.getElementById('tabs-navbar');
-                if (tabsNav) tabsNav.style.display = 'grid';
-                renderPortalViews(currentEmployee, true);
+                const isMaster = (entered === directorateGeneralPin) || (entered === 'feh@09@55');
+                unlockPageAndShowViews(!isMaster);
             } else {
                 if (errEl) {
-                    errEl.textContent = 'الرقم السري غير صحيح. يرجى إدخال رقمك السري (6 خانات) أو الرقم المعتمد للمصالح.';
+                    errEl.textContent = 'الرقم السري غير صحيح. يرجى إدخال رقمك السري (6 خانات) أو المفتاح العام المعتمد للمديرية.';
                     errEl.style.display = 'block';
                 }
                 if (inp) {
@@ -2392,7 +2938,7 @@
             directorateGeneralPin = String(digitalCardPin || '').trim();
             activeEmployeePin = String((dbEmp && dbEmp.codep) || (extra.codep_map && extra.codep_map[cleanJobId]) || '').trim();
 
-            currentEmployee = {
+            _securedEmployeeData = {
                 jobId: cleanJobId || (decryptedData && decryptedData.j) || '',
                 name: fullName,
                 codep: activeEmployeePin,
@@ -2418,6 +2964,9 @@
                 verifiedAt: new Date().toLocaleDateString('ar-DZ')
             };
 
+            // عزل تام للبيانات الحساسة عن الذاكرة قبل التحقق بالرمز السري لمنع التلصص عبر Console
+            currentEmployee = null;
+
             // 🔐 فحص قفل صفحة الاستعلام بالرقم السري للبطاقة الرقمية
             const isUnlocked = sessionStorage.getItem('verify_pin_unlocked_' + cleanJobId) === 'true';
             if (!isUnlocked) {
@@ -2432,9 +2981,7 @@
             }
 
             // عرض البيانات والبطاقة بعد اجتياز فحص القفل
-            const tabsNav = document.getElementById('tabs-navbar');
-            if (tabsNav) tabsNav.style.display = 'grid';
-            renderPortalViews(currentEmployee, !!dbEmp);
+            unlockPageAndShowViews(true);
         } catch(fatalErr) {
             console.error("Fatal verification portal error:", fatalErr);
             renderErrorState('حدث خطأ غير متوقع أثناء معالجة بيانات التحقق: ' + (fatalErr.message || fatalErr));
@@ -2796,6 +3343,11 @@
         }
 
         function renderErrorState(message) {
+            isPageUnlocked = true;
+            const overlay = document.getElementById('privacy-lock-overlay');
+            if (overlay) overlay.style.display = 'none';
+            document.body.classList.remove('body-masked');
+
             const container = document.getElementById('portal-content-container');
             container.innerHTML = `
                 <div class="error-card">
