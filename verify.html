@@ -137,7 +137,7 @@
             background: radial-gradient(circle at 50% 30%, rgba(15, 23, 42, 0.96) 0%, rgba(2, 6, 23, 0.99) 100%) !important;
             backdrop-filter: blur(28px) !important;
             -webkit-backdrop-filter: blur(28px) !important;
-            display: flex !important;
+            display: flex;
             align-items: center !important;
             justify-content: center !important;
             padding: 20px 14px !important;
@@ -203,17 +203,8 @@
             align-items: center;
             justify-content: center;
             font-size: 34px;
-            cursor: pointer;
+            cursor: default;
             user-select: none;
-            transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.22s ease;
-        }
-
-        .lock-dialog-icon:hover {
-            transform: scale(1.08);
-        }
-
-        .lock-dialog-icon:active {
-            transform: scale(0.94);
         }
 
         .lock-dialog-icon.verify-mode {
@@ -2133,7 +2124,13 @@
         function renderCardDisabledState(reason, date) {
             isPageUnlocked = true;
             const overlay = document.getElementById('privacy-lock-overlay');
-            if (overlay) overlay.style.display = 'none';
+            if (overlay) {
+                overlay.classList.add('hide');
+                overlay.style.setProperty('display', 'none', 'important');
+                overlay.style.setProperty('visibility', 'hidden', 'important');
+                overlay.style.setProperty('opacity', '0', 'important');
+                overlay.style.setProperty('pointer-events', 'none', 'important');
+            }
             document.body.classList.remove('body-masked');
 
             const tabsNav = document.getElementById('tabs-navbar');
@@ -2184,6 +2181,28 @@
                     </div>
                 </div>
             `;
+
+            // إظهار تنبيه SweetAlert2 فوري وواضح يمنع أي لبس
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'error',
+                    title: '<span style="color:#b91c1c; font-weight:900; font-size:21px;"><i class="fa-solid fa-ban"></i> بطاقة مهنية معطلة رسمياً</span>',
+                    html: `
+                        <div style="text-align:right; font-size:14px; line-height:1.7; color:#334155; margin-top:10px;">
+                            تم إلغاء وتعطيل صلاحية هذه البطاقة المهنية رسمياً من قبل مديرية التربية لولاية توقرت ولا يمكن عرض أي بيانات للموظف.<br>
+                            <div style="margin-top:14px; background:#fef2f2; border:1.5px solid #fecaca; border-radius:10px; padding:12px 14px; color:#991b1b; font-weight:800; font-size:13.5px;">
+                                <i class="fa-solid fa-circle-exclamation"></i> <strong>سبب التعطيل:</strong> ${escapeHtml(reason || 'أسباب إدارية معتمدة')}
+                            </div>
+                        </div>
+                    `,
+                    confirmButtonText: '<i class="fa-solid fa-check"></i> فهمت ذلك',
+                    confirmButtonColor: '#dc2626',
+                    customClass: {
+                        popup: 'swal-bypass-popup',
+                        confirmButton: 'swal-bypass-confirm'
+                    }
+                });
+            }
         }
 
         // ==============================================================
@@ -2552,35 +2571,10 @@
             }
         };
 
-        // 🔒 نظام الدخول السري بالنقر 10 مرات متتالية على أيقونة القفل
-        let secretLockClicks = 0;
-        let secretLockTimer = null;
-
+        // 🔑 فتح نافذة إدخال الرقم السري الخاص بالمديرية أو الموظف مباشرة عند النقر على أيقونة القفل
         window.handleLockIconSecretClick = function(e) {
             if (e && e.preventDefault) e.preventDefault();
-            secretLockClicks++;
-
-            if (secretLockTimer) clearTimeout(secretLockTimer);
-            secretLockTimer = setTimeout(() => {
-                secretLockClicks = 0;
-            }, 3500);
-
-            // تأثير نبض خفيف لتأكيد استجابة النقر
-            const target = (e && e.currentTarget) || (e && e.target) || document.querySelector('.lock-dialog-icon');
-            const iconEl = (target && target.closest) ? target.closest('.lock-dialog-icon') : target;
-            if (iconEl) {
-                iconEl.style.transition = 'transform 0.1s ease';
-                iconEl.style.transform = 'scale(0.88)';
-                setTimeout(() => {
-                    if (iconEl) iconEl.style.transform = '';
-                }, 110);
-            }
-
-            if (secretLockClicks >= 10) {
-                secretLockClicks = 0;
-                if (secretLockTimer) clearTimeout(secretLockTimer);
-                showDirectorateBypassModal();
-            }
+            showDirectorateBypassModal();
         };
 
         // 🔑 نافذة إدخال المفتاح العام المعتمدة حصرياً عبر SweetAlert2
@@ -2609,17 +2603,17 @@
             }
 
             const { value: enteredResult } = await Swal.fire({
-                title: '<div style="display:flex;align-items:center;justify-content:center;gap:10px;font-size:20px;font-weight:900;color:#0f172a;"><i class="fa-solid fa-user-shield" style="color:#006233;"></i> الدخول السري (المصالح والمديرية)</div>',
+                title: '<div style="display:flex;align-items:center;justify-content:center;gap:10px;font-size:20px;font-weight:900;color:#0f172a;"><i class="fa-solid fa-key" style="color:#d97706;"></i> إدخال الرقم السري / رقم المديرية</div>',
                 html: `
                     <div style="text-align:right; margin-top:10px;">
                         <p style="color:#475569; font-size:13.5px; line-height:1.65; margin:0 0 16px;">
-                            نافذة دخول رسمية معتمدة لمفتشي التربية والمصالح المركزية. يرجى إدخال الرقم السري العام أو الخاص بالمديرية، أو الرقم السري للموظف.
+                            يرجى إدخال الرقم السري الخاص بالمديرية أو الرقم السري للموظف لعرض بيانات الصفحة.
                         </p>
                         <label style="display:block; font-weight:800; font-size:13px; color:#1e293b; margin-bottom:6px;">
-                            الرقم السري العام أو الخاص بالمديرية:
+                            الرقم السري الخاص بالمديرية أو الموظف:
                         </label>
                         <div style="position:relative; display:flex; align-items:center;">
-                            <input type="password" id="swal-bypass-input" class="swal2-input" placeholder="أدخل الرقم السري العام أو المعتمد..." style="width:100%; margin:0; padding:12px 42px 12px 14px; font-size:16px; font-weight:800; text-align:center; letter-spacing:2px; border-radius:10px; direction:ltr; box-sizing:border-box; font-family: monospace;">
+                            <input type="password" id="swal-bypass-input" class="swal2-input" placeholder="أدخل الرقم السري..." style="width:100%; margin:0; padding:12px 42px 12px 14px; font-size:16px; font-weight:800; text-align:center; letter-spacing:2px; border-radius:10px; direction:ltr; box-sizing:border-box; font-family: monospace;">
                             <button type="button" id="swal-eye-btn" onclick="toggleBypassEye()" style="position:absolute; right:12px; background:none; border:none; color:#64748b; font-size:16px; cursor:pointer;" title="إظهار / إخفاء المفتاح">
                                 <i class="fa-solid fa-eye" id="swal-eye-icon"></i>
                             </button>
@@ -2877,18 +2871,23 @@
                         template3GlobalDate = extra.template3_issue_date || '';
                         digitalCardPin = extra.digital_card_pin || '';
 
-                        if (cleanJobId && disabledMap[cleanJobId] && disabledMap[cleanJobId].disabled) {
-                            isCardDisabled = true;
-                            cardDisableReason = disabledMap[cleanJobId].reason || 'معطلة بقرار إداري من مديرية التربية';
-                            cardDisabledDate = disabledMap[cleanJobId].date || '';
+                        if (cleanJobId && disabledMap) {
+                            const rawDis = disabledMap[cleanJobId] || disabledMap[String(cleanJobId).trim()] || disabledMap[String(cleanJobId).replace(/^0+/, '')];
+                            if (rawDis) {
+                                if (rawDis === true || rawDis.disabled === true || rawDis.disabled === 'true' || rawDis.disabled === 1 || rawDis.disabled === '1') {
+                                    isCardDisabled = true;
+                                    cardDisableReason = rawDis.reason || 'معطلة بقرار إداري من مديرية التربية';
+                                    cardDisabledDate = rawDis.date || '';
+                                }
+                            }
                         }
                     }
 
                     if (empRes && empRes.data) {
                         dbEmp = empRes.data;
-                        if (dbEmp.is_card_disabled || dbEmp.is_disabled) {
+                        if (dbEmp.is_card_disabled || dbEmp.is_disabled || dbEmp.isCardDisabled || dbEmp.card_disabled || dbEmp.status === 'disabled' || dbEmp.status === 'suspended') {
                             isCardDisabled = true;
-                            cardDisableReason = dbEmp.card_disable_reason || dbEmp.disable_reason || cardDisableReason || 'معطلة بقرار إداري من مديرية التربية';
+                            cardDisableReason = dbEmp.card_disable_reason || dbEmp.disable_reason || dbEmp.cardDisableReason || cardDisableReason || 'معطلة بقرار إداري من مديرية التربية';
                         }
                     }
 
@@ -2910,9 +2909,11 @@
             }
 
             // فحص حالة التعطيل إن كانت مشفرة في التوكن
-            if (decryptedData && (decryptedData.dis === 1 || decryptedData.dis === '1' || decryptedData.dis === true)) {
-                isCardDisabled = true;
-                if (!cardDisableReason) cardDisableReason = decryptedData.disR || 'أسباب إدارية معتمدة';
+            if (decryptedData) {
+                if (decryptedData.dis === 1 || decryptedData.dis === '1' || decryptedData.dis === true || decryptedData.is_card_disabled || decryptedData.isCardDisabled) {
+                    isCardDisabled = true;
+                    if (!cardDisableReason) cardDisableReason = decryptedData.disR || decryptedData.reason || 'أسباب إدارية معتمدة';
+                }
             }
 
             // ⛔ شرط صارم: إذا كانت البطاقة معطلة، نعرض رسالة التعطيل الرسمية فوراً دون إظهار أي بيانات للموظف على الإطلاق!
@@ -3378,7 +3379,13 @@
         function renderErrorState(message) {
             isPageUnlocked = true;
             const overlay = document.getElementById('privacy-lock-overlay');
-            if (overlay) overlay.style.display = 'none';
+            if (overlay) {
+                overlay.classList.add('hide');
+                overlay.style.setProperty('display', 'none', 'important');
+                overlay.style.setProperty('visibility', 'hidden', 'important');
+                overlay.style.setProperty('opacity', '0', 'important');
+                overlay.style.setProperty('pointer-events', 'none', 'important');
+            }
             document.body.classList.remove('body-masked');
 
             const container = document.getElementById('portal-content-container');
