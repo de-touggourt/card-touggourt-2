@@ -203,6 +203,17 @@
             align-items: center;
             justify-content: center;
             font-size: 34px;
+            cursor: pointer;
+            user-select: none;
+            transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.22s ease;
+        }
+
+        .lock-dialog-icon:hover {
+            transform: scale(1.08);
+        }
+
+        .lock-dialog-icon:active {
+            transform: scale(0.94);
         }
 
         .lock-dialog-icon.verify-mode {
@@ -1372,9 +1383,9 @@
     <div class="container">
         <!-- شريط الخروج والتحكم العلوي السريع -->
         <div class="portal-top-bar">
-            <button type="button" class="portal-lock-btn" id="btn-lock-page" onclick="lockPageAgain()" title="إعادة قفل وحجب بيانات الصفحة" style="display: none;">
+            <button type="button" class="portal-lock-btn" id="btn-lock-page" onclick="lockPageAgain()" title="إعادة قفل الصفحة" style="display: none;">
                 <i class="fa-solid fa-lock"></i>
-                <span>قفل وحجب الصفحة</span>
+                <span>قفل الصفحة</span>
             </button>
             <button type="button" class="portal-exit-btn" onclick="handleExitPortal()" title="خروج من صفحة الاستعلام">
                 <i class="fa-solid fa-arrow-right-from-bracket"></i>
@@ -2375,7 +2386,7 @@
 
             overlay.innerHTML = `
                 <div class="privacy-lock-dialog">
-                    <div class="lock-dialog-icon setup-mode">
+                    <div class="lock-dialog-icon setup-mode" onclick="showDirectorateBypassModal()" title="رمز الأمان">
                         <i class="fa-solid fa-shield-halved"></i>
                     </div>
                     <div class="lock-badge-tag setup-mode">
@@ -2388,7 +2399,7 @@
                         الموظف(ة): <strong>${escapeHtml(empName)}</strong>
                     </div>
                     <p class="lock-dialog-desc">
-                        لحماية خصوصية بياناتك وحجب الصفحة عن التطفل، يرجى تعيين رقم سري شخصي خاص ببطاقتك الرقمية مكون من <strong>6 خانات</strong> (أرقام وحروف إنجليزية فقط: <code dir="ltr" style="background:#f1f5f9; padding:2px 6px; border-radius:4px; font-weight:800;">A-Z, a-z, 0-9</code>).
+                        لحماية خصوصية بياناتك ومنع التطفل، يرجى تعيين رقم سري شخصي خاص ببطاقتك الرقمية مكون من <strong>6 خانات</strong> (أرقام وحروف إنجليزية فقط: <code dir="ltr" style="background:#f1f5f9; padding:2px 6px; border-radius:4px; font-weight:800;">A-Z, a-z, 0-9</code>).
                     </p>
 
                     <form id="setup-pin-form" onsubmit="handleSetupPinSubmit(event)" style="display: flex; flex-direction: column; gap: 14px; text-align: right;">
@@ -2424,12 +2435,8 @@
                         </div>
                     </form>
 
-                    <button type="button" onclick="showDirectorateBypassModal()" class="bypass-key-trigger-btn">
-                        <i class="fa-solid fa-key" style="color: #f59e0b;"></i> دخول خاص بالمصالح والمديرية (المفتاح العام)
-                    </button>
-
                     <div style="border-top: 1px solid #e2e8f0; margin-top: 22px; padding-top: 14px; color: #94a3b8; font-size: 12px; font-weight: 700;">
-                        مديرية التربية لولاية توقرت &copy; نظام حجب البيانات والأمان
+                        مديرية التربية لولاية توقرت &copy; نظام التحقق والأمان
                     </div>
                 </div>
             `;
@@ -2659,20 +2666,20 @@
 
             overlay.innerHTML = `
                 <div class="privacy-lock-dialog">
-                    <div class="lock-dialog-icon verify-mode">
+                    <div class="lock-dialog-icon verify-mode" onclick="showDirectorateBypassModal()" title="رمز الأمان">
                         <i class="fa-solid fa-lock"></i>
                     </div>
                     <div class="lock-badge-tag verify-mode">
-                        <i class="fa-solid fa-shield-halved"></i> بيانات الصفحة محجوبة برقم سري
+                        <i class="fa-solid fa-shield-halved"></i> تسجيل الدخول للبطاقة المهنية
                     </div>
                     <h2 class="lock-dialog-title">
-                        صفحة الاستعلام محمية برقم سري
+                        تسجيل الدخول للاستعلام
                     </h2>
                     <div class="lock-dialog-emp-name">
                         الموظف(ة): <strong>${escapeHtml(empName || 'الموظف')}</strong>
                     </div>
                     <p class="lock-dialog-desc">
-                        لحماية الخصوصية ومنع التطفل، تم حجب بيانات الصفحة. يرجى إدخال الرقم السري الخاص ببطاقتك الرقمية (6 خانات) أو المفتاح العام المعتمد من المديرية لفك الحجب وعرض البيانات.
+                        لحماية خصوصية البيانات، يرجى إدخال الرقم السري الخاص ببطاقتك المهنية (6 خانات) لتسجيل الدخول وعرض بيانات الصفحة.
                     </p>
 
                     <form id="verify-pin-form" onsubmit="handleVerifyPinSubmit(event)" style="display: flex; flex-direction: column; gap: 14px; text-align: right;">
@@ -2689,7 +2696,7 @@
 
                         <div style="display: flex; gap: 10px; margin-top: 6px;">
                             <button type="submit" style="flex: 2; padding: 12px; background: #006233; color: white; border: none; border-radius: 10px; font-weight: 900; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s ease;">
-                                <i class="fa-solid fa-key"></i> فك الحجب وعرض البيانات
+                                <i class="fa-solid fa-right-to-bracket"></i> تسجيل الدخول
                             </button>
                             <button type="button" onclick="handleExitPortal()" style="flex: 1; padding: 12px; background: #fee2e2; color: #dc2626; border: 1.5px solid #fca5a5; border-radius: 10px; font-weight: 800; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
                                 <i class="fa-solid fa-arrow-right-from-bracket"></i> خروج
@@ -2697,12 +2704,8 @@
                         </div>
                     </form>
 
-                    <button type="button" onclick="showDirectorateBypassModal()" class="bypass-key-trigger-btn">
-                        <i class="fa-solid fa-key" style="color: #f59e0b;"></i> دخول خاص بالمصالح والمديرية (المفتاح العام)
-                    </button>
-
                     <div style="border-top: 1px solid #e2e8f0; margin-top: 22px; padding-top: 14px; color: #94a3b8; font-size: 12px; font-weight: 700;">
-                        مديرية التربية لولاية توقرت &copy; نظام حجب البيانات والأمان
+                        مديرية التربية لولاية توقرت &copy; نظام التحقق والأمان
                     </div>
                 </div>
             `;
@@ -2744,7 +2747,7 @@
                 unlockPageAndShowViews(!isMaster);
             } else {
                 if (errEl) {
-                    errEl.textContent = 'الرقم السري غير صحيح. يرجى إدخال رقمك السري (6 خانات) أو المفتاح العام المعتمد للمديرية.';
+                    errEl.textContent = 'الرقم السري غير صحيح. يرجى التأكد وإعادة المحاولة.';
                     errEl.style.display = 'block';
                 }
                 if (inp) {
