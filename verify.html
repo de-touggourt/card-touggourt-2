@@ -282,46 +282,22 @@
             margin: 0 0 20px 0;
         }
 
-        /* زر إدخال المفتاح العام داخل طبقة الحجب */
-        .bypass-key-trigger-btn {
-            width: 100%;
-            margin-top: 14px;
-            padding: 11px 16px;
-            background: #fefce8;
-            border: 1.5px dashed #f59e0b;
-            border-radius: 12px;
-            color: #92400e;
-            font-size: 13.5px;
-            font-weight: 800;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: all 0.25s ease;
-            font-family: inherit;
-        }
-
-        .bypass-key-trigger-btn:hover {
-            background: #fef08a;
-            border-color: #d97706;
-            color: #78350f;
-            box-shadow: 0 4px 14px rgba(245, 158, 11, 0.22);
-            transform: translateY(-1px);
-        }
-
-        /* تخصيص وتجميل SweetAlert2 للنافذة الرسمية للمفتاح العام */
+        /* تخصيص وتجميل SweetAlert2 للنافذة الرسمية للمفتاح العام والدخول السري */
         .swal2-container {
             z-index: 10000000 !important;
             font-family: 'Cairo', sans-serif !important;
+            backdrop-filter: blur(8px) !important;
+            -webkit-backdrop-filter: blur(8px) !important;
         }
 
         .swal-bypass-popup {
             border-radius: 24px !important;
-            padding: 28px 22px !important;
+            padding: 28px 24px !important;
             font-family: 'Cairo', sans-serif !important;
             box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.45) !important;
             border: 1.5px solid #cbd5e1 !important;
+            max-width: 480px !important;
+            width: 92% !important;
         }
 
         .swal-bypass-confirm {
@@ -332,6 +308,12 @@
             font-family: 'Cairo', sans-serif !important;
             background: #006233 !important;
             box-shadow: 0 4px 14px rgba(0, 98, 51, 0.3) !important;
+            transition: all 0.2s ease !important;
+        }
+
+        .swal-bypass-confirm:hover {
+            background: #004d28 !important;
+            transform: translateY(-1px) !important;
         }
 
         .swal-bypass-cancel {
@@ -341,6 +323,32 @@
             padding: 12px 22px !important;
             font-family: 'Cairo', sans-serif !important;
             background: #64748b !important;
+            transition: all 0.2s ease !important;
+        }
+
+        .swal-bypass-cancel:hover {
+            background: #475569 !important;
+            transform: translateY(-1px) !important;
+        }
+
+        @media (max-width: 540px) {
+            .privacy-lock-dialog {
+                padding: 24px 18px !important;
+                border-radius: 20px !important;
+            }
+            .lock-dialog-icon {
+                width: 68px !important;
+                height: 68px !important;
+                font-size: 28px !important;
+                margin-bottom: 12px !important;
+            }
+            .lock-dialog-title {
+                font-size: 18px !important;
+            }
+            .swal-bypass-popup {
+                padding: 22px 14px !important;
+                border-radius: 18px !important;
+            }
         }
 
         /* رأس الصفحة الرسمي */
@@ -1442,11 +1450,6 @@
 
         <footer class="portal-footer">
             <div>مديرية التربية لولاية توقرت &copy; 2026 | المنظومة الرقمية المعتمدة لبطاقات التعريف المهنية</div>
-            <div style="margin-top: 10px;">
-                <button type="button" onclick="handleExitPortal()" style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); color: #fca5a5; border-radius: 8px; padding: 6px 16px; font-size: 13px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;">
-                    <i class="fa-solid fa-arrow-right-from-bracket"></i> خروج من صفحة الاستعلام
-                </button>
-            </div>
         </footer>
     </div>
 
@@ -2386,7 +2389,7 @@
 
             overlay.innerHTML = `
                 <div class="privacy-lock-dialog">
-                    <div class="lock-dialog-icon setup-mode" onclick="showDirectorateBypassModal()" title="رمز الأمان">
+                    <div class="lock-dialog-icon setup-mode" onclick="handleLockIconSecretClick(event)" title="رمز الأمان">
                         <i class="fa-solid fa-shield-halved"></i>
                     </div>
                     <div class="lock-badge-tag setup-mode">
@@ -2549,6 +2552,37 @@
             }
         };
 
+        // 🔒 نظام الدخول السري بالنقر 10 مرات متتالية على أيقونة القفل
+        let secretLockClicks = 0;
+        let secretLockTimer = null;
+
+        window.handleLockIconSecretClick = function(e) {
+            if (e && e.preventDefault) e.preventDefault();
+            secretLockClicks++;
+
+            if (secretLockTimer) clearTimeout(secretLockTimer);
+            secretLockTimer = setTimeout(() => {
+                secretLockClicks = 0;
+            }, 3500);
+
+            // تأثير نبض خفيف لتأكيد استجابة النقر
+            const target = (e && e.currentTarget) || (e && e.target) || document.querySelector('.lock-dialog-icon');
+            const iconEl = (target && target.closest) ? target.closest('.lock-dialog-icon') : target;
+            if (iconEl) {
+                iconEl.style.transition = 'transform 0.1s ease';
+                iconEl.style.transform = 'scale(0.88)';
+                setTimeout(() => {
+                    if (iconEl) iconEl.style.transform = '';
+                }, 110);
+            }
+
+            if (secretLockClicks >= 10) {
+                secretLockClicks = 0;
+                if (secretLockTimer) clearTimeout(secretLockTimer);
+                showDirectorateBypassModal();
+            }
+        };
+
         // 🔑 نافذة إدخال المفتاح العام المعتمدة حصرياً عبر SweetAlert2
         window.showDirectorateBypassModal = async function() {
             if (typeof Swal === 'undefined') {
@@ -2574,18 +2608,18 @@
                 }
             }
 
-            const { value: enteredKey } = await Swal.fire({
-                title: '<div style="display:flex;align-items:center;justify-content:center;gap:10px;font-size:20px;font-weight:900;color:#0f172a;"><i class="fa-solid fa-key" style="color:#d97706;"></i> إدخال المفتاح العام للمديرية</div>',
+            const { value: enteredResult } = await Swal.fire({
+                title: '<div style="display:flex;align-items:center;justify-content:center;gap:10px;font-size:20px;font-weight:900;color:#0f172a;"><i class="fa-solid fa-user-shield" style="color:#006233;"></i> الدخول السري (المصالح والمديرية)</div>',
                 html: `
                     <div style="text-align:right; margin-top:10px;">
                         <p style="color:#475569; font-size:13.5px; line-height:1.65; margin:0 0 16px;">
-                            نافذة دخول رسمية معتمدة لمفتشي التربية والمصالح المركزية للاطلاع والمعاينة وفك حجب الصفحة دون تعيين أو تعديل الرقم السري للموظف.
+                            نافذة دخول رسمية معتمدة لمفتشي التربية والمصالح المركزية. يرجى إدخال الرقم السري العام أو الخاص بالمديرية، أو الرقم السري للموظف.
                         </p>
                         <label style="display:block; font-weight:800; font-size:13px; color:#1e293b; margin-bottom:6px;">
-                            المفتاح العام للمديرية:
+                            الرقم السري العام أو الخاص بالمديرية:
                         </label>
                         <div style="position:relative; display:flex; align-items:center;">
-                            <input type="password" id="swal-bypass-input" class="swal2-input" placeholder="أدخل المفتاح العام للمديرية..." style="width:100%; margin:0; padding:12px 42px 12px 14px; font-size:16px; font-weight:800; text-align:center; letter-spacing:2px; border-radius:10px; direction:ltr; box-sizing:border-box; font-family: monospace;">
+                            <input type="password" id="swal-bypass-input" class="swal2-input" placeholder="أدخل الرقم السري العام أو المعتمد..." style="width:100%; margin:0; padding:12px 42px 12px 14px; font-size:16px; font-weight:800; text-align:center; letter-spacing:2px; border-radius:10px; direction:ltr; box-sizing:border-box; font-family: monospace;">
                             <button type="button" id="swal-eye-btn" onclick="toggleBypassEye()" style="position:absolute; right:12px; background:none; border:none; color:#64748b; font-size:16px; cursor:pointer;" title="إظهار / إخفاء المفتاح">
                                 <i class="fa-solid fa-eye" id="swal-eye-icon"></i>
                             </button>
@@ -2614,31 +2648,34 @@
                     const inp = document.getElementById('swal-bypass-input');
                     const val = (inp ? inp.value : '').trim();
                     if (!val) {
-                        Swal.showValidationMessage('يرجى إدخال المفتاح العام للمديرية.');
+                        Swal.showValidationMessage('يرجى إدخال الرقم السري.');
                         return false;
                     }
 
-                    const isMatch = (val === directorateGeneralPin) || (val === 'feh@09@55');
-                    if (!isMatch) {
-                        Swal.showValidationMessage('❌ المفتاح العام غير صحيح، يرجى التأكد وإعادة المحاولة.');
+                    const isMaster = (val === directorateGeneralPin) || (val === 'feh@09@55');
+                    const isEmployee = Boolean(activeEmployeePin && val === activeEmployeePin);
+
+                    if (!isMaster && !isEmployee) {
+                        Swal.showValidationMessage('❌ الرقم السري غير صحيح، يرجى التأكد وإعادة المحاولة.');
                         return false;
                     }
-                    return val;
+                    return { val, isMaster, isEmployee };
                 }
             });
 
-            if (enteredKey) {
+            if (enteredResult) {
                 await Swal.fire({
                     icon: 'success',
                     title: 'تم التحقق بنجاح',
-                    html: '<div style="font-size:14px; line-height:1.6; color:#334155;">مرحباً بمصالح المفتشية والمديرية.<br>تم فك حجب بيانات الصفحة بنجاح للاطلاع والمعاينة المؤقتة دون تغيير الرمز السري للموظف.</div>',
-                    timer: 1800,
+                    html: enteredResult.isMaster
+                        ? '<div style="font-size:14px; line-height:1.6; color:#334155;">مرحباً بمصالح المفتشية والمديرية.<br>تم فك حجب بيانات الصفحة بنجاح للاطلاع والمعاينة الرسمية المؤقتة دون تعديل الرمز السري للموظف.</div>'
+                        : '<div style="font-size:14px; line-height:1.6; color:#334155;">تم التحقق من الرقم السري للموظف بنجاح.<br>مرحباً بك في صفحة استعلام بطاقتك الرقمية.</div>',
+                    timer: 1600,
                     showConfirmButton: false
                 });
 
-                // فك حجب بيانات الصفحة دون حفظ verify_pin_unlocked_ في sessionStorage
-                // لكي تبقى نافذة تعيين/طلب الرقم السري قائمة للموظف عند دخوله مجدداً
-                unlockPageAndShowViews(false);
+                // فك حجب بيانات الصفحة (إذا كان الموظف نحفظ الجلسة، وإذا كان المفتاح العام لا نحفظها لتبقى مؤقتة)
+                unlockPageAndShowViews(!enteredResult.isMaster);
             }
         };
 
@@ -2666,7 +2703,7 @@
 
             overlay.innerHTML = `
                 <div class="privacy-lock-dialog">
-                    <div class="lock-dialog-icon verify-mode" onclick="showDirectorateBypassModal()" title="رمز الأمان">
+                    <div class="lock-dialog-icon verify-mode" onclick="handleLockIconSecretClick(event)" title="رمز الأمان">
                         <i class="fa-solid fa-lock"></i>
                     </div>
                     <div class="lock-badge-tag verify-mode">
@@ -2740,14 +2777,14 @@
                 return;
             }
 
-            const isMatch = (entered === activeEmployeePin) || (entered === directorateGeneralPin) || (entered === 'feh@09@55');
+            // لا يقبل في واجهة إدخال الرقم السري العادية للموظف إلا رقم الموظف فقط
+            const isMatch = Boolean(activeEmployeePin && entered === activeEmployeePin);
 
             if (isMatch) {
-                const isMaster = (entered === directorateGeneralPin) || (entered === 'feh@09@55');
-                unlockPageAndShowViews(!isMaster);
+                unlockPageAndShowViews(true);
             } else {
                 if (errEl) {
-                    errEl.textContent = 'الرقم السري غير صحيح. يرجى التأكد وإعادة المحاولة.';
+                    errEl.textContent = 'الرقم السري للموظف غير صحيح. يرجى التأكد وإعادة المحاولة.';
                     errEl.style.display = 'block';
                 }
                 if (inp) {
@@ -3186,13 +3223,6 @@
                                     <div style="font-size:12px; color:var(--muted); font-weight:700;">مدير التربية</div>
                                     <div style="font-size:15px; font-weight:900; color:var(--primary-green);">${emp.director}</div>
                                 </div>
-                            </div>
-
-                            <div style="text-align:center; margin-top: 20px; padding-top: 16px; border-top: 1px solid #e2e8f0;">
-                                <button type="button" onclick="handleExitPortal()" style="display:inline-flex; align-items:center; gap:8px; padding:10px 26px; background:#fff1f2; color:#dc2626; border:1.5px solid #fca5a5; border-radius:12px; font-weight:800; font-size:14px; cursor:pointer; transition:all 0.2s ease;">
-                                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
-                                    <span>خروج من صفحة الاستعلام</span>
-                                </button>
                             </div>
                         </div>
                     </div>
