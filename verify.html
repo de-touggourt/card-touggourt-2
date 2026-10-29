@@ -205,6 +205,8 @@
             font-size: 34px;
             cursor: default;
             user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
         }
 
         .lock-dialog-icon.verify-mode {
@@ -2410,7 +2412,7 @@
 
             overlay.innerHTML = `
                 <div class="privacy-lock-dialog">
-                    <div class="lock-dialog-icon setup-mode" onclick="handleLockIconSecretClick(event)" title="رمز الأمان">
+                    <div class="lock-dialog-icon setup-mode" onclick="handleLockIconSecretClick(event)">
                         <i class="fa-solid fa-shield-halved"></i>
                     </div>
                     <div class="lock-badge-tag setup-mode">
@@ -2575,7 +2577,10 @@
             }
         };
 
-        // 🔑 فتح نافذة إدخال الرقم السري الخاص بالمديرية أو الموظف مباشرة عند النقر على أيقونة القفل
+        // 🔑 نظام النقر السري 10 مرات على أيقونة القفل لفتح نافذة إدخال رقم المديرية والمفتاح العام
+        let lockSecretClicks = 0;
+        let lockSecretTimer = null;
+
         window.handleLockIconSecretClick = function(e) {
             if (e) {
                 if (e.preventDefault) e.preventDefault();
@@ -2587,7 +2592,19 @@
             if (document.activeElement && typeof document.activeElement.blur === 'function') {
                 document.activeElement.blur();
             }
-            showDirectorateBypassModal();
+
+            lockSecretClicks++;
+
+            clearTimeout(lockSecretTimer);
+            lockSecretTimer = setTimeout(() => {
+                lockSecretClicks = 0;
+            }, 3000);
+
+            if (lockSecretClicks >= 10) {
+                lockSecretClicks = 0;
+                clearTimeout(lockSecretTimer);
+                showDirectorateBypassModal();
+            }
         };
 
         // 🔑 نافذة إدخال المفتاح العام المعتمدة حصرياً عبر SweetAlert2
@@ -2708,7 +2725,7 @@
 
             overlay.innerHTML = `
                 <div class="privacy-lock-dialog">
-                    <div class="lock-dialog-icon verify-mode" onclick="handleLockIconSecretClick(event)" title="رمز الأمان">
+                    <div class="lock-dialog-icon verify-mode" onclick="handleLockIconSecretClick(event)">
                         <i class="fa-solid fa-lock"></i>
                     </div>
                     <div class="lock-badge-tag verify-mode">
